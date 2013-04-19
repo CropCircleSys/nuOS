@@ -1,0 +1,47 @@
+#!/bin/sh
+set -e; set -u; set -C
+
+# nuOS 0.0.9.1a3 - bin/pkg_unpackaged - LICENSE: PUB_DOM
+#
+# Written in 2013 Chad Jacob Milios and Crop Circle Systems, Inc.
+# All rights reserved.
+#
+# This Source Code Form is placed in the public domain by the author, who disclaims all
+# liability. More information can be found in the license file.
+#
+# Official updates and community support available at http://nuos.org .
+# Other licensing options and professional services available at http://ccsys.com .
+
+while getopts oy OPT; do
+	case $OPT in
+		o)
+			OPT_ORIGIN=y
+			;;
+		y)
+			OPT_YES=y
+			;;
+		*)
+			echo "usage: `basename $0` [-oy]" >&2
+			exit 1
+	esac
+done
+
+pkg_origin () {
+	setvar $1 `pkg_info -q -o $2`
+}
+
+for pkg in `ls /var/db/pkg | grep -v '^pkgdb.db$'`; do
+	if [ ! -f /usr/ports/packages/All/$pkg.tbz ]; then
+		if [ -n "${OPT_YES-}" ]; then
+			pkg_origin origin $pkg
+			(cd /usr/ports/$origin && make package-noinstall)
+		else
+			if [ -n "${OPT_ORIGIN-}" ]; then
+				pkg_origin origin $pkg
+				echo $origin
+			else
+				echo $pkg
+			fi
+		fi
+	fi
+done

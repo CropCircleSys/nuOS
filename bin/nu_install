@@ -1,0 +1,615 @@
+#!/bin/sh
+set -e; set -u; set -C
+
+# nuOS 0.0.9.1a3 - bin/nu_install - LICENSE: MOZ_PUB
+#
+# Copyright (c) 2008-2013 Chad Jacob Milios and Crop Circle Systems, Inc.
+# All rights reserved.
+#
+# This Source Code Form is subject to the terms of the Mozilla Public License, v2.0.
+# If a copy of the MPL was not distributed alongside this file, you can obtain one at
+# http://mozilla.org/MPL/2.0/ . This software project is not affiliated with the Mozilla
+# Foundation.
+#
+# Official updates and community support available at http://nuos.org .
+# Other licensing options and professional services available at http://ccsys.com .
+
+NUOS_VER=0.0.9.1a3
+
+while getopts a:b:d:Dh:i:m:o:p:qQs:St:u:v OPT; do
+	case $OPT in
+		a)
+			ADMIN_ACCT="$OPTARG"
+			;;
+		b)
+			BD_ACCT="$OPTARG"
+			;;
+		d) # must be set unless (-S)wap is used
+			POOL_DEVS="$OPTARG"
+			;;
+		D) # nuOS developer's shortcut
+			COPY_PORTS=y
+			COPY_PORT_OPTS=y
+			COPY_DEV_PKGS=y
+			COPY_SRC=y
+			COPY_SVN=y
+			;;
+		h)
+			NEW_HOST="$OPTARG"
+			;;
+		i)
+			INJECT_CACHE="$OPTARG"
+			;;
+		m)
+			POOL_MNT="$OPTARG"
+			;;
+		o)
+			POOL_OPTS="$OPTARG"
+			;;
+		p)
+			POOL_NAME="$OPTARG"
+			;;
+		q)
+			OPT_QUICK=y
+			;;
+		s)
+			SWAP_SIZE="$OPTARG"
+			;;
+		S)
+			OPT_SWAP=y
+			;;
+		t) # raidz (default), raidz2, raidz3, mirror or ''
+			POOL_TYPE="$OPTARG"
+			;;
+		u)
+			USER_ACCT="$OPTARG"
+			;;
+		v)
+			OPT_VERBOSE=y
+			;;
+		*)
+			echo "usage: `basename $0` [-qSv] [-a admin-acct] [-b backdoor-acct] [-u user-acct] [-h new-host] [-s swap-size] [-d pool-devs] [-m pool-mnt] [-o pool-opts] [-p pool-name] [-t pool-type]" >&2
+			exit 1
+	esac
+done
+
+. "$(dirname "$(realpath "$0")")/../lib/nu_system.sh"
+. "$(dirname "$(realpath "$0")")/../lib/nu_common.sh"
+. "$(dirname "$(realpath "$0")")/../lib/nu_admin.sh"
+. "$(dirname "$(realpath "$0")")/../lib/nu_install.sh"
+
+baseos_init
+nuos_init
+install_vars_init
+admin_init
+
+maybe_pause
+maybe_yell
+
+i=0
+for dev in $POOL_DEVS; do
+	gpart create -s GPT /dev/$dev
+	gpart add -a 8 -t freebsd-boot -s 128 /dev/$dev
+	gpart add -a 8 -t freebsd-zfs -l $POOL_NAME$i /dev/$dev
+	gpart set -a bootme -i 2 /dev/$dev
+	gpart bootcode -b /boot/pmbr -p /boot/gptzfsboot -i 1 /dev/$dev
+	gnop create -S 4096 /dev/gpt/$POOL_NAME$i
+	nextdev="/dev/gpt/$POOL_NAME$i.nop"
+	add_to devlist $nextdev
+	i=$(($i + 1))
+done
+tempdir=`mktemp -d -t $(basename "$0").$$`
+zpool create -o altroot=$POOL_MNT -o cachefile=$tempdir/zpool.cache -O mountpoint=none -O canmount=off -O devices=off $POOL_OPTS $POOL_NAME $POOL_TYPE $devlist
+zpool export $POOL_NAME
+gnop destroy $devlist
+zpool import -o altroot=$POOL_MNT -o cachefile=$tempdir/zpool.cache $POOL_NAME
+
+pool_os_ds=$POOL_NAME/os
+baseos_proj_ds=$pool_os_ds/$BASEOS_TYPE
+baseos_ds=$baseos_proj_ds/$BASEOS_VER
+
+zfs create -o mountpoint=none -o canmount=off $pool_os_ds
+zfs create -o mountpoint=none -o canmount=off $baseos_proj_ds
+zfs create -o mountpoint=/ -o canmount=noauto $baseos_ds
+zfs mount $baseos_ds
+zfs create $baseos_ds/etc
+zfs create $baseos_ds/var
+zfs create $baseos_ds/var/db
+
+kern_ident=VIMAGE
+kern_conf=/usr/src/sys/$TRGT_ARCH/conf/$kern_ident
+
+if [ ! -f $kern_conf ]; then
+	cat > $kern_conf <<EOF
+include GENERIC
+ident $kern_ident
+options VIMAGE
+EOF
+fi
+(cd /usr/src && make -D WITHOUT_KERNEL_SYMBOLS DESTDIR=$POOL_MNT KERNCONF=$kern_ident installkernel installworld distribution)
+:> $POOL_MNT/etc/fstab
+
+zfs snapshot -r $baseos_ds@dist
+
+cat >> $POOL_MNT/etc/fstab <<'EOF'
+fdesc /dev/fd fdescfs rw 0 0
+tmp /tmp tmpfs rw 0 0
+proc /proc procfs rw 0 0
+#linproc /compat/linux/proc linprocfs rw 0 0
+#linsys /compat/linux/sys linsysfs rw 0 0
+EOF
+
+cat > $POOL_MNT/boot/loader.conf <<'EOF'
+zfs_load="YES"
+EOF
+
+cat > $POOL_MNT/etc/rc.conf <<'EOF'
+zfs_enable="YES"
+EOF
+
+(cd $POOL_MNT && mkdir -p compat/linux/proc compat/linux/sys etc/local)
+ln -s ../../etc/local $POOL_MNT/usr/local/etc
+
+zfs set mountpoint=none $baseos_ds
+zfs set canmount=off $baseos_ds
+zfs snapshot -r $baseos_ds@bare
+
+nuos_proj_ds=$pool_os_ds/nuOS
+nuos_ds=$nuos_proj_ds/$NUOS_VER
+
+zfs create -o mountpoint=none -o canmount=off $nuos_proj_ds
+zfs clone -o mountpoint=/ -o canmount=noauto $baseos_ds@bare $nuos_ds
+zfs clone $baseos_ds/etc@bare $nuos_ds/etc
+zfs clone $baseos_ds/var@bare $nuos_ds/var
+zfs clone $baseos_ds/var/db@bare $nuos_ds/var/db
+
+cat > $POOL_MNT/etc/nuos.conf <<EOF
+HOSTOS_TYPE=nuOS
+HOSTOS_VER=$NUOS_VER
+INSTALLER=`whoami`@`hostname`
+INSTALLER_HOSTOS_TYPE=$HOSTOS_TYPE
+INSTALLER_HOSTOS_VER=$HOSTOS_VER
+INSTALLER_KERN=`uname -v | awk '{print $NF}'`
+BOOTOS_ARCH=$TRGT_ARCH
+BOOTOS_PROC=$TRGT_PROC
+BASEOS_TYPE=$BASEOS_TYPE
+BASEOS_VER=$BASEOS_VER
+EOF
+
+baseos_type_lc=`echo "$BASEOS_TYPE" | tr '[:upper:]' '[:lower:]'`
+
+mv -n $POOL_MNT/etc/motd $POOL_MNT/etc/motd.$baseos_type_lc
+head -n 1 $POOL_MNT/etc/motd.$baseos_type_lc > $POOL_MNT/etc/motd
+cat >> $POOL_MNT/etc/motd <<EOF
+nuOS $NUOS_VER
+
+Welcome to nuOS!
+
+Official updates and community support available at http://nuos.org .
+
+If you would like to donate to the nuOS Project, please send BTC to one, any or
+all of the following seven addresses. Your contributions are greatly appreciated
+and allow nuOS to thrive. Thank you.
+
++-----------------------------------------------------------------------------+
+|   nuOS association root bitcoin donation addresses (valid during 2013 UTC)  |
++--------------------------------------+--------------------------------------+
+|  16xPJ4MNCDudem5FFZJyRYCfgFPzYRyJGG  |  175V9B8cJuE4JKwtFgKjoFAVSU9cFwVtVi  |
++--------------------------------------+--------------------------------------+
+|  1L2Kn3oQDdNHDktdT8GWqEVCCwhvF7WRZ4  |  1BPaf5rdkhnSi4uHhWHbH82ayCe32z41vz  |
++--------------------------------------+--------------------------------------+
+|  1M1JBj5qf1BTp7Su51KdZTRK8mW8ArzHEs  |  12JV99k5rrFmgWisvmmkZhE6suZ2FxZ3Be  |
++--------------------------------------+--------------------------------------+
+|  19gPJ8Ai9MH3GBfQfhkZTyHv9KkmNRb9Qg  |  - more addresses in PLANNING doc -  |
++--------------------------------------+--------------------------------------+
+
+Edit /etc/motd to change this login announcement.
+
+EOF
+
+nuos_supported_len=`echo -n "$NUOS_SUPPORTED" | wc -m | awk '{print \$1}'`
+[ $nuos_supported_len -le 23 ]
+nuos_supported_23_chrs=`echo "$NUOS_SUPPORTED" | awk '{printf "%-23s", \$1}'`
+baseos_info_url="http://$baseos_type_lc.org"
+patch -b '' -d $POOL_MNT/boot -f beastie.4th + brand.4th + menu-commands.4th + menu.4th + menu.rc <<EOF
+diff -r ../boot.orig/beastie.4th ./beastie.4th
+27c27
+< \\ \$FreeBSD: releng/9.1/sys/boot/forth/beastie.4th 222417 2011-05-28 08:50:38Z julian \$
+---
+> \\ \$Id\$
+174a175,197
+> : nuosbw-logo ( x y -- ) \\ B/W nuOS spam (21 rows x 33ish columns)
+> 
+> 	2dup at-xy ."      Copyright (c) 2008-2013" 1+
+> 	2dup at-xy ." " 1+
+> 	2dup at-xy ."   $BASEOS_TYPE Edition (a.k.a. nuBSD)" 1+
+> 	2dup at-xy ."   extends $BASEOS_TYPE $BASEOS_VER" 1+
+> 	2dup at-xy ." " 1+
+> 	2dup at-xy ."   Official updates and community" 1+
+> 	2dup at-xy ."        support available at" 1+
+> 	2dup at-xy ."         http://nuos.org ." 1+
+> 	2dup at-xy ." " 1+
+> 	2dup at-xy ."    Other licensing options and" 1+
+> 	2dup at-xy ."  professional services available" 1+
+> 	2dup at-xy ." from Crop Circle Systems, Inc. at" 1+
+> 	2dup at-xy ."         http://ccsys.com ." 1+
+> 	2dup at-xy ." " 1+
+> 	2dup at-xy ."   More information about $BASEOS_TYPE" 1+
+> 	     at-xy ." available at $baseos_info_url ."
+> 
+> 	\\ Put the cursor back at the bottom
+> 	0 25 at-xy
+> ;
+> 
+186a210
+> \\ 	nuosbw      B/W nuOS spam (21 rows x 33ish columns)
+233a258,261
+> 	2dup s" nuosbw" compare-insensitive 0= if
+> 		logoX @ logoY @ nuosbw-logo
+> 		2drop exit
+> 	then
+diff -r ../boot.orig/brand.4th ./brand.4th
+25c25
+< \\ \$FreeBSD: releng/9.1/sys/boot/forth/brand.4th 222417 2011-05-28 08:50:38Z julian \$
+---
+> \\ \$Id\$
+49a50,63
+> : nuos-logo ( x y -- ) \\ "nuOS" logo in B/W (7 rows x 38 columns)
+> 
+> 	2dup at-xy ." nuOS $NUOS_VER" 1+
+> 	2dup at-xy ." $nuos_supported_23_chrs _____   _____" 1+
+> 	2dup at-xy ."        ______  _     _ / ___ \\ / ____|" 1+
+> 	2dup at-xy ."       |  ___ \\| |   | | |   | | (___" 1+
+> 	2dup at-xy ."       | |   | | |   | | |   | |\\___ \\" 1+
+> 	2dup at-xy ."       | |   | | |___| | |___| |____) |" 1+
+> 	     at-xy ."       |_|   |_|\\______|\\_____/|_____/"
+> 
+> 	\\ Put the cursor back at the bottom
+> 	0 25 at-xy
+> ;
+> 
+57a72
+> \\ 	nuos        nuOS banner
+89a105,109
+> 	2dup s" nuos" compare-insensitive 0= if
+> 		brandX @ brandY @ nuos-logo
+> 		2drop exit
+> 	then
+> 
+diff -r ../boot.orig/menu-commands.4th ./menu-commands.4th
+25c25
+< \\ \$FreeBSD: releng/9.1/sys/boot/forth/menu-commands.4th 222417 2011-05-28 08:50:38Z julian \$
+---
+> \\ \$Id\$
+190a191,196
+> 
+> : memtest-boot ( -- )
+>         s" unload" evaluate
+>         s" load /boot/opt/memtest86+" evaluate
+>         s" boot" evaluate
+> ;
+diff -r ../boot.orig/menu.4th ./menu.4th
+27c27
+< \\ \$FreeBSD: releng/9.1/sys/boot/forth/menu.4th 230219 2012-01-16 14:55:42Z pluknet \$
+---
+> \\ \$Id\$
+420c420
+< 		drop s" Welcome to $BASEOS_TYPE"
+---
+> 		drop s" Welcome to nuOS"
+diff -r ../boot.orig/menu.rc ./menu.rc
+2c2
+< \\ \$FreeBSD: releng/9.1/sys/boot/forth/menu.rc 230867 2012-02-01 15:04:27Z pluknet \$
+---
+> \\ \$Id\$
+69a70,76
+> set menu_caption[8]="MemTest86+ RAM test"
+> \\ set menu_caption[8]="Mem[T]est86+ RAM test"
+> set menu_command[8]="memtest-boot"
+> \\ set menu_keycode[8]="114"
+> set ansi_caption[8]="MemTest86+ RAM test"
+> \\ set ansi_caption[8]="Mem[1mT[37mest86+ RAM test"
+> 
+EOF
+
+cat >> $POOL_MNT/etc/fstab <<'EOF'
+#linproc /compat/linux/proc linprocfs rw 0 0
+#linsys /compat/linux/sys linsysfs rw 0 0
+EOF
+
+cat >> $POOL_MNT/boot/loader.conf <<'EOF'
+loader_brand="nuos"
+loader_logo="nuosbw"
+autoboot_delay="3"
+ipfw_load="YES"
+#linux_load="YES"
+sem_load="YES"
+accf_data_load="YES"
+accf_dns_load="YES"
+accf_http_load="YES"
+kern.ipc.shmmni="1024"
+kern.ipc.shmseg="1024"
+EOF
+
+cat >> $POOL_MNT/etc/rc.conf <<'EOF'
+#linux_enable="YES"
+entropy_file="/var/db/entropy/seed"
+firewall_enable="YES"
+firewall_type="open"
+firewall_nat_flags="same_ports reset"
+devfs_load_rulesets="YES"
+sendmail_submit_enable="NO"
+sendmail_outbound_enable="NO"
+sendmail_msp_queue_enable="NO"
+EOF
+
+cat > $POOL_MNT/etc/rc.conf.local <<'EOF'
+#ifconfig_DEFAULT="DHCP"
+#gateway_enable="YES"
+#firewall_nat_enable="YES"
+#firewall_nat_interface="net0" # this needs to be set correctly, not just enabled
+EOF
+
+cat >> $POOL_MNT/etc/sysctl.conf <<'EOF'
+net.inet.ip.fw.one_pass=0
+EOF
+
+cat > $POOL_MNT/etc/make.conf <<'EOF'
+CPUTYPE?=core2
+WITH_BDB_VER=48
+RUBY_DEFAULT_VER=1.9
+# added by use.perl 2012-12-22 00:00:00
+PERL_VERSION=5.16.2
+EOF
+
+cat > $POOL_MNT/etc/periodic.conf <<'EOF'
+daily_output="/var/log/daily.log"
+weekly_output="/var/log/weekly.log"
+monthly_output="/var/log/monthly.log"
+daily_status_security_inline="YES"
+daily_show_success="NO"
+weekly_show_success="NO"
+monthly_show_success="NO"
+daily_status_security_chksetuid_enable="NO"
+daily_status_security_neggrpperm_enable="NO"
+daily_clean_hoststat_enable="NO"
+daily_status_mail_rejects_enable="NO"
+daily_status_include_submit_mailq="NO"
+daily_submit_queuerun="NO"
+weekly_locate_enable="NO"
+weekly_whatis_enable="NO"
+EOF
+
+cat >> $POOL_MNT/etc/ssh/sshd_config <<'EOF'
+UseDNS no
+EOF
+
+cat > $POOL_MNT/etc/jail.conf <<'EOF'
+$tmpfs_args = "-o size=1073741824";
+path = "/var/jail/$name";
+host.hostname = "$name.jail";
+devfs_ruleset = 4;
+exec.clean;
+exec.prestart = "mount -t devfs dev $path/dev && devfs -m $path/dev rule -s $devfs_ruleset applyset && ln -sf /var/run/log $path/dev/log";
+exec.prestart += "mount -t fdescfs fdesc $path/dev/fd";
+exec.prestart += "mount -t tmpfs $tmpfs_args tmp $path/tmp";
+exec.prestart += "mount -t procfs proc $path/proc";
+exec.start = "/bin/sh /etc/rc";
+exec.stop = "/bin/sh /etc/rc.shutdown";
+exec.poststop = "umount $path/proc";
+exec.poststop += "umount $path/tmp";
+exec.poststop += "umount $path/dev/fd";
+exec.poststop += "umount $path/dev/";
+enforce_statfs = 1;
+interface = "lo0";
+ip_hostname;
+allow.chflags;
+allow.quotas;
+children.max = 256;
+EOF
+
+cat >> $POOL_MNT/boot/loader.conf <<'EOF'
+init_script="/boot/init.sh"
+EOF
+
+cat > $POOL_MNT/boot/init.sh <<'EOF'
+#!/bin/sh
+set -e; set -u; set -C
+or_x () {
+        if [ -x "$2" ]; then setvar $1 $2; else setvar $1 $3; fi
+}
+or_x cat /bin/cat /rescue/cat
+or_x sed /usr/bin/sed /rescue/sed
+or_x zfs /sbin/zfs /rescue/zfs
+loader_conf_files=/boot/defaults/loader.conf
+while [ "$loader_conf_files" != "${loaded-}" ]; do
+        loaded="$loader_conf_files"
+        eval `$cat $loader_conf_files | $sed -Ee '/^vfs.root.mountfrom=|^loader_conf_files=/!d; s/^vfs.root.//'`
+done
+ds=${mountfrom#zfs:}
+pool=${ds%%/*}
+$zfs rollback -r $pool/swap/host@blank || err_swap=$?
+if [ -n "${err_swap-}" ]; then
+	or_x echo /bin/echo /rescue/echo
+	$echo 'WARNING: swap zvol not found or not reinitialized' >&2
+fi
+$zfs mount $ds/etc
+EOF
+
+zfs snapshot -r $nuos_ds@bare
+
+zfs create -o mountpoint=/usr/src $baseos_proj_ds/src-$BASEOS_VER
+zfs create -o mountpoint=/usr/obj $baseos_proj_ds/obj-$BASEOS_VER
+if [ -n "${COPY_SRC-}" ]; then
+	if [ -n "${COPY_SVN-}" ]; then
+		xsvn=
+	fi
+	tar -cpf - -C /usr ${xsvn---exclude src/.svn} src obj | tar -xpvf - -C $POOL_MNT/usr
+fi
+zfs unmount $baseos_proj_ds/src-$BASEOS_VER
+zfs unmount $baseos_proj_ds/obj-$BASEOS_VER
+
+zfs create -o mountpoint=/usr/ports $baseos_proj_ds/ports-current
+zfs create -o mountpoint=/usr/ports/distfiles $baseos_proj_ds/ports-distfiles
+zfs create -o mountpoint=/var/db/portsnap $baseos_proj_ds/portsnap-db
+if [ -n "${COPY_PORTS-}" ]; then
+	tar -cpf - -C /var/db portsnap | tar -xpvf - -C $POOL_MNT/var/db
+	portsnap -d $POOL_MNT/var/db/portsnap -f $POOL_MNT/etc/portsnap.conf -p $POOL_MNT/usr/ports extract
+	if [ -d /usr/ports/local ]; then
+		tar -cpf - -C /usr/ports local | tar -xpvf - -C $POOL_MNT/usr/ports
+	fi
+fi
+zfs unmount $baseos_proj_ds/ports-distfiles
+zfs unmount $baseos_proj_ds/portsnap-db
+
+if [ -n "${COPY_PORT_OPTS-}" ]; then
+	tar -cpf - -C /var/db ports | tar -xpvf - -C $POOL_MNT/var/db
+fi
+
+zfs create -o mountpoint=/usr/ports/packages $nuos_proj_ds/pkg-$NUOS_VER
+if [ -n "${COPY_DEV_PKGS-}" ]; then
+	tar -cpf - -C /usr/ports packages | tar -xpvf - -C $POOL_MNT/usr/ports
+	zfs snapshot $nuos_proj_ds/pkg-$NUOS_VER@dist
+fi
+
+install_pkg () {
+	[ -n "${COPY_DEV_PKGS-}" ] || mount -t nullfs /usr/ports/packages $POOL_MNT/usr/ports/packages
+	if [ "$*" = -a ]; then
+		local abs_pool_mnt=`realpath "$POOL_MNT"`
+		(cd / && ls -rtU /var/db/pkg | grep -v '^pkgdb.db$' | sed -e 's-^-/usr/ports/packages/All/-;s/$/.tbz/' | xargs pkg_add -C $abs_pool_mnt -F)
+	else
+		for port in $*; do
+			pkg=`cd /usr/ports/$port && make -V PKGNAME`
+			(cd / && pkg_add -C $POOL_MNT /usr/ports/packages/All/$pkg.tbz)
+		done
+	fi
+	[ -n "${COPY_DEV_PKGS-}" ] || umount $POOL_MNT/usr/ports/packages/
+}
+
+install_pkg sysutils/memtest86+ sysutils/jail2 sysutils/screen misc/buffer sysutils/pipemeter archivers/lzop sysutils/smartmontools
+install_pkg net/netatalk3
+install_pkg databases/mongodb www/npm www/apache22-worker-mpm
+install_pkg mail/cyrus-imapd24
+yes | install_pkg mail/postfix
+install_pkg devel/subversion devel/git
+install_pkg ports-mgmt/portupgrade
+
+cat >> $POOL_MNT/usr/local/etc/afp.conf <<'EOF'
+[Homes]
+basedir regex = /home
+EOF
+
+if [ ! -d $POOL_MNT/usr/local/nuos -a -d /root/nuos ]; then
+	tar -cpf - -C /root nuos | tar -xpvf - -C $POOL_MNT/root
+fi
+
+zfs unmount $nuos_proj_ds/pkg-$NUOS_VER
+zfs unmount $baseos_proj_ds/ports-current
+
+zfs set mountpoint=none $nuos_ds
+zfs set canmount=off $nuos_ds
+zfs snapshot -r $nuos_ds@base
+
+pool_sys_ds=$POOL_NAME/sys
+rescue_ds=$pool_sys_ds/rescue
+
+zfs create -o mountpoint=none -o canmount=off $pool_sys_ds
+zfs clone -o mountpoint=/ -o canmount=noauto $nuos_ds@base $rescue_ds
+zfs clone $nuos_ds/etc@base $rescue_ds/etc
+zfs clone $nuos_ds/var@base $rescue_ds/var
+zfs clone $nuos_ds/var/db@base $rescue_ds/var/db
+zfs create -o mountpoint=none -o canmount=off -o logbias=throughput -o sync=disabled $POOL_NAME/entropy
+zfs create -o mountpoint=/var/db/entropy $POOL_NAME/entropy/rescue
+
+mkdir $POOL_MNT/boot/etc
+mv -n $POOL_MNT/etc/login.conf.db $POOL_MNT/boot/etc/
+ln -s ../boot/etc/login.conf.db $POOL_MNT/etc/login.conf.db
+zfs unmount $rescue_ds/etc
+ln -s ../boot/etc/login.conf.db $POOL_MNT/etc/login.conf.db
+zfs mount $rescue_ds/etc
+
+if [ -n "${INJECT_CACHE-}" ]; then
+	[ ! -f $POOL_MNT/boot/zfs/zpool.cache ]
+	cp "$INJECT_CACHE" $POOL_MNT/boot/zfs/zpool.cache
+	rm $tempdir/zpool.cache
+else
+	mv -n $tempdir/zpool.cache $POOL_MNT/boot/zfs/
+fi
+rmdir $tempdir
+
+zfs snapshot -r $rescue_ds@sys
+
+# TODO: The '-o sync=always' here is about avoiding crashes due to memory pressure race conditions and not at all about making the writes durable. It may be safe to remove it after much further testing and confirmation that FreeBSD has fixed any such races. Using it causes swapping to be far slower than normal. This is a safe though not very viable swap scenario especially when used with hard disks. An L2ARC on high-end SSD helps a lot but the ultimate goal should certainly be to return to the default syncing behavior once crashes can deterministically be shown to be always avoided. For now plan to swap a little as possible, which should almost certainly already be your plan, anyway. 
+# TODO: '-o primarycache=none -o secondarycache=none' is a super-safe mode if we are planning to go beta any time soon. Forget what I said about L2ARC, it needs to be tested further that swapping into the pool via L2ARC doesn't race at all. Metadata in primary memory should also be further investigated. We should instead be using '-o primarycache=metadata' when deemed safe.
+zfs create -o mountpoint=none -o canmount=off -o compression=off -o primarycache=none -o secondarycache=none -o sync=always -o org.freebsd:swap=on $POOL_NAME/swap
+#zfs create -o mountpoint=none -o canmount=off -o primarycache=metadata -o org.freebsd:swap=on $POOL_NAME/swap # TODO: Testing ideal case
+
+if [ "$SWAP_SIZE" != 0 ]; then
+	zfs create -b 4K -V $SWAP_SIZE $POOL_NAME/swap/host
+	zfs snapshot $POOL_NAME/swap/host@blank
+fi
+
+cat >> $POOL_MNT/etc/rc.conf.local <<'EOF'
+zfs_enable="NO"
+EOF
+
+cat >> $POOL_MNT/etc/fstab <<EOF
+$rescue_ds/var /var zfs rw 0 0
+$rescue_ds/var/db /var/db zfs rw 0 0
+EOF
+
+cat > $POOL_MNT/boot/loader.conf.local <<EOF
+vfs.root.mountfrom="zfs:$rescue_ds"
+EOF
+
+zfs set canmount=noauto $POOL_NAME/entropy/rescue
+zfs unmount $POOL_NAME/entropy/rescue
+zfs set canmount=noauto $rescue_ds/etc
+zfs set canmount=noauto $rescue_ds/var
+zfs set canmount=noauto $rescue_ds/var/db
+zfs unmount $rescue_ds
+zfs set mountpoint=legacy $rescue_ds/var
+zfs set mountpoint=legacy $rescue_ds/var/db
+zfs snapshot -r $rescue_ds@boot
+
+host_ds=$pool_sys_ds/host
+
+zfs clone -o mountpoint=/ -o canmount=noauto $rescue_ds@sys $host_ds
+zfs clone $rescue_ds/etc@sys $host_ds/etc
+zfs clone $rescue_ds/var@sys $host_ds/var
+zfs clone $rescue_ds/var/db@sys $host_ds/var/db
+zfs create -o mountpoint=/var/db/entropy $POOL_NAME/entropy/host
+
+cat > $POOL_MNT/boot/loader.conf.local <<EOF
+vfs.root.mountfrom="zfs:$host_ds"
+EOF
+
+cat >> $POOL_MNT/etc/rc.conf.local <<EOF
+hostname="$NEW_HOST"
+EOF
+
+sed -i '' -e "s/\.my\.domain\$/.`echo $NEW_HOST | sed -e 's/^[^\.]*\.//'` $NEW_HOST `echo $NEW_HOST | sed -e 's/\..*//'`/" $POOL_MNT/etc/hosts
+
+(umask 77 && dd if=/dev/random of=$POOL_MNT/var/db/entropy/seed count=1 bs=4k)
+
+zfs snapshot -r $host_ds@boot
+zpool set bootfs=$host_ds $POOL_NAME
+
+home_ds=$POOL_NAME/home
+
+zfs create -o mountpoint=/home $home_ds
+
+admin_install -z $POOL_MNT
+
+(sh "$(dirname "$(realpath "$0")")/enable_svc" -C $POOL_MNT sshd jail2)
+#(sh "$(dirname "$(realpath "$0")")/enable_svc" -C $POOL_MNT dbus avahi_daemon netatalk)
+
+export NEW_HOST
+(sh "$(dirname "$(realpath "$0")")/nu_jail" -C $POOL_MNT -p $POOL_NAME -t clone -w -j base-lab -o $BASEOS_TYPE/$BASEOS_VER -s bare -i 127.0.0.2 -a '' -u '' -b '' -q)
+(sh "$(dirname "$(realpath "$0")")/nu_jail" -C $POOL_MNT -p $POOL_NAME -t clone -w -j nuos-lab -s bare -i 127.0.0.3 -a '' -u '' -b '' -q)
+(sh "$(dirname "$(realpath "$0")")/nu_jail" -C $POOL_MNT -p $POOL_NAME -t clone -w -j lab -i 127.0.0.4 -a '' -u '' -b '' -q)
+
+zfs snapshot -r $host_ds@genesis
+zfs snapshot -r $home_ds@genesis
+
+echo "Initialization of $NEW_HOST running nuOS/$NUOS_VER over $BASEOS_TYPE-$BASEOS_VER onto pool $POOL_NAME is complete."

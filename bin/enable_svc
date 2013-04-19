@@ -1,0 +1,52 @@
+#!/bin/sh
+set -e; set -u; set -C
+
+# nuOS 0.0.9.1a3 - bin/enable_svc - LICENSE: BSD_SMPL
+#
+# Copyright (c) 2008-2013 Chad Jacob Milios and Crop Circle Systems, Inc.
+# All rights reserved.
+#
+# This Source Code Form is subject to the terms of the Simplified BSD License.
+# If a copy of the Simplified BSD License was not distributed alongside this file, you can
+# obtain one at http://www.freebsd.org/copyright/freebsd-license.html . This software
+# project is not affiliated with the FreeBSD Project.
+#
+# Official updates and community support available at http://nuos.org .
+# Other licensing options and professional services available at http://ccsys.com .
+
+while getopts C: OPT && [ $OPT != '?' ]; do
+	case $OPT in
+		C)
+			CHROOTDIR="$OPTARG"
+			;;
+		*)
+			echo "usage: `basename \"$0\"` [-C chroot_dir] service ..." >&2
+			exit 1
+	esac
+done
+while [ $OPTIND -gt 1 ]; do
+	shift
+	OPTIND=$(($OPTIND - 1))
+done
+
+confdir="${CHROOTDIR-}/etc/rc.conf.d"
+disabled_confdir=$confdir.off
+mkdir -p $confdir
+for svc in $*; do
+	svc_switch_egrep="^[[:blank:]]*#*[[:blank:]]*${svc}_enable="
+	if [ -f $confdir/$svc ]; then
+		tempfile=`mktemp -t $(basename "$0").$$`
+		grep -v -E "$svc_switch_egrep" $confdir/$svc >> "$tempfile"
+		rm $confdir/$svc
+	fi
+	echo ${svc}_enable='"YES"' > $confdir/$svc
+	if [ -n "${tempfile-}" ]; then
+		cat "$tempfile" >> $confdir/$svc
+		rm "$tempfile"
+	fi
+	if [ -f $disabled_confdir/$svc ]; then
+		grep -v -E "$svc_switch_egrep" $disabled_confdir/$svc >> $confdir/$svc
+		rm $disabled_confdir/$svc
+	fi
+	rmdir $disabled_confdir 2>/dev/null || true
+done

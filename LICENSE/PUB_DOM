@@ -1,0 +1,26 @@
++----------------------------------------------------------------------------------------+
+| Miscellaneous Tools included with nuOS 0.0.9.1a3                                       |
+| Copyright (c) 2008-2013 Chad Jacob Milios and Crop Circle Systems, Inc.                |
+| All rights reserved.                                                                   |
++----------------------------------------------------------------------------------------+
+
+Certain files of this Source Code Form are placed in the public domain by the author. Furthermore, the author disclaims all liability, express or implied, as explained in a disclaimer which should be included in this file.
+
+Official updates and community support available at http://nuos.org .
+Other licensing options and professional services available at http://ccsys.com .
+
+file(s) herein placed in the public domain:
+	bin/pkg_extract_opts
+	bin/pkg_obsolete
+	bin/pkg_unpackaged
+
++----------------------------------------------------------------------------------------+
+| PUBLIC DOMAIN DISCLAIMER                                                               |
+|                                                                                        |
+| THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH REGARD   |
+| TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS. IN   |
+| NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR              |
+| CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR    |
+| PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION,        |
+| ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.          |
++----------------------------------------------------------------------------------------+

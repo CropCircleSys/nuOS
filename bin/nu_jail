@@ -1,0 +1,166 @@
+#!/bin/sh
+set -e; set -u; set -C
+
+# nuOS 0.0.9.1a3 - bin/nu_jail - LICENSE: MOZ_PUB
+#
+# Copyright (c) 2008-2013 Chad Jacob Milios and Crop Circle Systems, Inc.
+# All rights reserved.
+#
+# This Source Code Form is subject to the terms of the Mozilla Public License, v2.0.
+# If a copy of the MPL was not distributed alongside this file, you can obtain one at
+# http://mozilla.org/MPL/2.0/ . This software project is not affiliated with the Mozilla
+# Foundation.
+#
+# Official updates and community support available at http://nuos.org .
+# Other licensing options and professional services available at http://ccsys.com .
+
+NUOS_VER=0.0.9.1a3
+
+while getopts a:b:C:h:i:j:o:p:qs:t:u:vw OPT; do
+	case $OPT in
+		a)
+			ADMIN_ACCT="$OPTARG"
+			;;
+		b)
+			BD_ACCT="$OPTARG"
+			;;
+		C)
+			CHROOTDIR="$OPTARG"
+			;;
+		h)
+			JAIL_HOST="$OPTARG"
+			;;
+		i)
+			JAIL_IP="$OPTARG"
+			;;
+		j)
+			JAIL_NAME="$OPTARG"
+			;;
+		o)
+			JAIL_OS="$OPTARG"
+			;;
+		p)
+			POOL_NAME="$OPTARG"
+			;;
+		q)
+			OPT_QUICK=y
+			;;
+		s)
+			JAIL_SNAP="$OPTARG"
+			;;
+		t) # jail (default), clone or vnet
+			JAIL_TYPE="$OPTARG"
+			;;
+		u)
+			USER_ACCT="$OPTARG"
+			;;
+		v)
+			OPT_VERBOSE=y
+			;;
+		w)
+			OPT_RW_SRC=y
+			;;
+		*)
+			echo "usage: `basename \"$0\"` [-qvw] [-C chroot-dir] [-a admin-acct] [-b backdoor-acct] [-u user-acct] [-p pool-name] [-h jail-host] [-i jail-ip] [-t jail-type] [-o jail-os] [-s jail-snap]" >&2
+			exit 1
+	esac
+done
+
+. "$(dirname "$(realpath "$0")")/../lib/nu_system.sh"
+. "$(dirname "$(realpath "$0")")/../lib/nu_common.sh"
+. "$(dirname "$(realpath "$0")")/../lib/nu_admin.sh"
+. "$(dirname "$(realpath "$0")")/../lib/nu_jail.sh"
+
+nuos_init
+jail_vars_init
+admin_init
+
+maybe_pause
+maybe_yell
+
+zfs create -p -o mountpoint=none -o canmount=off $POOL_NAME/jail
+mkdir -p `dirname "${CHROOTDIR-}$JAIL_PATH"`
+zfs clone -o mountpoint=$JAIL_PATH $POOL_NAME/os/$JAIL_OS@$JAIL_SNAP $JAIL_DATA
+zfs clone $POOL_NAME/os/$JAIL_OS/etc@$JAIL_SNAP $JAIL_DATA/etc
+zfs clone $POOL_NAME/os/$JAIL_OS/var@$JAIL_SNAP $JAIL_DATA/var
+zfs clone $POOL_NAME/os/$JAIL_OS/var/db@$JAIL_SNAP $JAIL_DATA/var/db
+
+cat >> "${CHROOTDIR-}/$JAIL_PATH/etc/rc.conf.local" <<EOF
+hostname="$JAIL_HOST"
+EOF
+
+sed -i '' -e "s/\.my\.domain\$/.`echo $JAIL_HOST | sed -e 's/^[^\.]*\.//'` $JAIL_HOST `echo $JAIL_HOST | sed -e 's/\..*//'`/" "${CHROOTDIR-}$JAIL_PATH/etc/hosts"
+
+cat >> "${CHROOTDIR-}/etc/hosts" <<EOF
+$JAIL_IP		$JAIL_HOST $JAIL_NAME.jail $JAIL_NAME
+EOF
+
+cat >> "${CHROOTDIR-}/etc/jail.conf" <<EOF
+$JAIL_NAME {
+EOF
+
+case $JAIL_TYPE in
+	clone)
+		cat >> "${CHROOTDIR-}/etc/jail.conf" <<'EOF'
+	allow.raw_sockets;
+	noip_hostname;
+	ip4 = "inherit";   
+	$tmpfs_args = "";
+EOF
+		tempfile=`mktemp -t $(basename "$0").$$`
+		grep ^exec.prestart "${CHROOTDIR-}/etc/jail.conf" | sed -e 's/&& devfs .* applyset &&/\&\&/;s/^/	/' >> $tempfile
+		cat $tempfile >> "${CHROOTDIR-}/etc/jail.conf"
+		rm $tempfile
+		;;
+	vnet)
+		cat >> "${CHROOTDIR-}/etc/jail.conf" <<EOF
+	noip_hostname;
+	vnet = "new";
+	vnet.interface = "epair0b";
+	exec.prestart += "ifconfig epair0 create";
+	exec.prestart += "ifconfig epair0a 172.16.0.0 netmask 0xfffffffe";
+	exec.start = "ifconfig lo0 127.0.0.1 netmask 0xff000000";
+	exec.start += "ifconfig epair0b 172.16.0.1 netmask 0xfffffffe";
+	exec.start += "route add default 172.16.0.0";
+	exec.start += "/bin/sh /etc/rc";
+	exec.poststop += "ifconfig epair0a destroy";
+EOF
+		;;
+esac
+
+if [ -n "${OPT_RW_SRC-}" ]; then
+		cat >> "${CHROOTDIR-}/etc/jail.conf" <<EOF
+	exec.prestart += "mkdir -p \$path/usr/ports && mount -t nullfs /usr/ports \$path/usr/ports";
+	exec.prestart += "mount -t nullfs /usr/ports/distfiles \$path/usr/ports/distfiles";
+	exec.prestart += "mount -t nullfs /usr/ports/packages \$path/usr/ports/packages";
+	exec.prestart += "mount -t nullfs /var/db/portsnap \$path/var/db/portsnap";
+	exec.prestart += "mount -t nullfs /usr/src \$path/usr/src";
+	exec.prestart += "mount -t nullfs /usr/obj \$path/usr/obj";
+	exec.poststop += "umount \$path/usr/ports/distfiles";
+	exec.poststop += "umount \$path/usr/ports/packages";
+	exec.poststop += "umount \$path/usr/ports";
+	exec.poststop += "umount \$path/var/db/portsnap";
+	exec.poststop += "umount \$path/usr/src";
+	exec.poststop += "umount \$path/usr/obj";
+EOF
+fi
+
+cat >> "${CHROOTDIR-}/etc/jail.conf" <<EOF
+}
+EOF
+
+if [ $JAIL_TYPE = vnet ]; then
+	for rc_script in bridge dhclient ip6addrctl ipfilter ipfs ipfw ipmon ipnat ipsec mroute6d mrouted natd pf pflog pfsync resolv route6d routed; do
+		sed -i '' -E -e '/^[[:blank:]]*#*[[:blank:]]*KEYWORD:/s/nojail/jail_enabled/' "${CHROOTDIR-}$JAIL_PATH/etc/rc.d/$rc_script"
+	done
+	# TODO: investigate rc.d/{defaultroute,netif,netoptions,netwait,routing} and maybe others
+fi
+if [ $JAIL_TYPE = clone ]; then
+	cat >> "${CHROOTDIR-}$JAIL_PATH/etc/rc.conf.local" <<EOF
+syslogd_flags="-ss"
+EOF
+fi
+
+admin_install "${CHROOTDIR-}$JAIL_PATH"
+
+echo "Initialization of $JAIL_HOST running $JAIL_OS is complete."

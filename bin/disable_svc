@@ -1,0 +1,44 @@
+#!/bin/sh
+set -e; set -u; set -C
+
+# nuOS 0.0.9.1a3 - bin/disable_svc - LICENSE: BSD_SMPL
+#
+# Copyright (c) 2008-2013 Chad Jacob Milios and Crop Circle Systems, Inc.
+# All rights reserved.
+#
+# This Source Code Form is subject to the terms of the Simplified BSD License.
+# If a copy of the Simplified BSD License was not distributed alongside this file, you can
+# obtain one at http://www.freebsd.org/copyright/freebsd-license.html . This software
+# project is not affiliated with the FreeBSD Project.
+#
+# Official updates and community support available at http://nuos.org .
+# Other licensing options and professional services available at http://ccsys.com .
+
+while getopts C: OPT && [ $OPT != '?' ]; do
+	case $OPT in
+		C)
+			CHROOTDIR="$OPTARG"
+			;;
+		*)
+			echo "usage: `basename \"$0\"` [-C chroot_dir] service ..." >&2
+			exit 1
+	esac
+done
+while [ $OPTIND -gt 1 ]; do
+	shift
+	OPTIND=$(($OPTIND - 1))
+done
+
+confdir="${CHROOTDIR-}/etc/rc.conf.d"
+disabled_confdir=$confdir.off
+for svc in $*; do
+	if [ -f $confdir/$svc ]; then
+		numlines=`grep -v ^\$ $confdir/$svc | wc -l | awk '{print \$1}'`
+		if [ $numlines = 0 -o $numlines = 1 ]; then
+			rm $confdir/$svc
+		else
+			mkdir -p $disabled_confdir
+			mv -n $confdir/$svc $disabled_confdir/
+		fi
+	fi
+done

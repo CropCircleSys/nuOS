@@ -1,0 +1,74 @@
++----------------------------------------------------------------------------------------+
+| nuOS 0.0.9.1a3                                                                    /(o\ |
+| Copyright (c) 2008-2013 Chad Jacob Milios and Crop Circle Systems, Inc.           \o)/ |
+| All rights reserved.                                                                   |
++----------------------------------------------------------------------------------------+
+
+nuOS software is and will always be free. Free to use, free to modify, free to distribute. 
+
+Beside the 7 root association bitcoin donation addresses, the deposits to which will fund the project as a whole, there are goal-specific addresses which are used to steer the direction of the project at the behest of contributors. If you have a suggestion for a plan or a recommendation for a sub-categorization please join the project forum and send a message.
+
+If you develop enhancements to the software your contributions of patches or pull requests to the project's association are greatly appreciated, not mandatory. Your open planning and coordination with our developers and users on the project forum will help the project advance with greater success and unification, but is not an expectation.
+
+Your contributions of time and quality code may earn you coin! Your contribution of coin will spur advancement and refinement. Vote with your coin for plans as specifically or generally as you prefer. Various contributing developers within and loyal to the nuOS project may be publicly traded or accepting private investment, so bitcoin donations are not the only way to contribute to or steer the project. Fund our loosely-knit worldwide band of merry nerds! Feed, clothe, bathe or shelter your local nerd and encourage them to advance the nuOS project!
+
+These are the tenets of this project as outlined in the README:
+
+Ease of use:                                            12Bf51NFitRXhB2w3NodiiMvgdd5nxhEbC
+Security:                                               18L3vxzcVBvHza17kaGBrot9b7FrLm2Lnq
+Integration, consistency:                               1PmxriFTrGvTFqpoyREa1gczoP2rcKoC4A
+Robustness, stability:                                  1DYkscLWefAEQJ4VWDgmNLo1HQRPGNLNGb
+Speed, performance, efficiency:                         1NZ8UehaXiDNL3xdXno9c2D6zNEByswUCb
+Functionality:                                          1Gu1QL5QzfZXXkH8ZVghXE5RN9kQv7ruh8
+Compatibility:                                          1Jk6uV5DFX5wLKbjJ7NFqYmvHKT8mXikaY
+
+The following goals have commitments in the SCHEDULE which may be met or exceeded through your contribution:
+
+nuBSD (nuOS on FreeBSD):                                1GpqhJGMyXiNGYdUouMMhQnJeeMwCMfYoh
+Project forums:                                         1NzWZjxPsHn1iz5RJkwMc9zBK7pnfK5E5x
+
+The following plans are underway in the TODO file and may be accelerated with your help:
+
+Documentation:                                          1QCz3Zk9RQTsWymYa14vbgtsZyANnMo7tx
+Secure management web interface:                        1AdnM9T2RjvdRyzr8G3iGReKKyu7zNRKpa
+  Installation:                                         1JuG3EkyHDiYKqSGXNi3yM4k3vr39jMgQZ
+  System management:                                    1B9WqWrYn1ocio5Zhk7hCuoNc4bEjacpyQ
+    Package management:                                 1DkUUivVAPpjtdpXB1CdieiFHcK4bwtDL9
+  Graphical user interface:                             1MKWHF1FWTY1h6v7t2R2tcWPJUdgh4VcYi
+  Programmatic REST API:                                1E99zoLFpyFG1VTEaQ9XSLHrpnBZ4cQ6QW
+Mercurial support everywhere Git is supported:          13Yk1ahnR8qtbZ6wUjVUzRjYtdjFVfVGHe
+QEMU, Xen, kvm et al everywhere VirtualBox is:          1AFsdP2V2UNA19ZKiTNaWNBgiXwyVs2KZV
+Server capabilities:                                    1DiiDGWQ6GCwrBMRCMqes9e3oPohGim2qo
+
+The following plans are APPROVED by the project and may be researched and/or developed with your help:
+
+Client capabilities:                                    1CxXhJafXnz3AjZ9j1e3WybDmavBCBwEAh
+  Laptop capabilities:                                  18YKJTn6SHvDs6QhGv8xk44S9VZqiHho6H
+  Tablet capabilities:                                  1K8ojziun9S6jZU985zXKvZ6pQ5tX5NUYz
+Embedded capabilities:                                  1EmNBcHTJQ6qGNcAit3d25EmhduVBRRTdG
+Branding:                                               15NLNDfdkDitekWUE3FN9sAFnesmBr9WrU
+Marketing:                                              1D3x8RmSsjMdFsxUHDzd3PXBdizsmudv6e
+nuGenode (nuOS on Genode):                              16knrh6Esg26xsQktgQrcEmdxvU6af3vkD
+NetBSD support for nuBSD:                               1NjJu2ZuPwSFPa46PBraRJQwViV7oPD3xj
+
+The following plans are PROPOSED by users and may find approval with your support:
+
+More code licensed under Simplified BSD (vs MPLv2):     1A2W9yGnXonBptfGC5p8n8hCSmFmUEcKq2
+nuLumos (nuOS on illumos):                              1GSiHfdZeVMfqYeJvXDWTxPvVw3DhmWDAb
+nuLinux (nuOS on Linux):                                1ZvSSpxbQPh5XZq8jCAm5faLG6xxZEWr7
+OpenBSD support for nuBSD:                              1NG2uWEGhETAbuXq3MoLLd7DQupQim9hkM
+Dragonfly support for nuBSD:                            1PUaXr6WQ3rJ34CyQho9Zs6DXUi7XVJf6g
+
+If you would like to donate to the nuOS Project, please send BTC to one, any or all of the following seven addresses. Your contributions are greatly appreciated and allow nuOS to thrive. Thank you.
+
++-----------------------------------------------------------------------------+
+|   nuOS association root bitcoin donation addresses (valid during 2013 UTC)  |
++--------------------------------------+--------------------------------------+
+|  16xPJ4MNCDudem5FFZJyRYCfgFPzYRyJGG  |  175V9B8cJuE4JKwtFgKjoFAVSU9cFwVtVi  |
++--------------------------------------+--------------------------------------+
+|  1L2Kn3oQDdNHDktdT8GWqEVCCwhvF7WRZ4  |  1BPaf5rdkhnSi4uHhWHbH82ayCe32z41vz  |
++--------------------------------------+--------------------------------------+
+|  1M1JBj5qf1BTp7Su51KdZTRK8mW8ArzHEs  |  12JV99k5rrFmgWisvmmkZhE6suZ2FxZ3Be  |
++--------------------------------------+--------------------------------------+
+|  19gPJ8Ai9MH3GBfQfhkZTyHv9KkmNRb9Qg  |  - more addresses in PLANNING doc -  |
++--------------------------------------+--------------------------------------+

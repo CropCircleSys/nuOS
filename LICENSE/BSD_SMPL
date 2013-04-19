@@ -1,0 +1,43 @@
++----------------------------------------------------------------------------------------+
+| FreeBSD System Utilities made for nuOS 0.0.9.1a3                                       |
+| Copyright (c) 2008-2013 Chad Jacob Milios and Crop Circle Systems, Inc.                |
+| All rights reserved.                                                                   |
++----------------------------------------------------------------------------------------+
+
+Certain files of this Source Code Form are subject to the terms of the Simplified BSD License. A copy of the Simplified BSD License should be included in this file, if not, you can obtain one at http://www.freebsd.org/copyright/freebsd-license.html . This software project is not affiliated with the FreeBSD Project.
+
+Official updates and community support available at http://nuos.org .
+Other licensing options and professional services available at http://ccsys.com .
+
+file(s) herein covered by the Simplified BSD License:
+	bin/disable_svc
+	bin/enable_svc
+	lib/nu_system.sh
+
++----------------------------------------------------------------------------------------+
+| SIMPLIFIED BSD LICENSE                                                                 |
+|                                                                                        |
+| Redistribution and use in source and binary forms, with or without modification, are   |
+| permitted provided that the following conditions are met:                              |
+|                                                                                        |
+| 1. Redistributions of source code must retain the above copyright notice, this list of |
+|    conditions and the following disclaimer.                                            |
+|                                                                                        |
+| 2. Redistributions in binary form must reproduce the above copyright notice, this list |
+|    of conditions and the following disclaimer in the documentation and/or other        |
+|    materials provided with the distribution.                                           |
+|                                                                                        |
+| THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDER ``AS IS'' AND ANY EXPRESS OR IMPLIED |
+| WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY   |
+| AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT   |
+| HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,        |
+| EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF     |
+| SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) |
+| HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,  |
+| OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS  |
+| SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.                           |
+|                                                                                        |
+| The views and conclusions contained in the software and documentation are those of the |
+| authors and should not be interpreted as representing official policies, either        |
+| expressed or implied, of the copyright holder.                                         |
++----------------------------------------------------------------------------------------+
