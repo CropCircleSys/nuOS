@@ -12,31 +12,60 @@ set -e; set -u; set -C
 # Official updates and community support available at http://nuos.org .
 # Other licensing options and professional services available at http://ccsys.com .
 
-while getopts dr OPT; do
+while getopts doru OPT; do
 	case $OPT in
 		d)
 			OPT_DELETE=y
 			;;
+		o)
+			OPT_ORIGIN=y
+			;;
 		r)
 			OPT_RECURSE=y
 			;;
+		u)
+			OPT_UNINSTALL=y
+			;;
 		*)
-			echo "usage: `basename $0` [-dr]" >&2
+			echo "usage: `basename $0` [-doru]" >&2
 			exit 1
 	esac
 done
 
-for pkg in `portversion -vL= | awk '{print $1}'`; do
-	echo $pkg
-	if [ -n "${OPT_DELETE-}" ]; then
-		rm /usr/ports/packages/*/$pkg.tbz
+report () {
+	while [ -t = $1 ]; do
+		echo -n '	'
+		shift
+	done
+	if [ -n "${OPT_ORIGIN-}" ]; then
+		pkg_info -q -o $1
+	else
+		echo $1
 	fi
+}
+
+maybe_delete () {
+	local pkg_file=/usr/ports/packages/All/$1.tbz
+	if [ -n "${OPT_DELETE-}" -a -f $pkg_file ]; then
+		rm $pkg_file
+	fi
+}
+
+maybe_uninstall () {
+	if [ -n "${OPT_UNINSTALL-}" -a -d /var/db/pkg/$1 ]; then
+		pkg_delete -f $1
+	fi
+}
+
+for pkg in `portversion -vL= | awk '{print $1}'`; do
+	report $pkg
 	if [ -n "${OPT_RECURSE-}" ]; then
 		for consumer in `pkg_info -qR $pkg`; do
-			echo "	$consumer"
-			if [ -n "${OPT_DELETE-}" -a -f /usr/ports/packages/All/$consumer.tbz ]; then
-				rm /usr/ports/packages/*/$consumer.tbz
-			fi
+			report -t $consumer
+			maybe_uninstall $consumer
+			maybe_delete $consumer
 		done
 	fi
+	maybe_uninstall $pkg
+	maybe_delete $pkg
 done
