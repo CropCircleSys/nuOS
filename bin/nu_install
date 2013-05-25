@@ -480,7 +480,11 @@ install_pkg () {
 	else
 		for port in $*; do
 			pkg=`cd /usr/ports/$port && make -V PKGNAME`
-			(cd / && pkg_add -C $POOL_MNT /usr/ports/packages/All/$pkg.tbz)
+			local pkg_file=/usr/ports/packages/All/$pkg.tbz
+			if [ ! -f $pkg_file ] ; then
+				(cd /usr/ports/$port && make clean && make -DBATCH package-recursive && make clean)
+			fi
+			(cd / && pkg_add -C $POOL_MNT $pkg_file)
 		done
 	fi
 	[ -n "${COPY_DEV_PKGS-}" ] || umount $POOL_MNT/usr/ports/packages/
@@ -488,11 +492,15 @@ install_pkg () {
 
 install_pkg sysutils/memtest86+ sysutils/jail2 sysutils/screen misc/buffer sysutils/pipemeter archivers/lzop sysutils/smartmontools
 install_pkg net/netatalk3
-install_pkg databases/mongodb www/npm www/apache22-worker-mpm
+install_pkg databases/mongodb databases/redis www/npm www/apache22-worker-mpm
 install_pkg mail/cyrus-imapd24
 yes | install_pkg mail/postfix
 install_pkg devel/subversion devel/git
 install_pkg ports-mgmt/portupgrade
+
+cat $POOL_MNT/usr/local/etc/redis.conf.sample - > $POOL_MNT/usr/local/etc/redis.conf <<'EOF'
+save ""
+EOF
 
 cat >> $POOL_MNT/usr/local/etc/afp.conf <<'EOF'
 [Homes]
