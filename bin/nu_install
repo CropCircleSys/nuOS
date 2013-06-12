@@ -498,7 +498,7 @@ yes | install_pkg mail/postfix
 install_pkg devel/subversion devel/git
 install_pkg ports-mgmt/portupgrade
 
-cat $POOL_MNT/usr/local/etc/redis.conf.sample - > $POOL_MNT/usr/local/etc/redis.conf <<'EOF'
+cat >> $POOL_MNT/usr/local/etc/redis.conf <<'EOF'
 save ""
 EOF
 
