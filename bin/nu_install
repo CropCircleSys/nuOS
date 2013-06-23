@@ -492,7 +492,7 @@ install_pkg () {
 
 install_pkg sysutils/memtest86+ sysutils/jail2 sysutils/screen misc/buffer sysutils/pipemeter archivers/lzop sysutils/smartmontools
 install_pkg net/netatalk3
-install_pkg databases/mongodb databases/redis www/npm www/apache22-worker-mpm
+install_pkg databases/mongodb databases/redis www/npm www/apache24
 install_pkg mail/cyrus-imapd24
 yes | install_pkg mail/postfix
 install_pkg devel/subversion devel/git
