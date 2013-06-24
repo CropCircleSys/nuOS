@@ -327,6 +327,7 @@ sem_load="YES"
 accf_data_load="YES"
 accf_dns_load="YES"
 accf_http_load="YES"
+snd_hda_load="YES"
 kern.ipc.shmmni="1024"
 kern.ipc.shmseg="1024"
 EOF
