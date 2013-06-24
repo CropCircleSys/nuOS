@@ -490,7 +490,8 @@ install_pkg () {
 	[ -n "${COPY_DEV_PKGS-}" ] || umount $POOL_MNT/usr/ports/packages/
 }
 
-install_pkg sysutils/memtest86+ sysutils/jail2 sysutils/screen misc/buffer sysutils/pipemeter archivers/lzop sysutils/smartmontools
+install_pkg sysutils/screen
+install_pkg sysutils/memtest86+ sysutils/jail2 misc/buffer sysutils/pipemeter archivers/lzop sysutils/smartmontools
 install_pkg net/netatalk3
 install_pkg databases/mongodb databases/redis www/npm www/apache24
 install_pkg mail/cyrus-imapd24 security/cyrus-sasl2-saslauthd
