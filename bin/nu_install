@@ -327,7 +327,7 @@ sem_load="YES"
 accf_data_load="YES"
 accf_dns_load="YES"
 accf_http_load="YES"
-snd_hda_load="YES"
+#snd_hda_load="YES"
 kern.ipc.shmmni="1024"
 kern.ipc.shmseg="1024"
 EOF
@@ -501,13 +501,13 @@ install_pkg ports-mgmt/portupgrade
 install_pkg emulators/virtualbox-ose
 install_pkg graphics/povray36
 install_pkg graphics/graphviz
-install_pkg graphics/gimp
 install_pkg print/teTeX
-install_pkg x11/xorg
-install_pkg x11/kde4
-install_pkg www/firefox
-install_pkg mail/thunderbird
-install_pkg editors/libreoffice
+#install_pkg graphics/gimp
+#install_pkg x11/xorg
+#install_pkg x11/kde4
+#install_pkg www/firefox
+#install_pkg mail/thunderbird
+#install_pkg editors/libreoffice
 
 if [ ! -d $POOL_MNT/usr/local/nuos -a -d /root/nuos ]; then
 	tar -cpf - -C /root nuos | tar -xpvf - -C $POOL_MNT/root
