@@ -502,6 +502,7 @@ install_pkg ports-mgmt/portupgrade
 install_pkg emulators/virtualbox-ose
 install_pkg graphics/povray36
 install_pkg graphics/graphviz
+install_pkg x11-fonts/webfonts
 install_pkg print/teTeX
 #install_pkg graphics/gimp
 #install_pkg x11/xorg
