@@ -497,6 +497,7 @@ install_pkg databases/mongodb databases/redis www/npm www/apache24
 install_pkg mail/cyrus-imapd24 security/cyrus-sasl2-saslauthd
 yes | install_pkg mail/postfix
 install_pkg devel/subversion devel/git
+install_pkg net/rsync
 install_pkg ports-mgmt/portupgrade
 install_pkg emulators/virtualbox-ose
 install_pkg graphics/povray36
