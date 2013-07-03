@@ -28,7 +28,7 @@ install_vars_init () {
 			# and hopefully your build is successful OR you CLEAN UP after yerself!
 			# this is a gud test that yer build will fit in a retail 8GB stick
 		else
-			echo "`basename $0`: -d or -s must be specified" >&2
+			echo "`basename $0`: -d or -S must be specified" >&2
 			exit 1
 		fi
 	fi
