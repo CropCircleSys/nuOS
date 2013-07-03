@@ -104,6 +104,11 @@ zpool export $POOL_NAME
 gnop destroy $devlist
 zpool import -o altroot=$POOL_MNT -o cachefile=$tempdir/zpool.cache $POOL_NAME
 
+if [ ! -f /usr/src/Makefile ]; then
+	svn checkout https://svn0.us-east.FreeBSD.org/base/releng/9.1 /usr/src
+	baseos_init
+fi
+
 pool_os_ds=$POOL_NAME/os
 baseos_proj_ds=$pool_os_ds/$BASEOS_TYPE
 baseos_ds=$baseos_proj_ds/$BASEOS_VER
@@ -126,6 +131,14 @@ ident $kern_ident
 options VIMAGE
 EOF
 fi
+
+if [ ! -d /usr/obj/usr/src/bin ]; then
+	(cd /usr/src && make buildworld)
+fi
+if [ ! -d /usr/obj/usr/src/sys/$kern_ident ]; then
+	(cd /usr/src && make KERNCONF=$kern_ident buildkernel)
+fi
+
 (cd /usr/src && make -D WITHOUT_KERNEL_SYMBOLS DESTDIR=$POOL_MNT KERNCONF=$kern_ident installkernel installworld distribution)
 :> $POOL_MNT/etc/fstab
 
@@ -448,6 +461,16 @@ if [ -n "${COPY_SRC-}" ]; then
 fi
 zfs unmount $baseos_proj_ds/src-$BASEOS_VER
 zfs unmount $baseos_proj_ds/obj-$BASEOS_VER
+
+if [ ! -d /var/db/portsnap/files ]; then
+	portsnap fetch
+fi
+if [ ! -f /usr/ports/Mk/bsd.port.mk ]; then
+	portsnap extract
+fi
+if [ ! -d /usr/ports/packages ]; then
+	mkdir /usr/ports/packages
+fi
 
 zfs create -o mountpoint=/usr/ports $baseos_proj_ds/ports-current
 zfs create -o mountpoint=/usr/ports/distfiles $baseos_proj_ds/ports-distfiles
