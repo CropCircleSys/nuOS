@@ -412,7 +412,7 @@ exec.stop = "/bin/sh /etc/rc.shutdown";
 exec.poststop = "umount $path/proc";
 exec.poststop += "umount $path/tmp";
 exec.poststop += "umount $path/dev/fd";
-exec.poststop += "umount $path/dev/";
+exec.poststop += "umount $path/dev";
 enforce_statfs = 1;
 interface = "lo0";
 ip_hostname;
