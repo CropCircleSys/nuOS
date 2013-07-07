@@ -56,3 +56,9 @@ push () {
 	shift
 	eval setvar \$var \"\${$var:+\$$var }$*\"
 }
+
+sister () {
+	local bin=$1
+	shift
+	(sh "$(dirname "$(realpath "$0")")/$bin" "$@")
+}

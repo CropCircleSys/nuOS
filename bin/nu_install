@@ -209,12 +209,8 @@ nuos_supported_len=`echo -n "$NUOS_SUPPORTED" | wc -m | awk '{print \$1}'`
 [ $nuos_supported_len -le 23 ]
 nuos_supported_23_chrs=`echo "$NUOS_SUPPORTED" | awk '{printf "%-23s", \$1}'`
 baseos_info_url="http://$baseos_type_lc.org"
-patch -b '' -d $POOL_MNT/boot -f beastie.4th + brand.4th + menu-commands.4th + menu.4th + menu.rc <<EOF
-diff -r ../boot.orig/beastie.4th ./beastie.4th
-27c27
-< \\ \$FreeBSD: releng/9.1/sys/boot/forth/beastie.4th 222417 2011-05-28 08:50:38Z julian \$
----
-> \\ \$Id\$
+
+patch -b '' $POOL_MNT/boot/beastie.4th <<EOF
 174a175,197
 > : nuosbw-logo ( x y -- ) \\ B/W nuOS spam (21 rows x 33ish columns)
 > 
@@ -246,11 +242,9 @@ diff -r ../boot.orig/beastie.4th ./beastie.4th
 > 		logoX @ logoY @ nuosbw-logo
 > 		2drop exit
 > 	then
-diff -r ../boot.orig/brand.4th ./brand.4th
-25c25
-< \\ \$FreeBSD: releng/9.1/sys/boot/forth/brand.4th 222417 2011-05-28 08:50:38Z julian \$
----
-> \\ \$Id\$
+EOF
+
+patch -b '' $POOL_MNT/boot/brand.4th <<EOF
 49a50,63
 > : nuos-logo ( x y -- ) \\ "nuOS" logo in B/W (7 rows x 38 columns)
 > 
@@ -274,11 +268,9 @@ diff -r ../boot.orig/brand.4th ./brand.4th
 > 		2drop exit
 > 	then
 > 
-diff -r ../boot.orig/menu-commands.4th ./menu-commands.4th
-25c25
-< \\ \$FreeBSD: releng/9.1/sys/boot/forth/menu-commands.4th 222417 2011-05-28 08:50:38Z julian \$
----
-> \\ \$Id\$
+EOF
+
+patch -b '' $POOL_MNT/boot/menu-commands.4th <<'EOF'
 190a191,196
 > 
 > : memtest-boot ( -- )
@@ -286,27 +278,23 @@ diff -r ../boot.orig/menu-commands.4th ./menu-commands.4th
 >         s" load /boot/opt/memtest86+" evaluate
 >         s" boot" evaluate
 > ;
-diff -r ../boot.orig/menu.4th ./menu.4th
-27c27
-< \\ \$FreeBSD: releng/9.1/sys/boot/forth/menu.4th 230219 2012-01-16 14:55:42Z pluknet \$
----
-> \\ \$Id\$
+EOF
+
+patch -b '' $POOL_MNT/boot/menu.4th <<'EOF'
 420c420
-< 		drop s" Welcome to $BASEOS_TYPE"
+< 		drop s" Welcome to FreeBSD"
 ---
 > 		drop s" Welcome to nuOS"
-diff -r ../boot.orig/menu.rc ./menu.rc
-2c2
-< \\ \$FreeBSD: releng/9.1/sys/boot/forth/menu.rc 230867 2012-02-01 15:04:27Z pluknet \$
----
-> \\ \$Id\$
+EOF
+
+patch -b '' $POOL_MNT/boot/menu.rc <<'EOF'
 69a70,76
 > set menu_caption[8]="MemTest86+ RAM test"
-> \\ set menu_caption[8]="Mem[T]est86+ RAM test"
+> \ set menu_caption[8]="Mem[T]est86+ RAM test"
 > set menu_command[8]="memtest-boot"
-> \\ set menu_keycode[8]="114"
+> \ set menu_keycode[8]="114"
 > set ansi_caption[8]="MemTest86+ RAM test"
-> \\ set ansi_caption[8]="Mem[1mT[37mest86+ RAM test"
+> \ set ansi_caption[8]="Mem[1mT[37mest86+ RAM test"
 > 
 EOF
 
@@ -467,28 +455,29 @@ fi
 
 zfs create -o mountpoint=/usr/ports/packages $nuos_proj_ds/pkg-$NUOS_VER
 
-(sh "$(dirname "$(realpath "$0")")/nu_install_pkg" -C $POOL_MNT sysutils/screen)
-(sh "$(dirname "$(realpath "$0")")/nu_install_pkg" -C $POOL_MNT sysutils/memtest86+ sysutils/jail2 misc/buffer sysutils/pipemeter archivers/lzop sysutils/smartmontools)
+sister nu_install_pkg -C $POOL_MNT sysutils/screen
+sister nu_install_pkg -C $POOL_MNT sysutils/memtest86+ sysutils/jail2
+sister nu_install_pkg -C $POOL_MNT misc/buffer sysutils/pipemeter archivers/lzop sysutils/smartmontools
+#sister nu_install_pkg -C $POOL_MNT net/rsync
 
-#(sh "$(dirname "$(realpath "$0")")/nu_install_pkg" -C $POOL_MNT net/rsync)
-#(sh "$(dirname "$(realpath "$0")")/nu_install_pkg" -C $POOL_MNT net/netatalk3)
-#(sh "$(dirname "$(realpath "$0")")/nu_install_pkg" -C $POOL_MNT databases/mongodb databases/redis www/npm www/apache24)
-#(sh "$(dirname "$(realpath "$0")")/nu_install_pkg" -C $POOL_MNT mail/cyrus-imapd24 security/cyrus-sasl2-saslauthd)
-#(sh "$(dirname "$(realpath "$0")")/nu_install_pkg" -C $POOL_MNT -y mail/postfix)
-#(sh "$(dirname "$(realpath "$0")")/nu_install_pkg" -C $POOL_MNT devel/subversion devel/git)
-#(sh "$(dirname "$(realpath "$0")")/nu_install_pkg" -C $POOL_MNT ports-mgmt/portupgrade)
-#(sh "$(dirname "$(realpath "$0")")/nu_install_pkg" -C $POOL_MNT emulators/virtualbox-ose)
-#(sh "$(dirname "$(realpath "$0")")/nu_install_pkg" -C $POOL_MNT graphics/povray36)
-#(sh "$(dirname "$(realpath "$0")")/nu_install_pkg" -C $POOL_MNT graphics/graphviz)
-#(sh "$(dirname "$(realpath "$0")")/nu_install_pkg" -C $POOL_MNT x11-fonts/webfonts)
-#(sh "$(dirname "$(realpath "$0")")/nu_install_pkg" -C $POOL_MNT print/teTeX)
+#sister nu_install_pkg -C $POOL_MNT net/netatalk3
+#sister nu_install_pkg -C $POOL_MNT databases/mongodb databases/redis www/npm www/apache24
+#sister nu_install_pkg -C $POOL_MNT mail/cyrus-imapd24 security/cyrus-sasl2-saslauthd
+#sister nu_install_pkg -C $POOL_MNT -y mail/postfix
+#sister nu_install_pkg -C $POOL_MNT devel/subversion devel/git
+#sister nu_install_pkg -C $POOL_MNT ports-mgmt/portupgrade
+#sister nu_install_pkg -C $POOL_MNT emulators/virtualbox-ose
+#sister nu_install_pkg -C $POOL_MNT graphics/povray36
+#sister nu_install_pkg -C $POOL_MNT graphics/graphviz
+#sister nu_install_pkg -C $POOL_MNT x11-fonts/webfonts
+#sister nu_install_pkg -C $POOL_MNT print/teTeX
 
-#(sh "$(dirname "$(realpath "$0")")/nu_install_pkg" -C $POOL_MNT graphics/gimp)
-#(sh "$(dirname "$(realpath "$0")")/nu_install_pkg" -C $POOL_MNT x11/xorg)
-#(sh "$(dirname "$(realpath "$0")")/nu_install_pkg" -C $POOL_MNT x11/kde4)
-#(sh "$(dirname "$(realpath "$0")")/nu_install_pkg" -C $POOL_MNT www/firefox)
-#(sh "$(dirname "$(realpath "$0")")/nu_install_pkg" -C $POOL_MNT mail/thunderbird)
-#(sh "$(dirname "$(realpath "$0")")/nu_install_pkg" -C $POOL_MNT editors/libreoffice)
+#sister nu_install_pkg -C $POOL_MNT graphics/gimp
+#sister nu_install_pkg -C $POOL_MNT x11/xorg
+#sister nu_install_pkg -C $POOL_MNT x11/kde4
+#sister nu_install_pkg -C $POOL_MNT www/firefox
+#sister nu_install_pkg -C $POOL_MNT mail/thunderbird
+#sister nu_install_pkg -C $POOL_MNT editors/libreoffice
 
 if [ -n "${COPY_DEV_PKGS-}" ]; then
 	tar -cpf - -C /usr/ports packages | tar -xpvf - -C $POOL_MNT/usr/ports
@@ -596,13 +585,13 @@ zfs create -o mountpoint=/home $home_ds
 
 admin_install -z $POOL_MNT
 
-(sh "$(dirname "$(realpath "$0")")/enable_svc" -C $POOL_MNT sshd jail2)
-#(sh "$(dirname "$(realpath "$0")")/enable_svc" -C $POOL_MNT dbus avahi_daemon netatalk)
+sister enable_svc -C $POOL_MNT sshd jail2
+#sister enable_svc -C $POOL_MNT dbus avahi_daemon netatalk
 
 export NEW_HOST
-(sh "$(dirname "$(realpath "$0")")/nu_jail" -C $POOL_MNT -p $POOL_NAME -t clone -w -j base-lab -o $BASEOS_TYPE/$BASEOS_VER -s bare -i 127.0.0.2 -a '' -u '' -b '' -q)
-(sh "$(dirname "$(realpath "$0")")/nu_jail" -C $POOL_MNT -p $POOL_NAME -t clone -w -j nuos-lab -s bare -i 127.0.0.3 -a '' -u '' -b '' -q)
-(sh "$(dirname "$(realpath "$0")")/nu_jail" -C $POOL_MNT -p $POOL_NAME -t clone -w -j lab -i 127.0.0.4 -a '' -u '' -b '' -q)
+sister nu_jail -C $POOL_MNT -p $POOL_NAME -t clone -w -j base-lab -o $BASEOS_TYPE/$BASEOS_VER -s bare -i 127.0.0.2 -a '' -u '' -b '' -q
+sister nu_jail -C $POOL_MNT -p $POOL_NAME -t clone -w -j nuos-lab -s bare -i 127.0.0.3 -a '' -u '' -b '' -q
+sister nu_jail -C $POOL_MNT -p $POOL_NAME -t clone -w -j lab -i 127.0.0.4 -a '' -u '' -b '' -q
 
 zfs snapshot -r $host_ds@genesis
 zfs snapshot -r $home_ds@genesis
