@@ -91,7 +91,6 @@ maybe_yell
 
 require_base_src
 
-tempdir=`mktemp -d -t $(basename "$0").$$`
 
 if [ -z "${OPT_ZPOOL_MANUALLY-}" ]; then
 	i=0
@@ -106,6 +105,7 @@ if [ -z "${OPT_ZPOOL_MANUALLY-}" ]; then
 		push devlist $nextdev
 		i=$(($i + 1))
 	done
+	require_tmp tempdir
 	zpool create -o altroot=$POOL_MNT -o cachefile=$tempdir/zpool.cache -O mountpoint=none -O canmount=off -O devices=off $POOL_OPTS $POOL_NAME $POOL_TYPE $devlist
 	zpool export $POOL_NAME
 	gnop destroy $devlist
@@ -341,13 +341,6 @@ cat >> $POOL_MNT/etc/sysctl.conf <<'EOF'
 net.inet.ip.fw.one_pass=0
 EOF
 
-cat > $POOL_MNT/etc/make.conf <<'EOF'
-CPUTYPE?=core2
-WITH_BDB_VER=48
-RUBY_DEFAULT_VER=1.9
-PERL_VERSION=5.16.3
-EOF
-
 cat > $POOL_MNT/etc/periodic.conf <<'EOF'
 daily_output="/var/log/daily.log"
 weekly_output="/var/log/weekly.log"
@@ -393,6 +386,10 @@ allow.chflags;
 allow.quotas;
 children.max = 256;
 EOF
+
+prepare_make_conf make_conf cmd_to_retire_make_conf
+cat $make_conf > $POOL_MNT/etc/make.conf
+$cmd_to_retire_make_conf $make_conf
 
 cat >> $POOL_MNT/boot/loader.conf <<'EOF'
 init_script="/boot/init.sh"
@@ -512,10 +509,12 @@ zfs unmount $rescue_ds/etc
 ln -s ../boot/etc/login.conf.db $POOL_MNT/etc/login.conf.db
 zfs mount $rescue_ds/etc
 
+
+require_tmp tempdir
 if [ -n "${INJECT_CACHE-}" ]; then
 	[ ! -f $POOL_MNT/boot/zfs/zpool.cache ]
 	cp "$INJECT_CACHE" $POOL_MNT/boot/zfs/zpool.cache
-	rm $tempdir/zpool.cache
+	[ -f $tempdir/zpool.cache ] && rm $tempdir/zpool.cache
 else
 	mv -n $tempdir/zpool.cache $POOL_MNT/boot/zfs/
 fi

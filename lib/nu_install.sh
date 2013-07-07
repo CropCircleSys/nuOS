@@ -16,11 +16,17 @@ set -e; set -u; set -C
 
 nuos_lib_ver=0.0.9.1a3
 [ $nuos_lib_ver = "$NUOS_VER" ]
+[ -n "${nuos_lib_system_loaded-}" ]
 [ -z "${nuos_lib_install_loaded-}" ]
 nuos_lib_install_loaded=y
 
+install_lite_vars_init () {
+	: ${TRGT_OPTZ:=core2}
+}
+
 install_vars_init () {
 	[ -n "$POOL_NAME" ]
+	install_lite_vars_init
 	if [ -z "${POOL_DEVS-}" ]; then # u shud spec a blank target media
 		if [ -n "${OPT_SWAP-}" ]; then # or ask to use these in (-S)wap
 			# have 2 - 8 GB of xtra ram depending on install options
@@ -41,6 +47,7 @@ install_vars_init () {
 	echo 'target arch        TRGT_ARCH      ' ${TRGT_ARCH:=`uname -m`}
 	echo 'target arch        TRGT_PROC      ' ${TRGT_PROC:=`uname -p`}
 	echo 'target kern        TRGT_KERN      ' ${TRGT_KERN:=VIMAGE}
+	echo 'target optimize    TRGT_OPTZ      ' $TRGT_OPTZ
 TRGT_KERN=VIMAGE
 	echo -n 'copy ports         COPY_PORTS      ' && [ -n "${COPY_PORTS-}" ] && echo set || echo null
 	echo -n 'copy port opts     COPY_PORT_OPTS  ' && [ -n "${COPY_PORT_OPTS-}" ] && echo set || echo null
@@ -65,10 +72,28 @@ require_ports_tree () {
 	fi
 }
 
+prepare_make_conf () {
+	if [ -f "${CHROOTDIR-}/etc/make.conf" ]; then
+		setvar $1 "${CHROOTDIR-}/etc/make.conf"
+		setvar $2 :
+	else
+		install_lite_vars_init
+		local tempfile=`mktemp -t $(basename "$0").$$`
+		cat > $tempfile <<EOF
+CPUTYPE?=$TRGT_OPTZ
+WITH_BDB_VER=48
+RUBY_DEFAULT_VER=1.9
+PERL_VERSION=5.16.3
+EOF
+		setvar $1 $tempfile
+		setvar $2 rm
+	fi
+}
+
 require_subversion () {
 	if which svn; then
 	else
-		(sh "$(dirname "$(realpath "$0")")/nu_install_pkg" devel/subversion)
+		sister nu_install_pkg devel/subversion
 	fi
 }
 
@@ -99,19 +124,24 @@ EOF
 		svn checkout https://svn0.us-east.FreeBSD.org/base/releng/9.1 /usr/src
 		baseos_init
 	fi
+	local make_conf cmd_to_retire_make_conf
 	if [ ! -d /usr/obj/usr/src/bin ]; then
-		(cd /usr/src && make buildworld)
+		prepare_make_conf make_conf cmd_to_retire_make_conf
+		(cd /usr/src && make __MAKE_CONF=$make_conf buildworld)
+		$cmd_to_retire_make_conf $make_conf
 	fi
-	kern_conf=/usr/src/sys/$TRGT_ARCH/conf/$TRGT_KERN
-	if [ ! -f $kern_conf -a $TRGT_KERN = VIMAGE ]; then
-		cat > $kern_conf <<EOF
+	if [ ! -d /usr/obj/usr/src/sys/$TRGT_KERN ]; then
+		local kern_conf=/usr/src/sys/$TRGT_ARCH/conf/$TRGT_KERN
+		if [ ! -f $kern_conf -a $TRGT_KERN = VIMAGE ]; then
+			cat > $kern_conf <<EOF
 include GENERIC
 ident VIMAGE
 options VIMAGE
 EOF
-	fi
-	if [ ! -d /usr/obj/usr/src/sys/$TRGT_KERN ]; then
-		(cd /usr/src && make KERNCONF=$TRGT_KERN buildkernel)
+		fi
+		prepare_make_conf make_conf cmd_to_retire_make_conf
+		(cd /usr/src && make __MAKE_CONF=$make_conf KERNCONF=$TRGT_KERN buildkernel)
+		$cmd_to_retire_make_conf $make_conf
 	fi
 }
 

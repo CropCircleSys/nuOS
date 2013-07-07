@@ -62,3 +62,7 @@ sister () {
 	shift
 	(sh "$(dirname "$(realpath "$0")")/$bin" "$@")
 }
+
+require_tmp () {
+	eval [ -n "\${$1-}" ] || setvar $1 `mktemp -d -t $(basename "$0").$$`
+}
