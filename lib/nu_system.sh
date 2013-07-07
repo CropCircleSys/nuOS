@@ -51,6 +51,8 @@ maybe_yell () {
 	fi
 }
 
-add_to () {
-	eval setvar \$1 \"\${$1:+\$$1 }$2\"
+push () {
+	local var=$1
+	shift
+	eval setvar \$var \"\${$var:+\$$var }$*\"
 }

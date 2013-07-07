@@ -1,0 +1,68 @@
+#!/bin/sh
+set -e; set -u; set -C
+
+# nuOS 0.0.9.1a3 - bin/nu_install_pkg - LICENSE: MOZ_PUB
+#
+# Copyright (c) 2008-2013 Chad Jacob Milios and Crop Circle Systems, Inc.
+# All rights reserved.
+#
+# This Source Code Form is subject to the terms of the Mozilla Public License, v2.0.
+# If a copy of the MPL was not distributed alongside this file, you can obtain one at
+# http://mozilla.org/MPL/2.0/ . This software project is not affiliated with the Mozilla
+# Foundation.
+#
+# Official updates and community support available at http://nuos.org .
+# Other licensing options and professional services available at http://ccsys.com .
+
+NUOS_VER=0.0.9.1a3
+
+while getopts C:my OPT && [ $OPT != '?' ]; do
+	case $OPT in
+		C)
+			CHROOTDIR="$OPTARG"
+			;;
+		m)
+			OPT_MAKE=y
+			;;
+		y)
+			OPT_YES=y
+			;;
+		*)
+			echo "usage: `basename \"$0\"` [-C chroot_dir] port_origin ..." >&2
+			exit 1
+	esac
+done
+while [ $OPTIND -gt 1 ]; do
+	shift
+	OPTIND=$(($OPTIND - 1))
+done
+
+. "$(dirname "$(realpath "$0")")/../lib/nu_install.sh"
+
+require_ports_tree
+
+if [ -n "${OPT_YES-}" ]; then
+	yes | sh $0 ${CHROOTDIR:+-C $CHROOTDIR} $@
+	exit $?
+fi
+
+if [ -n "${CHROOTDIR-}" ]; then
+	if [ ! -d "$CHROOTDIR/usr/ports/packages/All" ]; then
+		mount -t nullfs /usr/ports/packages "$CHROOTDIR/usr/ports/packages"
+		nullfs_mounted=y
+	fi
+fi
+for port in $*; do
+	pkg=`cd /usr/ports/$port && make -V PKGNAME`
+	pkg_file=/usr/ports/packages/All/$pkg.tbz
+	if [ ! -f $pkg_file ]; then
+		[ -n "${OPT_MAKE-}" ]
+		(cd /usr/ports/$port && make clean && make -DBATCH package-recursive && make clean)
+	fi
+	if [ ! -d "${CHROOTDIR-}/var/db/pkg/$pkg" ]; then
+		(cd / && pkg_add ${CHROOTDIR:+-C $CHROOTDIR} $pkg_file)
+	fi
+done
+if [ -n "${nullfs_mounted-}" ]; then
+	umount "$CHROOTDIR/usr/ports/packages"
+fi

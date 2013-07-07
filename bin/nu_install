@@ -86,6 +86,9 @@ admin_init
 maybe_pause
 maybe_yell
 
+require_base_src
+
+
 i=0
 for dev in $POOL_DEVS; do
 	gpart create -s GPT /dev/$dev
@@ -95,7 +98,7 @@ for dev in $POOL_DEVS; do
 	gpart bootcode -b /boot/pmbr -p /boot/gptzfsboot -i 1 /dev/$dev
 	gnop create -S 4096 /dev/gpt/$POOL_NAME$i
 	nextdev="/dev/gpt/$POOL_NAME$i.nop"
-	add_to devlist $nextdev
+	push devlist $nextdev
 	i=$(($i + 1))
 done
 tempdir=`mktemp -d -t $(basename "$0").$$`
@@ -103,11 +106,6 @@ zpool create -o altroot=$POOL_MNT -o cachefile=$tempdir/zpool.cache -O mountpoin
 zpool export $POOL_NAME
 gnop destroy $devlist
 zpool import -o altroot=$POOL_MNT -o cachefile=$tempdir/zpool.cache $POOL_NAME
-
-if [ ! -f /usr/src/Makefile ]; then
-	svn checkout https://svn0.us-east.FreeBSD.org/base/releng/9.1 /usr/src
-	baseos_init
-fi
 
 pool_os_ds=$POOL_NAME/os
 baseos_proj_ds=$pool_os_ds/$BASEOS_TYPE
@@ -121,25 +119,7 @@ zfs create $baseos_ds/etc
 zfs create $baseos_ds/var
 zfs create $baseos_ds/var/db
 
-kern_ident=VIMAGE
-kern_conf=/usr/src/sys/$TRGT_ARCH/conf/$kern_ident
-
-if [ ! -f $kern_conf ]; then
-	cat > $kern_conf <<EOF
-include GENERIC
-ident $kern_ident
-options VIMAGE
-EOF
-fi
-
-if [ ! -d /usr/obj/usr/src/bin ]; then
-	(cd /usr/src && make buildworld)
-fi
-if [ ! -d /usr/obj/usr/src/sys/$kern_ident ]; then
-	(cd /usr/src && make KERNCONF=$kern_ident buildkernel)
-fi
-
-(cd /usr/src && make -D WITHOUT_KERNEL_SYMBOLS DESTDIR=$POOL_MNT KERNCONF=$kern_ident installkernel installworld distribution)
+(cd /usr/src && make -D WITHOUT_KERNEL_SYMBOLS DESTDIR=$POOL_MNT KERNCONF=$TRGT_KERN installkernel installworld distribution)
 :> $POOL_MNT/etc/fstab
 
 zfs snapshot -r $baseos_ds@dist
@@ -462,20 +442,11 @@ fi
 zfs unmount $baseos_proj_ds/src-$BASEOS_VER
 zfs unmount $baseos_proj_ds/obj-$BASEOS_VER
 
-if [ ! -d /var/db/portsnap/files ]; then
-	portsnap fetch
-fi
-if [ ! -f /usr/ports/Mk/bsd.port.mk ]; then
-	portsnap extract
-fi
-if [ ! -d /usr/ports/packages ]; then
-	mkdir /usr/ports/packages
-fi
-
 zfs create -o mountpoint=/usr/ports $baseos_proj_ds/ports-current
 zfs create -o mountpoint=/usr/ports/distfiles $baseos_proj_ds/ports-distfiles
 zfs create -o mountpoint=/var/db/portsnap $baseos_proj_ds/portsnap-db
 if [ -n "${COPY_PORTS-}" ]; then
+	require_portsnap_files
 	tar -cpf - -C /var/db portsnap | tar -xpvf - -C $POOL_MNT/var/db
 	portsnap -d $POOL_MNT/var/db/portsnap -f $POOL_MNT/etc/portsnap.conf -p $POOL_MNT/usr/ports extract
 	if [ -d /usr/ports/local ]; then
@@ -490,53 +461,37 @@ if [ -n "${COPY_PORT_OPTS-}" ]; then
 fi
 
 zfs create -o mountpoint=/usr/ports/packages $nuos_proj_ds/pkg-$NUOS_VER
+
+(sh "$(dirname "$(realpath "$0")")/nu_install_pkg" -C $POOL_MNT sysutils/screen)
+(sh "$(dirname "$(realpath "$0")")/nu_install_pkg" -C $POOL_MNT sysutils/memtest86+ sysutils/jail2 misc/buffer sysutils/pipemeter archivers/lzop sysutils/smartmontools)
+
+#(sh "$(dirname "$(realpath "$0")")/nu_install_pkg" -C $POOL_MNT net/rsync)
+#(sh "$(dirname "$(realpath "$0")")/nu_install_pkg" -C $POOL_MNT net/netatalk3)
+#(sh "$(dirname "$(realpath "$0")")/nu_install_pkg" -C $POOL_MNT databases/mongodb databases/redis www/npm www/apache24)
+#(sh "$(dirname "$(realpath "$0")")/nu_install_pkg" -C $POOL_MNT mail/cyrus-imapd24 security/cyrus-sasl2-saslauthd)
+#(sh "$(dirname "$(realpath "$0")")/nu_install_pkg" -C $POOL_MNT -y mail/postfix)
+#(sh "$(dirname "$(realpath "$0")")/nu_install_pkg" -C $POOL_MNT devel/subversion devel/git)
+#(sh "$(dirname "$(realpath "$0")")/nu_install_pkg" -C $POOL_MNT ports-mgmt/portupgrade)
+#(sh "$(dirname "$(realpath "$0")")/nu_install_pkg" -C $POOL_MNT emulators/virtualbox-ose)
+#(sh "$(dirname "$(realpath "$0")")/nu_install_pkg" -C $POOL_MNT graphics/povray36)
+#(sh "$(dirname "$(realpath "$0")")/nu_install_pkg" -C $POOL_MNT graphics/graphviz)
+#(sh "$(dirname "$(realpath "$0")")/nu_install_pkg" -C $POOL_MNT x11-fonts/webfonts)
+#(sh "$(dirname "$(realpath "$0")")/nu_install_pkg" -C $POOL_MNT print/teTeX)
+
+#(sh "$(dirname "$(realpath "$0")")/nu_install_pkg" -C $POOL_MNT graphics/gimp)
+#(sh "$(dirname "$(realpath "$0")")/nu_install_pkg" -C $POOL_MNT x11/xorg)
+#(sh "$(dirname "$(realpath "$0")")/nu_install_pkg" -C $POOL_MNT x11/kde4)
+#(sh "$(dirname "$(realpath "$0")")/nu_install_pkg" -C $POOL_MNT www/firefox)
+#(sh "$(dirname "$(realpath "$0")")/nu_install_pkg" -C $POOL_MNT mail/thunderbird)
+#(sh "$(dirname "$(realpath "$0")")/nu_install_pkg" -C $POOL_MNT editors/libreoffice)
+
 if [ -n "${COPY_DEV_PKGS-}" ]; then
 	tar -cpf - -C /usr/ports packages | tar -xpvf - -C $POOL_MNT/usr/ports
 	zfs snapshot $nuos_proj_ds/pkg-$NUOS_VER@dist
 fi
 
-install_pkg () {
-	[ -n "${COPY_DEV_PKGS-}" ] || mount -t nullfs /usr/ports/packages $POOL_MNT/usr/ports/packages
-	if [ "$*" = -a ]; then
-		local abs_pool_mnt=`realpath "$POOL_MNT"`
-		(cd / && ls -rtU /var/db/pkg | grep -v '^pkgdb.db$' | sed -e 's-^-/usr/ports/packages/All/-;s/$/.tbz/' | xargs pkg_add -C $abs_pool_mnt -F)
-	else
-		for port in $*; do
-			pkg=`cd /usr/ports/$port && make -V PKGNAME`
-			local pkg_file=/usr/ports/packages/All/$pkg.tbz
-			if [ ! -f $pkg_file ] ; then
-				(cd /usr/ports/$port && make clean && make -DBATCH package-recursive && make clean)
-			fi
-			(cd / && pkg_add -C $POOL_MNT $pkg_file)
-		done
-	fi
-	[ -n "${COPY_DEV_PKGS-}" ] || umount $POOL_MNT/usr/ports/packages/
-}
-
-install_pkg sysutils/screen
-install_pkg sysutils/memtest86+ sysutils/jail2 misc/buffer sysutils/pipemeter archivers/lzop sysutils/smartmontools
-install_pkg net/netatalk3
-install_pkg databases/mongodb databases/redis www/npm www/apache24
-install_pkg mail/cyrus-imapd24 security/cyrus-sasl2-saslauthd
-yes | install_pkg mail/postfix
-install_pkg devel/subversion devel/git
-install_pkg net/rsync
-install_pkg ports-mgmt/portupgrade
-install_pkg emulators/virtualbox-ose
-install_pkg graphics/povray36
-install_pkg graphics/graphviz
-install_pkg x11-fonts/webfonts
-install_pkg print/teTeX
-#install_pkg graphics/gimp
-#install_pkg x11/xorg
-#install_pkg x11/kde4
-#install_pkg www/firefox
-#install_pkg mail/thunderbird
-#install_pkg editors/libreoffice
-
-if [ ! -d $POOL_MNT/usr/local/nuos -a -d /root/nuos ]; then
-	tar -cpf - -C /root nuos | tar -xpvf - -C $POOL_MNT/root
-fi
+mkdir $POOL_MNT/root/nuos
+tar -cpf - -C "$(dirname "$(realpath "$0")")/.." . | tar -xpvf - -C $POOL_MNT/root/nuos
 
 zfs unmount $nuos_proj_ds/pkg-$NUOS_VER
 zfs unmount $baseos_proj_ds/ports-current

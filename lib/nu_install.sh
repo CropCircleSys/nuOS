@@ -16,11 +16,11 @@ set -e; set -u; set -C
 
 nuos_lib_ver=0.0.9.1a3
 [ $nuos_lib_ver = "$NUOS_VER" ]
-[ -n "${nuos_lib_common_loaded-}" ]
 [ -z "${nuos_lib_install_loaded-}" ]
 nuos_lib_install_loaded=y
 
 install_vars_init () {
+	[ -n "$POOL_NAME" ]
 	if [ -z "${POOL_DEVS-}" ]; then # u shud spec a blank target media
 		if [ -n "${OPT_SWAP-}" ]; then # or ask to use these in (-S)wap
 			# have 2 - 8 GB of xtra ram depending on install options
@@ -40,9 +40,78 @@ install_vars_init () {
 	echo 'new host name   -h NEW_HOST       ' ${NEW_HOST:=$POOL_NAME.`hostname | sed -e 's/^[^\.]*\.//'`}
 	echo 'target arch        TRGT_ARCH      ' ${TRGT_ARCH:=`uname -m`}
 	echo 'target arch        TRGT_PROC      ' ${TRGT_PROC:=`uname -p`}
+	echo 'target kern        TRGT_KERN      ' ${TRGT_KERN:=VIMAGE}
+TRGT_KERN=VIMAGE
 	echo -n 'copy ports         COPY_PORTS      ' && [ -n "${COPY_PORTS-}" ] && echo set || echo null
 	echo -n 'copy port opts     COPY_PORT_OPTS  ' && [ -n "${COPY_PORT_OPTS-}" ] && echo set || echo null
 	echo -n 'copy all pkgs      COPY_DEV_PKGS   ' && [ -n "${COPY_DEV_PKGS-}" ] && echo set || echo null
 	echo -n 'copy src           COPY_SRC        ' && [ -n "${COPY_SRC-}" ] && echo set || echo null
 	echo -n 'copy svn repo      COPY_SVN        ' && [ -n "${COPY_SRC-}" ] && ([ -n "${COPY_SVN-}" ] && echo set || echo null) || echo n/a
 }
+
+require_portsnap_files () {
+	if [ ! -d /var/db/portsnap/files ]; then
+		portsnap fetch
+	fi
+}
+
+require_ports_tree () {
+	if [ ! -f /usr/ports/Mk/bsd.port.mk ]; then
+		require_portsnap_files
+		portsnap extract
+	fi
+	if [ ! -d /usr/ports/packages ]; then
+		mkdir /usr/ports/packages
+	fi
+}
+
+require_subversion () {
+	if which svn; then
+	else
+		(sh "$(dirname "$(realpath "$0")")/nu_install_pkg" devel/subversion)
+	fi
+}
+
+require_base_src () {
+	if [ ! -f /usr/src/Makefile ]; then
+		require_subversion
+		[ -d ~/.subversion ] || mkdir ~/.subversion
+		[ -d ~/.subversion/auth ] || (umask 77 && mkdir ~/.subversion/auth)
+		[ -d ~/.subversion/auth/svn.ssl.server ] || mkdir ~/.subversion/auth/svn.ssl.server
+		local srv_pub_key=`eval echo '~/.subversion/auth/svn.ssl.server/87ff8e8fd0384311d1630a5693b2abb5'`
+		if [ ! -f $srv_pub_key ]; then
+			cat > $srv_pub_key <<'EOF'
+K 10
+ascii_cert
+V 2216
+MIIGejCCBGKgAwIBAgIJAMR5NL8c8CnnMA0GCSqGSIb3DQEBBQUAMIGNMQswCQYDVQQGEwJVUzELMAkGA1UECBMCQ0ExFDASBgNVBAoTC0ZyZWVCU0Qub3JnMRMwEQYDVQQLEwpjbHVzdGVyYWRtMR8wHQYDVQQDExZzdm5taXIubnlpLkZyZWVCU0Qub3JnMSUwIwYJKoZIhvcNAQkBFhZjbHVzdGVyYWRtQEZyZWVCU0Qub3JnMB4XDTEyMDgxMjIzMDEzMVoXDTEzMDgxMjIzMDEzMVowgY0xCzAJBgNVBAYTAlVTMQswCQYDVQQIEwJDQTEUMBIGA1UEChMLRnJlZUJTRC5vcmcxEzARBgNVBAsTCmNsdXN0ZXJhZG0xHzAdBgNVBAMTFnN2bm1pci5ueWkuRnJlZUJTRC5vcmcxJTAjBgkqhkiG9w0BCQEWFmNsdXN0ZXJhZG1ARnJlZUJTRC5vcmcwggIiMA0GCSqGSIb3DQEBAQUAA4ICDwAwggIKAoICAQCjWjd/9knAZ3FMroXP3T51fAwHwFZ5eiQEM+XhIrLfF7asIy0F447CPtngfMs/hH8ODQeJCgHDUCmuyV1vy3oLkW8g36Bkc0/SSUgvxee/b3ilhoIusXFLULvboshVUBq+njk3Cy8vbPB4IQVNn/b2dv6szC/XfaGMGvVmSE6GQAUdfbF1ndj7mytPKw9FSew1hwWNvHKtMYw6B+O4YTGeTGmRYllVG4zmxCZJASZ0XxDsHQ0T8DIjpdvB00/jzsJ3z4BiqmkHC+CgpfsuZ7tIX2OkuafIKzy/sLAdPPPrpomMYWBJKoTf4x88HsQ34hZN7nrgrQYmHM5aI8llvkrsJu15c1ddbcfL8MG4DsPlQh3dptwv4CNQXKarMx0KT+X1vvzYGHtA2iOG5ewGe70fBuXdNnUAkNzxdxjQ8P7BrVC3qQxZFEHjP84jdsl3VWYqFgoyGZ+zgC6TJFh9t99wk6dJ5D9QFX0Pz2jG9t71qmc/UbWhhZKCP0TED7yL8BdrCt3xbrfijVGEMK5g5t/IiU72FIDypfpocK5ZCHhpMXsjmQMO7dq35t2EVV/MViL2EM8YHhQE2/RmClX5z9SrdTNTqiRTF/haS+Dg21vow3+Yya4vDLHfJEVwPJ5jfGpJVnO4ddsH93y94xAs95nEJyLaMwW5zfDip6YFr7RrMQIDAQABo4HaMIHXMIG8BgNVHREEgbQwgbGCFnN2bm1pci5ueWkuRnJlZUJTRC5vcmeCEHN2bjAuRnJlZUJTRC5vcmeCEHN2bjEuRnJlZUJTRC5vcmeCEHN2bjIuRnJlZUJTRC5vcmeCEHN2bjMuRnJlZUJTRC5vcmeCEHN2bjQuRnJlZUJTRC5vcmeCE3N2bjAudXMuRnJlZUJTRC5vcmeCE3N2bjEudXMuRnJlZUJTRC5vcmeCE3N2bjIudXMuRnJlZUJTRC5vcmcwCQYDVR0TBAIwADALBgNVHQ8EBAMCBeAwDQYJKoZIhvcNAQEFBQADggIBABFISEkISUpw6ni/in93fVEEdgReusgvpwR9s/x8iqerGXwSIpSf9CQLqv42W3NOVOZ0qO632Fk9UxFfYkmzH04hRQ4atU05aHyURqYjL/Do2+0H9LuX9iwBXNsO9vtNbEORXu5IofM43Gy5UGWwnqAnv3cpehuk0HmbPJ0NeAaTBL6xCcYRTWA8QfMN36I2cp+KzgUYGD6s2qDlWJetJN03tScI6yWS4CRHAuRq0x3G7TezV5ut6D8vQuQnCJb+buZOQltyx9ju/rUy3Br01GPV2j2Nzd1yGawALn6sVMPI+FrPMTqekdOG9H/A2rbVRne7zi2Fs2IGYrb9qcw+bWjDexd7fX0EE9s17Tl+kdXHgSCKBYyDFOpcr76B66CotpNVhLHCuwlQDfT4a9MpDibCPZs14jpZcX6HDhXwJhH6AIlfVsWartQxy8IH982burPqzBvo57WGltOFMKj1DNcQ17unfPapFaK6OZK13hf0M+A19qTCRAtURCRgyb2aAwToDDRkgkdsYxcDP3h4mdEnanRWt1cnOGIw+AftaNvJfdHs6s/+pvxfFOB9mZ6h05ERzFsNDTpdYfTtT84fwYRYpCixO2HLF2peEoTD1HgGDOJI95h/JkJk635u/2NCOFex49IiEiLyRWMi+lDJSGaY5FeOqSJ8M3WJOtQd3ccZ
+K 8
+failures
+V 2
+12
+K 15
+svn:realmstring
+V 36
+https://svn0.us-east.freebsd.org:443
+END
+EOF
+		fi
+		svn checkout https://svn0.us-east.FreeBSD.org/base/releng/9.1 /usr/src
+		baseos_init
+	fi
+	if [ ! -d /usr/obj/usr/src/bin ]; then
+		(cd /usr/src && make buildworld)
+	fi
+	kern_conf=/usr/src/sys/$TRGT_ARCH/conf/$TRGT_KERN
+	if [ ! -f $kern_conf -a $TRGT_KERN = VIMAGE ]; then
+		cat > $kern_conf <<EOF
+include GENERIC
+ident VIMAGE
+options VIMAGE
+EOF
+	fi
+	if [ ! -d /usr/obj/usr/src/sys/$TRGT_KERN ]; then
+		(cd /usr/src && make KERNCONF=$TRGT_KERN buildkernel)
+	fi
+}
+

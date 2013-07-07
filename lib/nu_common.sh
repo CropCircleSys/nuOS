@@ -16,7 +16,6 @@ set -e; set -u; set -C
 
 nuos_lib_ver=0.0.9.1a3
 [ $nuos_lib_ver = "$NUOS_VER" ]
-[ -n "${nuos_lib_system_loaded-}" ]
 [ -z "${nuos_lib_common_loaded-}" ]
 nuos_lib_common_loaded=y
 
