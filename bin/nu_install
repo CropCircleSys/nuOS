@@ -16,7 +16,7 @@ set -e; set -u; set -C
 
 NUOS_VER=0.0.9.1a3
 
-while getopts a:b:d:Dh:i:m:o:p:qQs:St:u:v OPT; do
+while getopts a:b:d:Dh:i:m:o:p:qQs:St:u:vz OPT; do
 	case $OPT in
 		a)
 			ADMIN_ACCT="$OPTARG"
@@ -67,8 +67,11 @@ while getopts a:b:d:Dh:i:m:o:p:qQs:St:u:v OPT; do
 		v)
 			OPT_VERBOSE=y
 			;;
+		z)
+			OPT_ZPOOL_MANUALLY=y
+			;;
 		*)
-			echo "usage: `basename $0` [-qSv] [-a admin-acct] [-b backdoor-acct] [-u user-acct] [-h new-host] [-s swap-size] [-d pool-devs] [-m pool-mnt] [-o pool-opts] [-p pool-name] [-t pool-type]" >&2
+			echo "usage: `basename $0` [-qSvz] [-a admin-acct] [-b backdoor-acct] [-u user-acct] [-h new-host] [-s swap-size] [-d pool-devs] [-m pool-mnt] [-o pool-opts] [-p pool-name] [-t pool-type]" >&2
 			exit 1
 	esac
 done
@@ -88,24 +91,26 @@ maybe_yell
 
 require_base_src
 
-
-i=0
-for dev in $POOL_DEVS; do
-	gpart create -s GPT /dev/$dev
-	gpart add -a 8 -t freebsd-boot -s 128 /dev/$dev
-	gpart add -a 8 -t freebsd-zfs -l $POOL_NAME$i /dev/$dev
-	gpart set -a bootme -i 2 /dev/$dev
-	gpart bootcode -b /boot/pmbr -p /boot/gptzfsboot -i 1 /dev/$dev
-	gnop create -S 4096 /dev/gpt/$POOL_NAME$i
-	nextdev="/dev/gpt/$POOL_NAME$i.nop"
-	push devlist $nextdev
-	i=$(($i + 1))
-done
 tempdir=`mktemp -d -t $(basename "$0").$$`
-zpool create -o altroot=$POOL_MNT -o cachefile=$tempdir/zpool.cache -O mountpoint=none -O canmount=off -O devices=off $POOL_OPTS $POOL_NAME $POOL_TYPE $devlist
-zpool export $POOL_NAME
-gnop destroy $devlist
-zpool import -o altroot=$POOL_MNT -o cachefile=$tempdir/zpool.cache $POOL_NAME
+
+if [ -z "${OPT_ZPOOL_MANUALLY-}" ]; then
+	i=0
+	for dev in $POOL_DEVS; do
+		gpart create -s GPT /dev/$dev
+		gpart add -a 8 -t freebsd-boot -s 128 /dev/$dev
+		gpart add -a 8 -t freebsd-zfs -l $POOL_NAME$i /dev/$dev
+		gpart set -a bootme -i 2 /dev/$dev
+		gpart bootcode -b /boot/pmbr -p /boot/gptzfsboot -i 1 /dev/$dev
+		gnop create -S 4096 /dev/gpt/$POOL_NAME$i
+		nextdev="/dev/gpt/$POOL_NAME$i.nop"
+		push devlist $nextdev
+		i=$(($i + 1))
+	done
+	zpool create -o altroot=$POOL_MNT -o cachefile=$tempdir/zpool.cache -O mountpoint=none -O canmount=off -O devices=off $POOL_OPTS $POOL_NAME $POOL_TYPE $devlist
+	zpool export $POOL_NAME
+	gnop destroy $devlist
+	zpool import -o altroot=$POOL_MNT -o cachefile=$tempdir/zpool.cache $POOL_NAME
+fi
 
 pool_os_ds=$POOL_NAME/os
 baseos_proj_ds=$pool_os_ds/$BASEOS_TYPE
