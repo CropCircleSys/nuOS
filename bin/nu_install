@@ -65,6 +65,7 @@ while getopts a:b:d:Dh:i:m:o:p:qQs:St:u:vz OPT; do
 			USER_ACCT="$OPTARG"
 			;;
 		v)
+			[ -n "${OPT_VERBOSE-}" ] && export OPT_VERBOSE
 			OPT_VERBOSE=y
 			;;
 		z)

@@ -16,7 +16,7 @@ set -e; set -u; set -C
 
 NUOS_VER=0.0.9.1a3
 
-while getopts C:My OPT && [ $OPT != '?' ]; do
+while getopts C:Mvy OPT && [ $OPT != '?' ]; do
 	case $OPT in
 		C)
 			CHROOTDIR="$OPTARG"
@@ -24,11 +24,14 @@ while getopts C:My OPT && [ $OPT != '?' ]; do
 		M)
 			OPT_NOMAKE=y
 			;;
+		v)
+			OPT_VERBOSE=y
+			;;
 		y)
 			OPT_YES=y
 			;;
 		*)
-			echo "usage: `basename \"$0\"` [-C chroot_dir] port_origin ..." >&2
+			echo "usage: `basename \"$0\"` [-Mvy] [-C chroot_dir] port_origin ..." >&2
 			exit 1
 	esac
 done
@@ -40,8 +43,10 @@ done
 . "$(dirname "$(realpath "$0")")/../lib/nu_system.sh"
 . "$(dirname "$(realpath "$0")")/../lib/nu_install.sh"
 
+maybe_yell
+
 if [ -n "${OPT_YES-}" ]; then
-	yes | sh $0 ${CHROOTDIR:+-C $CHROOTDIR} $@
+	yes | sh $0 ${OPT_NOMAKE:+-M} ${OPT_VERBOSE:+-v} ${CHROOTDIR:+-C $CHROOTDIR} $@
 	exit $?
 fi
 

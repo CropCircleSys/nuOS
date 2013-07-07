@@ -79,7 +79,7 @@ prepare_make_conf () {
 	else
 		install_lite_vars_init
 		local tempfile=`mktemp -t $(basename "$0").$$`
-		cat > $tempfile <<EOF
+		cat >| $tempfile <<EOF
 CPUTYPE?=$TRGT_OPTZ
 WITH_BDB_VER=48
 RUBY_DEFAULT_VER=1.9
