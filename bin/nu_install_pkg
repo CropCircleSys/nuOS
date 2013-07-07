@@ -16,13 +16,13 @@ set -e; set -u; set -C
 
 NUOS_VER=0.0.9.1a3
 
-while getopts C:my OPT && [ $OPT != '?' ]; do
+while getopts C:My OPT && [ $OPT != '?' ]; do
 	case $OPT in
 		C)
 			CHROOTDIR="$OPTARG"
 			;;
-		m)
-			OPT_MAKE=y
+		M)
+			OPT_NOMAKE=y
 			;;
 		y)
 			OPT_YES=y
@@ -56,7 +56,7 @@ for port in $*; do
 	pkg=`cd /usr/ports/$port && make -V PKGNAME`
 	pkg_file=/usr/ports/packages/All/$pkg.tbz
 	if [ ! -f $pkg_file ]; then
-		[ -n "${OPT_MAKE-}" ]
+		[ -z "${OPT_NOMAKE-}" ]
 		(cd /usr/ports/$port && make clean && make -DBATCH package-recursive && make clean)
 	fi
 	if [ ! -d "${CHROOTDIR-}/var/db/pkg/$pkg" ]; then
