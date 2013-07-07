@@ -73,7 +73,7 @@ require_ports_tree () {
 }
 
 prepare_make_conf () {
-	if [ -f "${CHROOTDIR-}/etc/make.conf" ]; then
+	if [ -s "${CHROOTDIR-}/etc/make.conf" ]; then
 		setvar $1 "${CHROOTDIR-}/etc/make.conf"
 		setvar $2 :
 	else
