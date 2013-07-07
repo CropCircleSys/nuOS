@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e; set -u; set -C
 
-# nuOS 0.0.9.1a3 - bin/nu_install - LICENSE: MOZ_PUB
+# nuOS 0.0.9.1b1 - bin/nu_install - LICENSE: MOZ_PUB
 #
 # Copyright (c) 2008-2013 Chad Jacob Milios and Crop Circle Systems, Inc.
 # All rights reserved.
@@ -14,7 +14,7 @@ set -e; set -u; set -C
 # Official updates and community support available at http://nuos.org .
 # Other licensing options and professional services available at http://ccsys.com .
 
-NUOS_VER=0.0.9.1a3
+NUOS_VER=0.0.9.1b1
 
 while getopts a:b:d:Dh:i:m:o:p:qQs:St:u:vz OPT; do
 	case $OPT in
@@ -456,7 +456,7 @@ zfs create -o mountpoint=/usr/ports/packages $nuos_proj_ds/pkg-$NUOS_VER
 sister nu_install_pkg -C $POOL_MNT sysutils/screen
 sister nu_install_pkg -C $POOL_MNT sysutils/memtest86+ sysutils/jail2
 sister nu_install_pkg -C $POOL_MNT misc/buffer sysutils/pipemeter archivers/lzop sysutils/smartmontools
-#sister nu_install_pkg -C $POOL_MNT net/rsync
+sister nu_install_pkg -C $POOL_MNT net/rsync
 
 #sister nu_install_pkg -C $POOL_MNT net/netatalk3
 #sister nu_install_pkg -C $POOL_MNT databases/mongodb databases/redis www/npm www/apache24
@@ -482,8 +482,8 @@ if [ -n "${COPY_DEV_PKGS-}" ]; then
 	zfs snapshot $nuos_proj_ds/pkg-$NUOS_VER@dist
 fi
 
-mkdir $POOL_MNT/root/nuos
-tar -cpf - -C "$(dirname "$(realpath "$0")")/.." . | tar -xpvf - -C $POOL_MNT/root/nuos
+mkdir $POOL_MNT/usr/nuos
+tar -cpf - -C "$(dirname "$(realpath "$0")")/.." . | tar -xpvf - -C $POOL_MNT/usr/nuos
 
 zfs unmount $nuos_proj_ds/pkg-$NUOS_VER
 zfs unmount $baseos_proj_ds/ports-current

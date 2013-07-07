@@ -1,5 +1,5 @@
 +----------------------------------------------------------------------------------------+
-| nuOS 0.0.9.1a3                                                                         |
+| nuOS 0.0.9.1b1                                                                         |
 | Copyright (c) 2008-2013 Chad Jacob Milios and Crop Circle Systems, Inc.                |
 | All rights reserved.                                                                   |
 +----------------------------------------------------------------------------------------+
@@ -9,14 +9,13 @@ The plans here are approved by the nuOS project and underway. Nothing is stated 
 Plan: Management Web Interface with Node.js Backend, REST APIs and AngularUI Frontend
 Manager: Crop Circle Systems, Inc.
 Donate: 1AdnM9T2RjvdRyzr8G3iGReKKyu7zNRKpa
-Invest: http://ccsys.com/opportunity
-Description: Chad J. Milios of Crop Circle Systems has committed to completion of this plan but no schedule has been announced. He states the current investment is substantial and all parties are currently invested the release of this component for the nuOS project under the MOZ_PUB license.
+Invest: http://ccsys.com/invest
+Description: Chad J. Milios of Crop Circle Systems, Inc. has committed to completion of this plan but no schedule has been announced. He states the current investment is substantial and all parties are currently invested in the release of this component for the nuOS project under the MOZ_PUB license.
 
 Plan: Project Mailing Lists/Forums, Wiki, Online Documentation
 Manager: Chad J. Milios
 Donate: 1NzWZjxPsHn1iz5RJkwMc9zBK7pnfK5E5x
-Description: Manager has committed to completion of this plan but no schedule has been announced. It shall be released for the nuOS project under the MOZ_PUB license with some
-tools released under the BSD_SMPL license.
+Description: Manager has committed to completion of this plan but no schedule has been announced. It shall be released for the nuOS project under the MOZ_PUB license with some tools released under the BSD_SMPL license.
 
 If you would like to donate to the nuOS Project, please send BTC to one, any or all of the following seven addresses. Your contributions are greatly appreciated and allow nuOS to thrive. Thank you.
 

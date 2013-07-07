@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e; set -u; set -C
 
-# nuOS 0.0.9.1a3 - bin/pkg_unpackaged - LICENSE: PUB_DOM
+# nuOS 0.0.9.1b1 - bin/pkg_unpackaged - LICENSE: PUB_DOM
 #
 # Written in 2013 Chad Jacob Milios and Crop Circle Systems, Inc.
 # All rights reserved.
