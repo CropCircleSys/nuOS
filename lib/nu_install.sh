@@ -73,7 +73,11 @@ require_ports_tree () {
 }
 
 prepare_make_conf () {
-	if [ -s "${CHROOTDIR-}/etc/make.conf" ]; then
+	if [ -i = $1 ]; then
+		shift
+		local opt_init=y
+	fi
+	if [ -z "${opt_init-}" ] && [ -s "${CHROOTDIR-}/etc/make.conf" ]; then
 		setvar $1 "${CHROOTDIR-}/etc/make.conf"
 		setvar $2 :
 	else
