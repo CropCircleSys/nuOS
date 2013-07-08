@@ -412,14 +412,9 @@ set -e; set -u; set -C
 or_x () {
         if [ -x "$2" ]; then setvar $1 $2; else setvar $1 $3; fi
 }
-or_x cat /bin/cat /rescue/cat
-or_x sed /usr/bin/sed /rescue/sed
+or_x kenv /bin/kenv /rescue/kenv
 or_x zfs /sbin/zfs /rescue/zfs
-loader_conf_files=/boot/defaults/loader.conf
-while [ "$loader_conf_files" != "${loaded-}" ]; do
-        loaded="$loader_conf_files"
-        eval `$cat $loader_conf_files | $sed -Ee '/^vfs\.root\.mountfrom=|^loader_conf_files=/!d; s/^vfs\.root\.//'`
-done
+mountfrom=`$kenv vfs.root.mountfrom`
 ds=${mountfrom#zfs:}
 pool=${ds%%/*}
 $zfs rollback -r $pool/swap/host@blank || err_swap=$?
