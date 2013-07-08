@@ -16,13 +16,16 @@ set -e; set -u; set -C
 
 NUOS_VER=0.0.9.1b1
 
-while getopts a:b:d:Dh:i:m:o:p:qQs:St:u:vz OPT; do
+while getopts a:b:Bd:Dh:i:m:o:p:qQs:St:u:vz OPT; do
 	case $OPT in
 		a)
 			ADMIN_ACCT="$OPTARG"
 			;;
 		b)
 			BD_ACCT="$OPTARG"
+			;;
+		B)
+			OPT_NOBRAND=y
 			;;
 		d) # must be set unless (-S)wap is used
 			POOL_DEVS="$OPTARG"
@@ -72,7 +75,7 @@ while getopts a:b:d:Dh:i:m:o:p:qQs:St:u:vz OPT; do
 			OPT_ZPOOL_MANUALLY=y
 			;;
 		*)
-			echo "usage: `basename $0` [-qSvz] [-a admin-acct] [-b backdoor-acct] [-u user-acct] [-h new-host] [-s swap-size] [-d pool-devs] [-m pool-mnt] [-o pool-opts] [-p pool-name] [-t pool-type]" >&2
+			echo "usage: `basename $0` [-BqSvz] [-a admin-acct] [-b backdoor-acct] [-u user-acct] [-h new-host] [-s swap-size] [-d pool-devs] [-m pool-mnt] [-o pool-opts] [-p pool-name] [-t pool-type]" >&2
 			exit 1
 	esac
 done
@@ -175,11 +178,13 @@ POOL_BASEOS_TYPE=$BASEOS_TYPE
 POOL_BASEOS_VER=$BASEOS_VER
 EOF
 
-baseos_type_lc=`echo "$BASEOS_TYPE" | tr '[:upper:]' '[:lower:]'`
-
-mv -n $POOL_MNT/etc/motd $POOL_MNT/etc/motd.$baseos_type_lc
-head -n 1 $POOL_MNT/etc/motd.$baseos_type_lc > $POOL_MNT/etc/motd
-cat >> $POOL_MNT/etc/motd <<EOF
+if [ -z "${OPT_NOBRAND-}" ]; then
+	
+	baseos_type_lc=`echo "$BASEOS_TYPE" | tr '[:upper:]' '[:lower:]'`
+	
+	mv -n $POOL_MNT/etc/motd $POOL_MNT/etc/motd.$baseos_type_lc
+	head -n 1 $POOL_MNT/etc/motd.$baseos_type_lc > $POOL_MNT/etc/motd
+	cat >> $POOL_MNT/etc/motd <<EOF
 nuOS $NUOS_VER
 
 Welcome to nuOS!
@@ -205,13 +210,13 @@ and allow nuOS to thrive. Thank you.
 Edit /etc/motd to change this login announcement.
 
 EOF
-
-nuos_supported_len=`echo -n "$NUOS_SUPPORTED" | wc -m | awk '{print \$1}'`
-[ $nuos_supported_len -le 23 ]
-nuos_supported_23_chrs=`echo "$NUOS_SUPPORTED" | awk '{printf "%-23s", \$1}'`
-baseos_info_url="http://$baseos_type_lc.org"
-
-patch -b '' $POOL_MNT/boot/beastie.4th <<EOF
+	
+	nuos_supported_len=`echo -n "$NUOS_SUPPORTED" | wc -m | awk '{print \$1}'`
+	[ $nuos_supported_len -le 23 ]
+	nuos_supported_23_chrs=`echo "$NUOS_SUPPORTED" | awk '{printf "%-23s", \$1}'`
+	baseos_info_url="http://$baseos_type_lc.org"
+	
+	patch -b '' $POOL_MNT/boot/beastie.4th <<EOF
 174a175,197
 > : nuosbw-logo ( x y -- ) \\ B/W nuOS spam (21 rows x 33ish columns)
 > 
@@ -245,7 +250,7 @@ patch -b '' $POOL_MNT/boot/beastie.4th <<EOF
 > 	then
 EOF
 
-patch -b '' $POOL_MNT/boot/brand.4th <<EOF
+	patch -b '' $POOL_MNT/boot/brand.4th <<EOF
 49a50,63
 > : nuos-logo ( x y -- ) \\ "nuOS" logo in B/W (7 rows x 38 columns)
 > 
@@ -271,6 +276,20 @@ patch -b '' $POOL_MNT/boot/brand.4th <<EOF
 > 
 EOF
 
+	patch -b '' $POOL_MNT/boot/menu.4th <<'EOF'
+420c420
+< 		drop s" Welcome to FreeBSD"
+---
+> 		drop s" Welcome to nuOS"
+EOF
+
+	cat >> $POOL_MNT/boot/loader.conf <<'EOF'
+loader_brand="nuos"
+loader_logo="nuosbw"
+EOF
+
+fi
+
 patch -b '' $POOL_MNT/boot/menu-commands.4th <<'EOF'
 190a191,196
 > 
@@ -279,13 +298,6 @@ patch -b '' $POOL_MNT/boot/menu-commands.4th <<'EOF'
 >         s" load /boot/opt/memtest86+" evaluate
 >         s" boot" evaluate
 > ;
-EOF
-
-patch -b '' $POOL_MNT/boot/menu.4th <<'EOF'
-420c420
-< 		drop s" Welcome to FreeBSD"
----
-> 		drop s" Welcome to nuOS"
 EOF
 
 patch -b '' $POOL_MNT/boot/menu.rc <<'EOF'
@@ -305,8 +317,6 @@ cat >> $POOL_MNT/etc/fstab <<'EOF'
 EOF
 
 cat >> $POOL_MNT/boot/loader.conf <<'EOF'
-loader_brand="nuos"
-loader_logo="nuosbw"
 autoboot_delay="3"
 ipfw_load="YES"
 #linux_load="YES"
