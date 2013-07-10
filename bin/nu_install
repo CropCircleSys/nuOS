@@ -464,7 +464,6 @@ EOF
 EOF
 	
 	sister nu_install_pkg -C $POOL_MNT sysutils/jail2
-	sister enable_svc -C $POOL_MNT jail2
 
 	zfs snapshot -r $POOL_NAME/os/nuOS/$NUOS_VER@bare
 	
@@ -704,6 +703,7 @@ zfs create -o mountpoint=/home $home_ds
 admin_install -z $POOL_MNT
 
 sister enable_svc -C $POOL_MNT sshd
+sister enable_svc -C $POOL_MNT jail2
 #sister enable_svc -C $POOL_MNT dbus avahi_daemon netatalk
 
 export NEW_HOST
