@@ -1,7 +1,7 @@
 #!/usr/bin/false
 set -e; set -u; set -C
 
-# nuOS 0.0.9.1b1 - lib/nu_install.sh - LICENSE: MOZ_PUB
+# nuOS 0.0.9.1b2 - lib/nu_install.sh - LICENSE: MOZ_PUB
 #
 # Copyright (c) 2008-2013 Chad Jacob Milios and Crop Circle Systems, Inc.
 # All rights reserved.
@@ -14,7 +14,7 @@ set -e; set -u; set -C
 # Official updates and community support available at http://nuos.org .
 # Other licensing options and professional services available at http://ccsys.com .
 
-nuos_lib_ver=0.0.9.1b1
+nuos_lib_ver=0.0.9.1b2
 [ $nuos_lib_ver = "$NUOS_VER" ]
 [ -n "${nuos_lib_system_loaded-}" ]
 [ -z "${nuos_lib_install_loaded-}" ]
@@ -25,7 +25,6 @@ install_lite_vars_init () {
 }
 
 install_vars_init () {
-	[ -n "$POOL_NAME" ]
 	install_lite_vars_init
 	if [ -z "${POOL_DEVS-}" ]; then # u shud spec a blank target media
 		if [ -n "${OPT_SWAP-}" ]; then # or ask to use these in (-S)wap
@@ -39,6 +38,7 @@ install_vars_init () {
 		fi
 	fi
 	echo 'pool devs       -d POOL_DEVS      ' $POOL_DEVS
+	echo 'pool name       -p POOL_NAME      ' ${POOL_NAME:=thumb}
 	echo 'pool mnt pt     -m POOL_MNT       ' ${POOL_MNT:=/$POOL_NAME}
 	echo 'pool type       -t POOL_TYPE      ' ${POOL_TYPE=raidz}
 	echo 'pool options    -o POOL_OPTS      ' ${POOL_OPTS="-O atime=off -O compression=on"}
@@ -48,7 +48,6 @@ install_vars_init () {
 	echo 'target arch        TRGT_PROC      ' ${TRGT_PROC:=`uname -p`}
 	echo 'target kern        TRGT_KERN      ' ${TRGT_KERN:=VIMAGE}
 	echo 'target optimize    TRGT_OPTZ      ' $TRGT_OPTZ
-TRGT_KERN=VIMAGE
 	echo -n 'copy ports         COPY_PORTS      ' && [ -n "${COPY_PORTS-}" ] && echo set || echo null
 	echo -n 'copy port opts     COPY_PORT_OPTS  ' && [ -n "${COPY_PORT_OPTS-}" ] && echo set || echo null
 	echo -n 'copy all pkgs      COPY_DEV_PKGS   ' && [ -n "${COPY_DEV_PKGS-}" ] && echo set || echo null

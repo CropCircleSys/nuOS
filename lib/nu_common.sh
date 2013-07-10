@@ -1,7 +1,7 @@
 #!/usr/bin/false
 set -e; set -u; set -C
 
-# nuOS 0.0.9.1b1 - lib/nu_common.sh - LICENSE: MOZ_PUB
+# nuOS 0.0.9.1b2 - lib/nu_common.sh - LICENSE: MOZ_PUB
 #
 # Copyright (c) 2008-2013 Chad Jacob Milios and Crop Circle Systems, Inc.
 # All rights reserved.
@@ -14,18 +14,20 @@ set -e; set -u; set -C
 # Official updates and community support available at http://nuos.org .
 # Other licensing options and professional services available at http://ccsys.com .
 
-nuos_lib_ver=0.0.9.1b1
+nuos_lib_ver=0.0.9.1b2
 [ $nuos_lib_ver = "$NUOS_VER" ]
 [ -z "${nuos_lib_common_loaded-}" ]
 nuos_lib_common_loaded=y
 
 nuos_init () {
+	if [ -r "${CHROOTDIR-}/usr/nuos/conf" ]; then
+		. "${CHROOTDIR-}/usr/nuos/conf"
+	fi
 	if [ -r "${CHROOTDIR-}/etc/nuos.conf" ]; then
 		. "${CHROOTDIR-}/etc/nuos.conf"
 	fi
 	echo 'nuos app v#                       ' $NUOS_VER
 	echo 'nuos support       NUOS_SUPPORTED ' ${NUOS_SUPPORTED:=UNSUPPORTED}
-	echo 'pool name       -p POOL_NAME      ' ${POOL_NAME:=thumb}
-	echo 'host opsys                        ' ${HOSTOS_TYPE:=nuOS}
-	echo 'host opsys v#                     ' ${HOSTOS_VER:=$NUOS_VER}
+	echo 'host opsys                        ' ${HOSTOS_TYPE:=$BASEOS_TYPE}
+	echo 'host opsys v#                     ' ${HOSTOS_VER:=$BASEOS_VER}
 }

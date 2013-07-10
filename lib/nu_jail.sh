@@ -1,7 +1,7 @@
 #!/usr/bin/false
 set -e; set -u; set -C
 
-# nuOS 0.0.9.1b1 - lib/nu_jail.sh - LICENSE: MOZ_PUB
+# nuOS 0.0.9.1b2 - lib/nu_jail.sh - LICENSE: MOZ_PUB
 #
 # Copyright (c) 2008-2013 Chad Jacob Milios and Crop Circle Systems, Inc.
 # All rights reserved.
@@ -14,7 +14,7 @@ set -e; set -u; set -C
 # Official updates and community support available at http://nuos.org .
 # Other licensing options and professional services available at http://ccsys.com .
 
-nuos_lib_ver=0.0.9.1b1
+nuos_lib_ver=0.0.9.1b2
 [ $nuos_lib_ver = "$NUOS_VER" ]
 [ -n "${nuos_lib_common_loaded-}" ]
 [ -z "${nuos_lib_jail_loaded-}" ]
@@ -24,6 +24,7 @@ jail_vars_init () {
 	echo 'creating jail   -j JAIL_NAME      ' ${JAIL_NAME:=clink}
 	echo 'jail type       -t JAIL_TYPE      ' ${JAIL_TYPE:=jail}
 	echo 'jail opsys      -o JAIL_OS        ' ${JAIL_OS:=$HOSTOS_TYPE/$HOSTOS_VER}
+	echo 'pool name       -p POOL_NAME      ' ${POOL_NAME:=$POOL_BOOT_NAME}
 	echo 'jail snapshot   -s JAIL_SNAP      ' ${JAIL_SNAP:=base}
 	echo 'jail dataset       JAIL_DATA      ' ${JAIL_DATA:=$POOL_NAME/jail/$JAIL_NAME}
 	echo 'jail path          JAIL_PATH      ' ${JAIL_PATH:=/var/jail/$JAIL_NAME}
