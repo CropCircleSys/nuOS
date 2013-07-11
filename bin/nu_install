@@ -507,7 +507,7 @@ fi
 zfs create -o mountpoint=/usr/src $POOL_NAME/os/$BASEOS_TYPE/src-$BASEOS_VER
 zfs create -o mountpoint=/usr/obj $POOL_NAME/os/$BASEOS_TYPE/obj-$BASEOS_VER
 if [ -n "${COPY_SRC-}" ]; then
-	if [ -z "${OPT_FORCE_BUILD-}" ] \
+	if [ -z "${OPT_FORCE_BUILD-}" -a -n "${POOL_BOOT_NAME-}" ] \
 		&& zfs list $POOL_BOOT_NAME/os/$BASEOS_TYPE/src-$BASEOS_VER@dist \
 		&& [ -n "${COPY_SVN-}" -a -d /usr/src/.zfs/snapshot/dist/.svn ] \
 			|| [ -z "${COPY_SVN-}" -a ! -d /usr/src/.zfs/snapshot/dist/.svn ]
@@ -525,7 +525,7 @@ if [ -n "${COPY_SRC-}" ]; then
 			zfs snapshot $POOL_NAME/os/$BASEOS_TYPE/src-$BASEOS_VER@dist
 		fi
 	fi
-	if [ -z "${OPT_FORCE_BUILD-}" ] \
+	if [ -z "${OPT_FORCE_BUILD-}" -a -n "${POOL_BOOT_NAME-}" ] \
 		&& zfs list $POOL_BOOT_NAME/os/$BASEOS_TYPE/obj-$BASEOS_VER@dist
 	then
 		zfs send $POOL_BOOT_NAME/os/$BASEOS_TYPE/obj-$BASEOS_VER@dist | zfs receive -vFd $POOL_NAME
@@ -549,7 +549,7 @@ zfs create -o mountpoint=/usr/ports $POOL_NAME/os/$BASEOS_TYPE/ports-current
 zfs create -o mountpoint=/usr/ports/distfiles $POOL_NAME/os/$BASEOS_TYPE/ports-distfiles
 zfs unmount $POOL_NAME/os/$BASEOS_TYPE/ports-distfiles
 if [ -n "${COPY_PORTS-}" ]; then
-	if [ -z "${OPT_FORCE_BUILD-}" ] \
+	if [ -z "${OPT_FORCE_BUILD-}" -a -n "${POOL_BOOT_NAME-}" ] \
 		&& zfs list $POOL_BOOT_NAME/os/$BASEOS_TYPE/portsnap-db
 	then
 		zfs snapshot $POOL_BOOT_NAME/os/$BASEOS_TYPE/portsnap-db@$snaptime
@@ -563,7 +563,7 @@ if [ -n "${COPY_PORTS-}" ]; then
 	if [ -z "${OPT_DONT_PRESERVE_DIST_SNAP-}" ]; then
 		zfs snapshot $POOL_NAME/os/$BASEOS_TYPE/portsnap-db@dist
 	fi
-	if [ -z "${OPT_FORCE_BUILD-}" ] \
+	if [ -z "${OPT_FORCE_BUILD-}" -a -n "${POOL_BOOT_NAME-}" ] \
 		&& zfs list $POOL_BOOT_NAME/os/$BASEOS_TYPE/ports-current
 	then
 		zfs snapshot $POOL_BOOT_NAME/os/$BASEOS_TYPE/ports-current@$snaptime
@@ -589,7 +589,7 @@ fi
 
 zfs create -o mountpoint=/usr/ports/packages $POOL_NAME/os/nuOS/pkg-$NUOS_VER
 if [ -n "${COPY_DEV_PKGS-}" ]; then
-	if [ -z "${OPT_FORCE_BUILD-}" ] \
+	if [ -z "${OPT_FORCE_BUILD-}" -a -n "${POOL_BOOT_NAME-}" ] \
 		&& zfs list $POOL_BOOT_NAME/os/nuOS/pkg-$NUOS_VER
 	then
 		zfs snapshot $POOL_BOOT_NAME/os/nuOS/pkg-$NUOS_VER@$snaptime
