@@ -1,0 +1,42 @@
+#!/bin/sh
+set -e; set -u; set -C
+
+# nuOS 0.0.9.1b2 - util/nu_version - LICENSE: MOZ_PUB
+#
+# Copyright (c) 2008-2013 Chad Jacob Milios and Crop Circle Systems, Inc.
+# All rights reserved.
+#
+# This Source Code Form is subject to the terms of the Mozilla Public License, v2.0.
+# If a copy of the MPL was not distributed alongside this file, you can obtain one at
+# http://mozilla.org/MPL/2.0/ . This software project is not affiliated with the Mozilla
+# Foundation.
+#
+# Official updates and community support available at http://nuos.org .
+# Other licensing options and professional services available at http://ccsys.com .
+
+NUOS_VER=0.0.9.1b2
+NUOS_CODE_ROOT="$(realpath "$(dirname "$(realpath "$0")")/../")"
+
+if [ -n "${1-}" ]; then
+	new_ver=$1
+else
+	new_ver=`basename "$NUOS_CODE_ROOT"`
+	[ $new_ver != nuOS -a $new_ver != nuos ]
+fi
+
+cd "$NUOS_CODE_ROOT"
+export LC_CTYPE=C
+
+human_texts="`find -E . -type f -depth 1 -regex './[[:upper:]]+'`"
+libs=lib/*.sh
+bins=bin/*
+utils=util/*
+
+nuos_ver_escd="$(echo $NUOS_VER | sed -e 's/\./\\./g')"
+
+sed -i '' -Ee "s/nuOS $nuos_ver_escd[[:>:]]/nuOS $new_ver/g" $human_texts
+sed -i '' -Ee "s/^# nuOS $nuos_ver_escd[[:>:]]/# nuOS $new_ver/" $libs $bins $utils
+sed -i '' -e "s/^NUOS_VER=$nuos_ver_escd\$/NUOS_VER=$new_ver/" $bins $utils
+sed -i '' -e "s/^nuos_lib_ver=$nuos_ver_escd\$/nuos_lib_ver=$new_ver/" $libs
+
+echo "Switched version label of nuOS $NUOS_VER codebase at $NUOS_CODE_ROOT to $new_ver."

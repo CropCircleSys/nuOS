@@ -17,6 +17,7 @@ file(s) herein covered by the Mozilla Public License, v2.0:
 	lib/nu_common.sh
 	lib/nu_install.sh
 	lib/nu_jail.sh
+	util/nu_version
 
 +----------------------------------------------------------------------------------------+
 | MOZILLA PUBLIC LICENSE VERSION 2.0                                                     |
