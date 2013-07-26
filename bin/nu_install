@@ -411,7 +411,7 @@ loader_logo="nuosbw"
 EOF
 		
 		mkdir $POOL_MNT/usr/nuos
-		tar -cpf - -C "$(dirname "$(realpath "$0")")/.." . | tar -xpvf - -C $POOL_MNT/usr/nuos
+		tar -cpf - -C "$(dirname "$(realpath "$0")")/.." --exclude ./conf . | tar -xpvf - -C $POOL_MNT/usr/nuos
 		conf=usr/nuos/conf
 		
 	else
@@ -419,7 +419,7 @@ EOF
 		echo HOSTOS_NOBRAND=y > $POOL_MNT/$conf
 	fi
 	
-	cat > $POOL_MNT/$conf <<EOF
+	cat >> $POOL_MNT/$conf <<EOF
 HOSTOS_TYPE=nuOS
 HOSTOS_VER=$NUOS_VER
 PARENT=`whoami`@`hostname`
