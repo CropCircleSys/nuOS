@@ -17,6 +17,8 @@ set -e; set -u; set -C
 NUOS_VER=0.0.9.1b2
 NUOS_CODE_ROOT="$(realpath "$(dirname "$(realpath "$0")")/../")"
 
+[ "$NUOS_CODE_ROOT" != /usr/nuos -a "$NUOS_CODE_ROOT" != /usr -a "$NUOS_CODE_ROOT" != / ]
+
 if [ -n "${1-}" ]; then
 	new_ver=$1
 else
