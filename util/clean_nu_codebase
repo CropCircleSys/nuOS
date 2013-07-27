@@ -1,15 +1,13 @@
 #!/bin/sh
 set -e; set -u; set -C
 
-# nuOS 0.0.9.1b2 - util/clean_nu_codebase - LICENSE: BSD_SMPL
+# nuOS 0.0.9.1b2 - util/clean_nu_codebase - LICENSE: LICENSE: PUB_DOM
 #
-# Copyright (c) 2008-2013 Chad Jacob Milios and Crop Circle Systems, Inc.
+# Written in 2013 Chad Jacob Milios and Crop Circle Systems, Inc.
 # All rights reserved.
 #
-# This Source Code Form is subject to the terms of the Simplified BSD License.
-# If a copy of the Simplified BSD License was not distributed alongside this file, you can
-# obtain one at http://www.freebsd.org/copyright/freebsd-license.html . This software
-# project is not affiliated with the FreeBSD Project.
+# This Source Code Form is placed in the public domain by the author, who disclaims all
+# liability. More information can be found in the license file.
 #
 # Official updates and community support available at http://nuos.org .
 # Other licensing options and professional services available at http://ccsys.com .

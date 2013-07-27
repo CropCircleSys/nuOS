@@ -1,7 +1,7 @@
 #!/usr/bin/false
 set -e; set -u; set -C
 
-# nuOS 0.0.9.1b2 - lib/nu_install.sh - LICENSE: MOZ_PUB
+# nuOS 0.0.9.2a1 - lib/nu_install.sh - LICENSE: MOZ_PUB
 #
 # Copyright (c) 2008-2013 Chad Jacob Milios and Crop Circle Systems, Inc.
 # All rights reserved.
@@ -14,7 +14,7 @@ set -e; set -u; set -C
 # Official updates and community support available at http://nuos.org .
 # Other licensing options and professional services available at http://ccsys.com .
 
-nuos_lib_ver=0.0.9.1b2
+nuos_lib_ver=0.0.9.2a1
 [ $nuos_lib_ver = "$NUOS_VER" ]
 [ -n "${nuos_lib_system_loaded-}" ]
 [ -z "${nuos_lib_install_loaded-}" ]
@@ -41,7 +41,7 @@ install_vars_init () {
 	echo 'pool name       -p POOL_NAME      ' ${POOL_NAME:=thumb}
 	echo 'pool mnt pt     -m POOL_MNT       ' ${POOL_MNT:=/$POOL_NAME}
 	echo 'pool type       -t POOL_TYPE      ' ${POOL_TYPE=raidz}
-	echo 'pool options    -o POOL_OPTS      ' ${POOL_OPTS="-O atime=off -O compression=on"}
+	echo 'pool options    -o POOL_OPTS      ' ${POOL_OPTS="-O atime=off -O compression=lz4"}
 	echo 'swap size       -s SWAP_SIZE      ' ${SWAP_SIZE:=512M}
 	echo 'new host name   -h NEW_HOST       ' ${NEW_HOST:=$POOL_NAME.`hostname | sed -e 's/^[^\.]*\.//'`}
 	echo 'target arch        TRGT_ARCH      ' ${TRGT_ARCH:=`uname -m`}
@@ -124,7 +124,7 @@ https://svn0.us-east.freebsd.org:443
 END
 EOF
 		fi
-		svn checkout https://svn0.us-east.FreeBSD.org/base/releng/9.1 /usr/src
+		svn checkout https://svn0.us-east.FreeBSD.org/base/stable/9 /usr/src
 		baseos_init
 	fi
 	local make_conf cmd_to_retire_make_conf
