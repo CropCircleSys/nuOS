@@ -198,9 +198,12 @@ sem_load="YES"
 accf_data_load="YES"
 accf_dns_load="YES"
 accf_http_load="YES"
-#snd_hda_load="YES"
-#kern.ipc.shmmni="1024"
-#kern.ipc.shmseg="1024"
+kern.ipc.shmmni="1024"
+kern.ipc.shmseg="1024"
+vfs.zfs.l2arc_write_max="83886080"
+vfs.zfs.l2arc_write_boost="83886080"
+vfs.zfs.l2arc_headroom="8"
+vfs.zfs.l2arc_norw="0"
 EOF
 	
 	cat >> $POOL_MNT/etc/rc.conf <<'EOF'
@@ -473,24 +476,28 @@ EOF
 	
 	zfs snapshot -r $POOL_NAME/os/nuOS/$NUOS_VER@lite
 
-	#sister nu_install_pkg -C $POOL_MNT net/netatalk3
-	#sister nu_install_pkg -C $POOL_MNT databases/mongodb databases/redis www/npm www/apache24
-	#sister nu_install_pkg -C $POOL_MNT mail/cyrus-imapd24 security/cyrus-sasl2-saslauthd
-	#sister nu_install_pkg -C $POOL_MNT -y mail/postfix
-	#sister nu_install_pkg -C $POOL_MNT devel/subversion devel/git
-	#sister nu_install_pkg -C $POOL_MNT ports-mgmt/portupgrade
-	#sister nu_install_pkg -C $POOL_MNT emulators/virtualbox-ose
-	#sister nu_install_pkg -C $POOL_MNT graphics/povray36
-	#sister nu_install_pkg -C $POOL_MNT graphics/graphviz
-	#sister nu_install_pkg -C $POOL_MNT x11-fonts/webfonts
-	#sister nu_install_pkg -C $POOL_MNT print/teTeX
+	sister nu_install_pkg -C $POOL_MNT net/netatalk3
+	sister nu_install_pkg -C $POOL_MNT databases/mongodb databases/redis www/npm www/apache24
+	sister nu_install_pkg -C $POOL_MNT mail/cyrus-imapd24 security/cyrus-sasl2-saslauthd
+	sister nu_install_pkg -C $POOL_MNT -y mail/postfix
+	sister nu_install_pkg -C $POOL_MNT devel/subversion devel/git
+	sister nu_install_pkg -C $POOL_MNT ports-mgmt/portupgrade
+	sister nu_install_pkg -C $POOL_MNT emulators/virtualbox-ose
+	sister nu_install_pkg -C $POOL_MNT graphics/povray36
+	sister nu_install_pkg -C $POOL_MNT graphics/graphviz
+	sister nu_install_pkg -C $POOL_MNT x11-fonts/webfonts
+	sister nu_install_pkg -C $POOL_MNT print/teTeX
+
+	zfs snapshot -r $POOL_NAME/os/nuOS/$NUOS_VER@server
 	
-	#sister nu_install_pkg -C $POOL_MNT graphics/gimp
-	#sister nu_install_pkg -C $POOL_MNT x11/xorg
-	#sister nu_install_pkg -C $POOL_MNT x11/kde4
-	#sister nu_install_pkg -C $POOL_MNT www/firefox
-	#sister nu_install_pkg -C $POOL_MNT mail/thunderbird
-	#sister nu_install_pkg -C $POOL_MNT editors/libreoffice
+	sister nu_install_pkg -C $POOL_MNT graphics/gimp
+	sister nu_install_pkg -C $POOL_MNT x11/xorg
+	sister nu_install_pkg -C $POOL_MNT x11/kde4
+	sister nu_install_pkg -C $POOL_MNT www/firefox
+	sister nu_install_pkg -C $POOL_MNT mail/thunderbird
+	sister nu_install_pkg -C $POOL_MNT editors/libreoffice
+	
+	zfs snapshot -r $POOL_NAME/os/nuOS/$NUOS_VER@desktop
 	
 	zfs snapshot -r $POOL_NAME/os/nuOS/$NUOS_VER@base
 	
