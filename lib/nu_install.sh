@@ -124,7 +124,7 @@ https://svn0.us-east.freebsd.org:443
 END
 EOF
 		fi
-		svn checkout https://svn0.us-east.FreeBSD.org/base/stable/9 /usr/src
+		svn checkout https://svn0.us-east.FreeBSD.org/base/releng/9.2 /usr/src
 		baseos_init
 	fi
 	local make_conf cmd_to_retire_make_conf
