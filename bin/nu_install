@@ -16,7 +16,7 @@ set -e; set -u; set -C
 
 NUOS_VER=0.0.9.2a1
 
-while getopts a:b:Bd:DFh:i:m:o:p:PqQs:St:u:vzZ OPT; do
+while getopts a:b:c:Bd:DFh:i:m:o:p:PqQs:St:u:vzZ OPT; do
 	case $OPT in
 		a)
 			ADMIN_ACCT="$OPTARG"
@@ -26,6 +26,9 @@ while getopts a:b:Bd:DFh:i:m:o:p:PqQs:St:u:vzZ OPT; do
 			;;
 		B)
 			OPT_NOBRAND=y
+			;;
+		c)
+			PKG_COLLECTION="$OPTARG"
 			;;
 		d) # must be set unless (-S)wap is used
 			POOL_DEVS="$OPTARG"
@@ -90,7 +93,7 @@ while getopts a:b:Bd:DFh:i:m:o:p:PqQs:St:u:vzZ OPT; do
 			OPT_ONLY_INIT_ZPOOL=y
 			;;
 		*)
-			echo "usage: `basename $0` [-BFPqSvzZ] [-a admin-acct] [-b backdoor-acct] [-u user-acct] [-h new-host] [-s swap-size] [-d pool-devs] [-m pool-mnt] [-o pool-opts] [-p pool-name] [-t pool-type]" >&2
+			echo "usage: `basename $0` [-BFPqSvzZ] [-a admin-acct] [-b backdoor-acct] [-u user-acct] [-c pkg-collection] [-h new-host] [-s swap-size] [-d pool-devs] [-m pool-mnt] [-o pool-opts] [-p pool-name] [-t pool-type]" >&2
 			exit 1
 	esac
 done
@@ -476,12 +479,15 @@ EOF
 	
 	zfs snapshot -r $POOL_NAME/os/nuOS/$NUOS_VER@lite
 
+	sister nu_install_pkg -C $POOL_MNT devel/subversion devel/git
+	sister nu_install_pkg -C $POOL_MNT ports-mgmt/portupgrade
+	
+	zfs snapshot -r $POOL_NAME/os/nuOS/$NUOS_VER@developer
+
 	sister nu_install_pkg -C $POOL_MNT net/netatalk3
 	sister nu_install_pkg -C $POOL_MNT databases/mongodb databases/redis www/npm www/apache24
 	sister nu_install_pkg -C $POOL_MNT mail/cyrus-imapd24 security/cyrus-sasl2-saslauthd
 	sister nu_install_pkg -C $POOL_MNT -y mail/postfix
-	sister nu_install_pkg -C $POOL_MNT devel/subversion devel/git
-	sister nu_install_pkg -C $POOL_MNT ports-mgmt/portupgrade
 	sister nu_install_pkg -C $POOL_MNT emulators/virtualbox-ose
 	sister nu_install_pkg -C $POOL_MNT graphics/povray-meta
 	sister nu_install_pkg -C $POOL_MNT graphics/graphviz
@@ -499,17 +505,17 @@ EOF
 	
 	zfs snapshot -r $POOL_NAME/os/nuOS/$NUOS_VER@desktop
 	
-	zfs snapshot -r $POOL_NAME/os/nuOS/$NUOS_VER@base
-	
 else
 	zfs send -R $POOL_BOOT_NAME/os/$BASEOS_TYPE/$BASEOS_VER@bare | zfs receive -vd $POOL_NAME
 	zfs set mountpoint=none  $POOL_NAME/os
 	zfs set canmount=off $POOL_NAME/os
 	zfs set mountpoint=none $POOL_NAME/os/$BASEOS_TYPE
 	zfs set canmount=off $POOL_NAME/os/$BASEOS_TYPE
-	zfs send -R $POOL_BOOT_NAME/os/nuOS/$NUOS_VER@base | zfs receive -vd $POOL_NAME
+	zfs send -R $POOL_BOOT_NAME/os/nuOS/$NUOS_VER@$PKG_COLLECTION | zfs receive -vd $POOL_NAME
 	zfs set canmount=off $POOL_NAME/os/nuOS
 fi
+
+zfs snapshot -r $POOL_NAME/os/nuOS/$NUOS_VER@base
 
 zfs create -o mountpoint=/usr/src $POOL_NAME/os/$BASEOS_TYPE/src-$BASEOS_VER
 zfs create -o mountpoint=/usr/obj $POOL_NAME/os/$BASEOS_TYPE/obj-$BASEOS_VER
