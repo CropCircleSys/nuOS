@@ -14,7 +14,7 @@ set -e; set -u; set -C
 
 # This produces a new ports options textual db from the chosen options from the pkg db
 # for installed ports/packages currently on the system. Its format is current as of
-# FreeBSD 9.1-RELEASE and 2013-02-21-0000 /usr/ports/Mk
+# FreeBSD 9.2-RELEASE and 2013-08-12-0000 /usr/ports/Mk
 
 while getopts d:v OPT; do
 	case $OPT in
@@ -38,7 +38,7 @@ for pkg in `ls /var/db/pkg | grep -v '^pkgdb.db$'`; do
 		org=`pkg_info -q -o $pkg`
 		pwd=$PWD
 		cd /usr/ports/$org
-		uni=`make -V UNIQUENAME`
+		uni=`echo $org | tr / _`
 		cd $pwd
 		tempfile=`mktemp -t $(basename "$0").$$`
 		optlist=''
