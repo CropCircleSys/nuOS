@@ -470,40 +470,24 @@ EOF
 EOF
 	
 	sister nu_install_pkg -C $POOL_MNT sysutils/jail2
-
 	zfs snapshot -r $POOL_NAME/os/nuOS/$NUOS_VER@bare
-	
-	sister nu_install_pkg -C $POOL_MNT sysutils/screen
-	sister nu_install_pkg -C $POOL_MNT misc/buffer sysutils/pipemeter archivers/lzop sysutils/smartmontools
-	sister nu_install_pkg -C $POOL_MNT net/rsync
-	
-	zfs snapshot -r $POOL_NAME/os/nuOS/$NUOS_VER@lite
-
-	sister nu_install_pkg -C $POOL_MNT devel/subversion devel/git
-	sister nu_install_pkg -C $POOL_MNT ports-mgmt/portupgrade
-	
-	zfs snapshot -r $POOL_NAME/os/nuOS/$NUOS_VER@developer
-
-	sister nu_install_pkg -C $POOL_MNT net/netatalk3
-	sister nu_install_pkg -C $POOL_MNT databases/mongodb databases/redis www/npm www/apache24
-	sister nu_install_pkg -C $POOL_MNT mail/cyrus-imapd24 security/cyrus-sasl2-saslauthd
-	sister nu_install_pkg -C $POOL_MNT -y mail/postfix
-	sister nu_install_pkg -C $POOL_MNT emulators/virtualbox-ose
-	sister nu_install_pkg -C $POOL_MNT graphics/povray-meta
-	sister nu_install_pkg -C $POOL_MNT graphics/graphviz
-	sister nu_install_pkg -C $POOL_MNT x11-fonts/webfonts
-	sister nu_install_pkg -C $POOL_MNT print/teTeX
-
-	zfs snapshot -r $POOL_NAME/os/nuOS/$NUOS_VER@server
-	
-	sister nu_install_pkg -C $POOL_MNT graphics/gimp
-	sister nu_install_pkg -C $POOL_MNT x11/xorg
-	sister nu_install_pkg -C $POOL_MNT x11/kde4
-	sister nu_install_pkg -C $POOL_MNT www/firefox
-	sister nu_install_pkg -C $POOL_MNT mail/thunderbird
-	sister nu_install_pkg -C $POOL_MNT editors/libreoffice
-	
-	zfs snapshot -r $POOL_NAME/os/nuOS/$NUOS_VER@desktop
+	if [ $PKG_COLLECTION != bare ]; then
+		sister nu_install_pkg -C $POOL_MNT sysutils/screen misc/buffer sysutils/pipemeter archivers/lzop sysutils/smartmontools net/rsync
+		zfs snapshot -r $POOL_NAME/os/nuOS/$NUOS_VER@lite
+		if [ $PKG_COLLECTION != lite ]; then
+			sister nu_install_pkg -C $POOL_MNT devel/subversion devel/git ports-mgmt/portupgrade
+			zfs snapshot -r $POOL_NAME/os/nuOS/$NUOS_VER@developer
+			if [ $PKG_COLLECTION != developer ]; then
+				sister nu_install_pkg -C $POOL_MNT -y mail/postfix
+				sister nu_install_pkg -C $POOL_MNT net/netatalk3 databases/mongodb databases/redis www/npm www/apache24 mail/cyrus-imapd24 security/cyrus-sasl2-saslauthd emulators/virtualbox-ose graphics/povray-meta graphics/graphviz x11-fonts/webfonts print/teTeX
+				zfs snapshot -r $POOL_NAME/os/nuOS/$NUOS_VER@server
+				if [ $PKG_COLLECTION != server ]; then
+					sister nu_install_pkg -C $POOL_MNT graphics/gimp x11/xorg x11/kde4 www/firefox mail/thunderbird editors/libreoffice
+					zfs snapshot -r $POOL_NAME/os/nuOS/$NUOS_VER@desktop
+				fi
+			fi
+		fi
+	fi
 	
 else
 	zfs send -R $POOL_BOOT_NAME/os/$BASEOS_TYPE/$BASEOS_VER@bare | zfs receive -vd $POOL_NAME
