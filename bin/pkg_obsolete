@@ -45,9 +45,8 @@ report () {
 }
 
 maybe_delete () {
-	local pkg_file=/usr/ports/packages/All/$1.tbz
-	if [ -n "${OPT_DELETE-}" -a -f $pkg_file ]; then
-		rm $pkg_file
+	if [ -n "${OPT_DELETE-}" -a -f /usr/ports/packages/All/$1.tbz ]; then
+		rm /usr/ports/packages/*/$1.tbz
 	fi
 }
 
