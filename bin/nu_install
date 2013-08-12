@@ -499,6 +499,10 @@ else
 	zfs set canmount=off $POOL_NAME/os/nuOS
 fi
 
+if [ -n "${COPY_PORT_OPTS-}" ]; then
+	tar -cpf - -C /var/db ports | tar -xpvf - -C $POOL_MNT/var/db
+fi
+
 zfs snapshot -r $POOL_NAME/os/nuOS/$NUOS_VER@base
 
 zfs create -o mountpoint=/usr/src $POOL_NAME/os/$BASEOS_TYPE/src-$BASEOS_VER
@@ -579,10 +583,6 @@ if [ -n "${COPY_PORTS-}" ]; then
 fi
 zfs unmount $POOL_NAME/os/$BASEOS_TYPE/portsnap-db
 zfs unmount $POOL_NAME/os/$BASEOS_TYPE/ports-current
-
-if [ -n "${COPY_PORT_OPTS-}" ]; then
-	tar -cpf - -C /var/db ports | tar -xpvf - -C $POOL_MNT/var/db
-fi
 
 zfs create -o mountpoint=/usr/ports/packages $POOL_NAME/os/nuOS/pkg-$NUOS_VER
 if [ -n "${COPY_DEV_PKGS-}" ]; then
