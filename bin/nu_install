@@ -414,7 +414,7 @@ loader_logo="nuosbw"
 EOF
 		
 		mkdir $POOL_MNT/usr/nuos
-		tar -cpf - -C "$(dirname "$(realpath "$0")")/.." --exclude ./conf . | tar -xpvf - -C $POOL_MNT/usr/nuos
+		tar -cpf - -C "$(dirname "$(realpath "$0")")/.." --exclude ^conf --exclude '.?*' . | tar -xpvf - -C $POOL_MNT/usr/nuos
 		conf=usr/nuos/conf
 		
 	else
