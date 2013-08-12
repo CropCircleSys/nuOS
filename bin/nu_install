@@ -483,7 +483,7 @@ EOF
 	sister nu_install_pkg -C $POOL_MNT devel/subversion devel/git
 	sister nu_install_pkg -C $POOL_MNT ports-mgmt/portupgrade
 	sister nu_install_pkg -C $POOL_MNT emulators/virtualbox-ose
-	sister nu_install_pkg -C $POOL_MNT graphics/povray36
+	sister nu_install_pkg -C $POOL_MNT graphics/povray-meta
 	sister nu_install_pkg -C $POOL_MNT graphics/graphviz
 	sister nu_install_pkg -C $POOL_MNT x11-fonts/webfonts
 	sister nu_install_pkg -C $POOL_MNT print/teTeX
