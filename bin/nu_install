@@ -36,7 +36,6 @@ while getopts a:b:c:Bd:DFh:i:m:o:p:PqQs:St:u:vzZ OPT; do
 		D) # nuOS developer's shortcut: -DD
 			if [ -n "${OPT_DEBUG-}" ]; then
 				COPY_PORTS=y
-				COPY_PORT_OPTS=y
 				COPY_DEV_PKGS=y
 				COPY_SRC=y
 				COPY_SVN=y
@@ -497,10 +496,6 @@ else
 	zfs set canmount=off $POOL_NAME/os/$BASEOS_TYPE
 	zfs send -R $POOL_BOOT_NAME/os/nuOS/$NUOS_VER@$PKG_COLLECTION | zfs receive -vd $POOL_NAME
 	zfs set canmount=off $POOL_NAME/os/nuOS
-fi
-
-if [ -n "${COPY_PORT_OPTS-}" ]; then
-	tar -cpf - -C /var/db ports | tar -xpvf - -C $POOL_MNT/var/db
 fi
 
 zfs snapshot -r $POOL_NAME/os/nuOS/$NUOS_VER@base
