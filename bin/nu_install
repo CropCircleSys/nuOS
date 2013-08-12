@@ -339,7 +339,7 @@ Edit /etc/motd to change this login announcement.
 
 EOF
 		
-		nuos_supported_len=`echo -n "$NUOS_SUPPORTED" | wc -m | awk '{print \$1}'`
+		nuos_supported_len=${#NUOS_SUPPORTED}
 		[ $nuos_supported_len -le 23 ]
 		nuos_supported_23_chrs=`echo "$NUOS_SUPPORTED" | awk '{printf "%-23s", \$1}'`
 		baseos_info_url="http://$baseos_type_lc.org"
