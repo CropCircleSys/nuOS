@@ -21,7 +21,14 @@ nuos_lib_ver=0.0.9.2a1
 nuos_lib_install_loaded=y
 
 install_lite_vars_init () {
-	: ${TRGT_OPTZ:=core2}
+	: ${TRGT_PROC:=`uname -p`}
+	if [ $TRGT_PROC = amd64 ]; then
+		local default_optz=core2
+	fi
+	if [ $TRGT_PROC = i386 ]; then
+		local default_optz=pentium3
+	fi
+	: ${TRGT_OPTZ:=$default_optz}
 }
 
 install_vars_init () {
@@ -46,11 +53,10 @@ install_vars_init () {
 	echo 'swap size       -s SWAP_SIZE      ' ${SWAP_SIZE:=512M}
 	echo 'new host name   -h NEW_HOST       ' ${NEW_HOST:=$POOL_NAME.`hostname | sed -e 's/^[^\.]*\.//'`}
 	echo 'target arch        TRGT_ARCH      ' ${TRGT_ARCH:=`uname -m`}
-	echo 'target arch        TRGT_PROC      ' ${TRGT_PROC:=`uname -p`}
+	echo 'target proc        TRGT_PROC      ' $TRGT_PROC
 	echo 'target kern        TRGT_KERN      ' ${TRGT_KERN:=VIMAGE}
 	echo 'target optimize    TRGT_OPTZ      ' $TRGT_OPTZ
 	echo -n 'copy ports         COPY_PORTS      ' && [ -n "${COPY_PORTS-}" ] && echo set || echo null
-	echo -n 'copy port opts     COPY_PORT_OPTS  ' && [ -n "${COPY_PORT_OPTS-}" ] && echo set || echo null
 	echo -n 'copy all pkgs      COPY_DEV_PKGS   ' && [ -n "${COPY_DEV_PKGS-}" ] && echo set || echo null
 	echo -n 'copy src           COPY_SRC        ' && [ -n "${COPY_SRC-}" ] && echo set || echo null
 	echo -n 'copy svn repo      COPY_SVN        ' && [ -n "${COPY_SRC-}" ] && ([ -n "${COPY_SVN-}" ] && echo set || echo null) || echo n/a
