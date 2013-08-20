@@ -490,7 +490,7 @@ EOF
 	
 else
 	zfs send -R $POOL_BOOT_NAME/os/$BASEOS_TYPE/$BASEOS_VER@bare | zfs receive -vd $POOL_NAME
-	zfs set mountpoint=none  $POOL_NAME/os
+	zfs set mountpoint=none $POOL_NAME/os
 	zfs set canmount=off $POOL_NAME/os
 	zfs set mountpoint=none $POOL_NAME/os/$BASEOS_TYPE
 	zfs set canmount=off $POOL_NAME/os/$BASEOS_TYPE
