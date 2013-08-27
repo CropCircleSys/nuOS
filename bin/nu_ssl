@@ -106,10 +106,14 @@ EOF
 	
 	if [ -z "${OPT_UNSECURE-}" ]; then
 		$command -passin file:$key_password_file < $tempfile
+		rm $key_password_file
 	else
 		$command < $tempfile
 	fi
-	echo; echo
+	rm $tempfile
+	
+	echo
+	echo
 	echo $message
 	
 else
