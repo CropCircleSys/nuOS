@@ -54,13 +54,25 @@ done
 nuos_init
 
 echo 'creating ssl    -h SSL_HOST       ' ${SSL_HOST:=$HOST}
-echo 'key bits        -b KEY_BITS       ' ${KEY_BITS:=2048}
-echo 'country code       COUNTRY        ' ${COUNTRY:=}
-echo 'state/province     STATE          ' ${STATE:=}
-echo 'city/locality      CITY           ' ${CITY:=}
-echo 'company            COMPANY        ' ${COMPANY:=}
-echo 'department         DEPT           ' ${DEPT:=}
-echo 'email              EMAIL          ' ${EMAIL:=}
+if [ -z "${CERT_FILE-}" ]; then
+	echo 'key bits        -b KEY_BITS       ' ${KEY_BITS:=2048}
+	echo 'country code       COUNTRY        ' $COUNTRY
+	country_len=${#COUNTRY}
+	[ $country_len -eq 2 ] || (echo "COUNTRY must be 2 chars (standard: ISO 3166-1 alpha-2)" >&2 && exit 85)
+	echo 'state/province     STATE          ' $STATE
+	[ -n "$STATE" ] || STATE=undefined
+	echo 'city/locality      CITY           ' ${CITY:=}
+	echo 'company            COMPANY        ' ${COMPANY:=}
+	[ -n "$COMPANY" ] || COMPANY=undefined
+	echo 'department         DEPT           ' ${DEPT:=}
+	echo 'email              EMAIL          ' ${EMAIL:=}
+	echo -n 'self signed     -s OPT_SELF_SIGNED ' && [ -n "${OPT_SELF_SIGNED-}" ] && echo set || echo null
+	echo -n 'unsecure        -S OPT_UNSECURE    ' && [ -n "${OPT_UNSECURE-}" ] && echo set || echo null
+else
+	echo 'cert file       -c CERT_FILE      ' $CERT_FILE
+	echo -n 'authority file  -a AUTH_FILE       ' && [ -n "${AUTH_FILE-}" ] && echo $AUTH_FILE || echo n/a
+fi
+echo
 
 maybe_yell
 
@@ -70,16 +82,16 @@ if [ -z "${CERT_FILE-}" ]; then
 	if [ -z "${OPT_UNSECURE-}" ]; then
 		read -p 'keyfile password:' -r key_password
 		key_password_len=${#key_password}
-		[ "$key_password_len" -ge 4 ] || (echo "password too short (must be 4 chars or more)" >&2 && exit 85)
+		[ $key_password_len -ge 4 ] || (echo "password too short (must be 4 chars or more)" >&2 && exit 85)
 		read -p 'repeat password:' -r key_password_repeat
 		[ "$key_password" = "$key_password_repeat" ] || (echo "password entered incorrectly" >&2 && exit 85)
 		key_password_file=`mktemp -t $(basename "$0").$$`
 		cat >| $key_password_file <<EOF
 $key_password
 EOF
-		openssl genrsa -des3 -passout file:$key_password_file -out /etc/ssl/$SSL_HOST.key $KEY_BITS
+		(umask 77 && openssl genrsa -des3 -passout file:$key_password_file -out /etc/ssl/$SSL_HOST.key $KEY_BITS)
 	else
-		openssl genrsa -out /etc/ssl/$SSL_HOST.key $KEY_BITS
+		(umask 77 && openssl genrsa -out /etc/ssl/$SSL_HOST.key $KEY_BITS)
 	fi
 	
 	tempfile=`mktemp -t $(basename "$0").$$`
@@ -105,17 +117,27 @@ EOF
 	fi
 	
 	if [ -z "${OPT_UNSECURE-}" ]; then
-		$command -passin file:$key_password_file < $tempfile
+		$command -passin file:$key_password_file < $tempfile 2> /dev/null
 		rm $key_password_file
 	else
-		$command < $tempfile
+		$command < $tempfile 2> /dev/null
 	fi
 	rm $tempfile
 	
-	echo
-	echo
 	echo $message
 	
 else
-# TODO insert $CERT_FILE and $AUTH_FILE supplied by CA into proper location
+	
+	[ -e /etc/ssl/$SSL_HOST.key ] || exit 2
+	[ ! -e /etc/ssl/$SSL_HOST.crt ] || exit 17
+	[ ! -e /etc/ssl/$SSL_HOST.ca.crt ] || exit 17
+	[ $SSL_HOST = `openssl x509 -noout -subject -nameopt sep_multiline -in $CERT_FILE | sed -e '/^    CN=/!d;s/^    CN=//'` ] || exit 85
+	cat $CERT_FILE > /etc/ssl/$SSL_HOST.crt
+	echo "Inserted certificate $CERT_FILE as $SSL_HOST.crt in /etc/ssl/."
+	if [ -n "${AUTH_FILE-}" ]; then
+		openssl x509 -noout -in $AUTH_FILE
+		cat $AUTH_FILE > /etc/ssl/$SSL_HOST.ca.crt
+		echo "Inserted authority certificate chain $AUTH_FILE as $SSL_HOST.ca.crt in /etc/ssl/."
+	fi
+	
 fi
