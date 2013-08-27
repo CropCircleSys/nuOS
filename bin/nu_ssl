@@ -1,0 +1,117 @@
+#!/bin/sh
+set -e; set -u; set -C
+
+# nuOS 0.0.9.2a1 - bin/nu_ssl - LICENSE: MOZ_PUB
+#
+# Copyright (c) 2008-2013 Chad Jacob Milios and Crop Circle Systems, Inc.
+# All rights reserved.
+#
+# This Source Code Form is subject to the terms of the Mozilla Public License, v2.0.
+# If a copy of the MPL was not distributed alongside this file, you can obtain one at
+# http://mozilla.org/MPL/2.0/ . This software project is not affiliated with the Mozilla
+# Foundation.
+#
+# Official updates and community support available at http://nuos.org .
+# Other licensing options and professional services available at http://ccsys.com .
+
+NUOS_VER=0.0.9.2a1
+
+while getopts a:b:c:C:h:sSv OPT; do
+	case $OPT in
+		a)
+			AUTH_FILE="$OPTARG"
+			;;
+		b)
+			KEY_BITS="$OPTARG"
+			;;
+		c)
+			CERT_FILE="$OPTARG"
+			;;
+		C)
+			CHROOTDIR="$OPTARG"
+			;;
+		h)
+			SSL_HOST="$OPTARG"
+			;;
+		s)
+			OPT_SELF_SIGNED=y
+			;;
+		S)
+			OPT_UNSECURE=y
+			;;
+		v)
+			OPT_VERBOSE=y
+			;;
+		*)
+			echo "usage: `basename \"$0\"` [-qsSv] [-C chroot-dir] [-a authority-file] [-b key-bits] [-c certificate-file] [-h ssl-host]" >&2
+			exit 1
+	esac
+done
+
+. "$(dirname "$(realpath "$0")")/../lib/nu_system.sh"
+. "$(dirname "$(realpath "$0")")/../lib/nu_common.sh"
+
+nuos_init
+
+echo 'creating ssl    -h SSL_HOST       ' ${SSL_HOST:=$HOST}
+echo 'key bits        -b KEY_BITS       ' ${KEY_BITS:=2048}
+echo 'country code       COUNTRY        ' ${COUNTRY:=}
+echo 'state/province     STATE          ' ${STATE:=}
+echo 'city/locality      CITY           ' ${CITY:=}
+echo 'company            COMPANY        ' ${COMPANY:=}
+echo 'department         DEPT           ' ${DEPT:=}
+echo 'email              EMAIL          ' ${EMAIL:=}
+
+maybe_yell
+
+if [ -z "${CERT_FILE-}" ]; then
+		
+	[ ! -e /etc/ssl/$SSL_HOST.key ] || exit 17
+	if [ -z "${OPT_UNSECURE-}" ]; then
+		read -p 'keyfile password:' -r key_password
+		key_password_len=${#key_password}
+		[ "$key_password_len" -ge 4 ] || (echo "password too short (must be 4 chars or more)" >&2 && exit 85)
+		read -p 'repeat password:' -r key_password_repeat
+		[ "$key_password" = "$key_password_repeat" ] || (echo "password entered incorrectly" >&2 && exit 85)
+		key_password_file=`mktemp -t $(basename "$0").$$`
+		cat >| $key_password_file <<EOF
+$key_password
+EOF
+		openssl genrsa -des3 -passout file:$key_password_file -out /etc/ssl/$SSL_HOST.key $KEY_BITS
+	else
+		openssl genrsa -out /etc/ssl/$SSL_HOST.key $KEY_BITS
+	fi
+	
+	tempfile=`mktemp -t $(basename "$0").$$`
+	cat >| $tempfile <<EOF
+$COUNTRY
+$STATE
+$CITY
+$COMPANY
+$DEPT
+$SSL_HOST
+$EMAIL
+EOF
+	
+	if [ -n "${OPT_SELF_SIGNED-}" ]; then
+		[ ! -e /etc/ssl/$SSL_HOST.crt ] || exit 17
+		command="openssl req -new -x509 -nodes -sha1 -days 365 -key /etc/ssl/$SSL_HOST.key -out /etc/ssl/$SSL_HOST.crt"
+		message="Generated key $SSL_HOST.key and certificate $SSL_HOST.crt in /etc/ssl/."
+	else
+		[ ! -e /etc/ssl/$SSL_HOST.csr ] || exit 17
+		(echo && echo) >> $tempfile
+		command="openssl req -new -key /etc/ssl/$SSL_HOST.key -out /etc/ssl/$SSL_HOST.csr"
+		message="Generated key $SSL_HOST.key and certificate signing request $SSL_HOST.csr in /etc/ssl/."
+	fi
+	
+	if [ -z "${OPT_UNSECURE-}" ]; then
+		$command -passin file:$key_password_file < $tempfile
+	else
+		$command < $tempfile
+	fi
+	echo; echo
+	echo $message
+	
+else
+# TODO insert $CERT_FILE and $AUTH_FILE supplied by CA into proper location
+fi
