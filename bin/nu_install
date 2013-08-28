@@ -200,6 +200,7 @@ sem_load="YES"
 accf_data_load="YES"
 accf_dns_load="YES"
 accf_http_load="YES"
+kern.maxfiles="32768"
 kern.ipc.shmmni="1024"
 kern.ipc.shmseg="1024"
 vfs.zfs.l2arc_write_max="83886080"
@@ -214,6 +215,7 @@ entropy_file="/var/db/entropy/seed"
 firewall_enable="YES"
 firewall_type="open"
 firewall_nat_flags="same_ports reset"
+firewall_nat_interface="net0"
 devfs_load_rulesets="YES"
 sendmail_submit_enable="NO"
 sendmail_outbound_enable="NO"
@@ -221,10 +223,10 @@ sendmail_msp_queue_enable="NO"
 EOF
 	
 	cat > $POOL_MNT/etc/rc.conf.local <<'EOF'
-#ifconfig_DEFAULT="DHCP"
+#ifconfig_%%INTERFACE%%_name="net0"
+#ifconfig_net0="DHCP"
 #gateway_enable="YES"
 #firewall_nat_enable="YES"
-#firewall_nat_interface="net0" # this needs to be set correctly, not just enabled
 EOF
 	
 	cat >> $POOL_MNT/etc/sysctl.conf <<'EOF'

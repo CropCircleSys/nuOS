@@ -149,12 +149,13 @@ cat >> "${CHROOTDIR-}/etc/jail.conf" <<EOF
 }
 EOF
 
-if [ $JAIL_TYPE = vnet ]; then
-	for rc_script in bridge dhclient ip6addrctl ipfilter ipfs ipfw ipmon ipnat ipsec mroute6d mrouted natd pf pflog pfsync resolv route6d routed; do
-		sed -i '' -E -e '/^[[:blank:]]*#*[[:blank:]]*KEYWORD:/s/nojail/jail_enabled/' "${CHROOTDIR-}$JAIL_PATH/etc/rc.d/$rc_script"
-	done
-	# TODO: investigate rc.d/{defaultroute,netif,netoptions,netwait,routing} and maybe others
-fi
+# removing this for FreeBSD 9.2
+# if [ $JAIL_TYPE = vnet ]; then
+# 	for rc_script in bridge dhclient ip6addrctl ipfilter ipfs ipfw ipmon ipnat ipsec mroute6d mrouted natd pf pflog pfsync resolv route6d routed; do
+# 		sed -i '' -E -e '/^[[:blank:]]*#*[[:blank:]]*KEYWORD:/s/nojail/jail_enabled/' "${CHROOTDIR-}$JAIL_PATH/etc/rc.d/$rc_script"
+# 	done
+# 	# TODO: investigate rc.d/{defaultroute,netif,netoptions,netwait,routing} and maybe others
+# fi
 if [ $JAIL_TYPE = clone ]; then
 	cat >> "${CHROOTDIR-}$JAIL_PATH/etc/rc.conf.local" <<EOF
 syslogd_flags="-ss"
