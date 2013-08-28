@@ -342,7 +342,7 @@ EOF
 		
 		nuos_supported_len=${#NUOS_SUPPORTED}
 		[ $nuos_supported_len -le 23 ]
-		nuos_supported_23_chrs=`echo "$NUOS_SUPPORTED" | awk '{printf "%-23s", \$1}'`
+		nuos_supported_23_chrs=`echo "$NUOS_SUPPORTED" | awk '{printf "%-23s", $1}'`
 		baseos_info_url="http://$baseos_type_lc.org"
 		
 # 		patch -b '' $POOL_MNT/boot/beastie.4th <<EOF
