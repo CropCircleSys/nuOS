@@ -56,7 +56,7 @@ admin_install () {
 			if [ -f $key ]; then
 				local home=
 				echo "WARNING: authorizing key '$key' to connect as user '$acct'" >&2
-				: ${home:=`chroot "$trgt_path" pw usershow -n $acct | awk 'FS=":" {print $9}'`}
+				: ${home:=`chroot "$trgt_path" pw usershow -n $acct | cut -d : -f 9`}
 				if [ ! -d "$trgt_path$home/.ssh" ]; then
 					(umask 77 && mkdir "$trgt_path$home/.ssh")
 					chroot "$trgt_path" chown $acct "$home/.ssh"

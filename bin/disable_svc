@@ -33,7 +33,7 @@ confdir="${CHROOTDIR-}/etc/rc.conf.d"
 disabled_confdir=$confdir.off
 for svc in $*; do
 	if [ -f $confdir/$svc ]; then
-		numlines=`grep -v ^\$ $confdir/$svc | wc -l | awk '{print \$1}'`
+		numlines=`grep -v ^\$ $confdir/$svc | wc -l | xargs | cut -w -f 1`
 		if [ $numlines = 0 -o $numlines = 1 ]; then
 			rm $confdir/$svc
 		else
