@@ -56,7 +56,7 @@ maybe_uninstall () {
 	fi
 }
 
-for pkg in `portversion -vL= | cut -w -f 1`; do
+for pkg in `portversion -v -l '<' | cut -w -f 1`; do
 	report $pkg
 	if [ -n "${OPT_RECURSE-}" ]; then
 		for consumer in `pkg_info -qR $pkg`; do
