@@ -419,6 +419,7 @@ EOF
 		
 		mkdir $POOL_MNT/usr/nuos
 		tar -cf - -C "$(dirname "$(realpath "$0")")/.." --exclude ^conf --exclude '.?*' . | tar -xvf - -C $POOL_MNT/usr/nuos
+		chown -R root:wheel $POOL_MNT/usr/nuos
 		conf=usr/nuos/conf
 		
 	else
