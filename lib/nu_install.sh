@@ -92,6 +92,7 @@ prepare_make_conf () {
 		cat >| $tempfile <<EOF
 CPUTYPE?=$TRGT_OPTZ
 WITH_BDB_VER=48
+WITH_PGSQL_VER=92
 RUBY_DEFAULT_VER=1.9
 PERL_VERSION=5.16.3
 EOF
