@@ -43,7 +43,7 @@ while getopts a:b:c:C:h:sSv OPT; do
 			OPT_VERBOSE=y
 			;;
 		*)
-			echo "usage: `basename \"$0\"` [-qsSv] [-C chroot-dir] [-a authority-file] [-b key-bits] [-c certificate-file] [-h ssl-host]" >&2
+			echo "usage: `basename \"$0\"` [-sSv] [-C chroot-dir] [-a authority-file] [-b key-bits] [-c certificate-file] [-h ssl-host]" >&2
 			exit 1
 	esac
 done
