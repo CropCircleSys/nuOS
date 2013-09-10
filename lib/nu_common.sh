@@ -1,20 +1,20 @@
 #!/usr/bin/false
 set -e; set -u; set -C
 
-# nuOS 0.0.9.2a1 - lib/nu_common.sh - LICENSE: MOZ_PUB
+# nuOS 0.0.9.2b1 - lib/nu_common.sh - LICENSE: BSD_SMPL
 #
 # Copyright (c) 2008-2013 Chad Jacob Milios and Crop Circle Systems, Inc.
 # All rights reserved.
 #
-# This Source Code Form is subject to the terms of the Mozilla Public License, v2.0.
-# If a copy of the MPL was not distributed alongside this file, you can obtain one at
-# http://mozilla.org/MPL/2.0/ . This software project is not affiliated with the Mozilla
-# Foundation.
+# This Source Code Form is subject to the terms of the Simplified BSD License.
+# If a copy of the Simplified BSD License was not distributed alongside this file, you can
+# obtain one at http://www.freebsd.org/copyright/freebsd-license.html . This software
+# project is not affiliated with the FreeBSD Project.
 #
 # Official updates and community support available at http://nuos.org .
 # Other licensing options and professional services available at http://ccsys.com .
 
-nuos_lib_ver=0.0.9.2a1
+nuos_lib_ver=0.0.9.2b1
 [ $nuos_lib_ver = "$NUOS_VER" ]
 [ -z "${nuos_lib_common_loaded-}" ]
 nuos_lib_common_loaded=y
