@@ -107,12 +107,12 @@ EOF
 	
 	if [ -n "${OPT_SELF_SIGNED-}" ]; then
 		[ ! -e "${CHROOTDIR-}/etc/ssl/$SSL_HOST.crt" ] || exit 17
-		command="openssl req -new -x509 -nodes -sha1 -days 365 -key '${CHROOTDIR-}/etc/ssl/$SSL_HOST.key' -out '${CHROOTDIR-}/etc/ssl/$SSL_HOST.crt'"
+		command="openssl req -new -x509 -nodes -sha1 -days 365 -key ${CHROOTDIR-}/etc/ssl/$SSL_HOST.key -out ${CHROOTDIR-}/etc/ssl/$SSL_HOST.crt"
 		message="Generated key $SSL_HOST.key and certificate $SSL_HOST.crt in /etc/ssl/."
 	else
 		[ ! -e "${CHROOTDIR-}/etc/ssl/$SSL_HOST.csr" ] || exit 17
 		(echo && echo) >> $tempfile
-		command="openssl req -new -key '${CHROOTDIR-}/etc/ssl/$SSL_HOST.key' -out '${CHROOTDIR-}/etc/ssl/$SSL_HOST.csr'"
+		command="openssl req -new -key ${CHROOTDIR-}/etc/ssl/$SSL_HOST.key -out ${CHROOTDIR-}/etc/ssl/$SSL_HOST.csr"
 		message="Generated key $SSL_HOST.key and certificate signing request $SSL_HOST.csr in /etc/ssl/."
 	fi
 	
