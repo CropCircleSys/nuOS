@@ -52,6 +52,7 @@ install_vars_init () {
 	echo 'pkg collection  -c PKG_COLLECTION ' ${PKG_COLLECTION:=desktop}
 	echo 'swap size       -s SWAP_SIZE      ' ${SWAP_SIZE:=512M}
 	echo 'new host name   -h NEW_HOST       ' ${NEW_HOST:=$POOL_NAME.`hostname | sed -e 's/^[^\.]*\.//'`}
+	echo 'make jobs          MAKE_JOBS      ' ${MAKE_JOBS:=$((2+`sysctl -n kern.smp.cpus`))}
 	echo 'target arch        TRGT_ARCH      ' ${TRGT_ARCH:=`uname -m`}
 	echo 'target proc        TRGT_PROC      ' $TRGT_PROC
 	echo 'target kern        TRGT_KERN      ' ${TRGT_KERN:=VIMAGE}
@@ -138,7 +139,7 @@ EOF
 	local make_conf cmd_to_retire_make_conf
 	if [ ! -d /usr/obj/usr/src/bin ]; then
 		prepare_make_conf make_conf cmd_to_retire_make_conf
-		(cd /usr/src && make __MAKE_CONF=$make_conf buildworld)
+		(cd /usr/src && make -j $MAKE_JOBS __MAKE_CONF=$make_conf buildworld)
 		$cmd_to_retire_make_conf $make_conf
 	fi
 	if [ ! -d /usr/obj/usr/src/sys/$TRGT_KERN ]; then
@@ -151,7 +152,7 @@ options VIMAGE
 EOF
 		fi
 		prepare_make_conf make_conf cmd_to_retire_make_conf
-		(cd /usr/src && make __MAKE_CONF=$make_conf KERNCONF=$TRGT_KERN buildkernel)
+		(cd /usr/src && make -j $MAKE_JOBS __MAKE_CONF=$make_conf KERNCONF=$TRGT_KERN buildkernel)
 		$cmd_to_retire_make_conf $make_conf
 	fi
 }
