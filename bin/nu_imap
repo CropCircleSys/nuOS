@@ -52,7 +52,7 @@ mkdir "${CHROOTDIR-}/usr/local/etc/cyrus"
 
 export LC_CTYPE=C
 
-sed -i '' -Ee 's/^#([[:space:]]+idled)[[:>:]]/\1/' "${CHROOTDIR-}/usr/local/etc/cyrus.conf"
+sed -i '' -Ee 's/^#([[:blank:]]+idled)[[:>:]]/\1/' "${CHROOTDIR-}/usr/local/etc/cyrus.conf"
 
 cat >> "${CHROOTDIR-}/usr/local/etc/imapd.conf" <<EOF
 
@@ -78,7 +78,7 @@ tls_ca_file: /usr/local/etc/cyrus/ssl/$HOST_NAME.ca.crt
 EOF
 	fi
 else
-	sed -i '' -Ee 's/^([[:space:]]+imaps)[[:>:]]/#\1/;s/^([[:space:]]+pop3s)[[:>:]]/#\1/' "${CHROOTDIR-}/usr/local/etc/cyrus.conf"
+	sed -i '' -Ee 's/^([[:blank:]]+imaps)[[:>:]]/#\1/;s/^([[:blank:]]+pop3s)[[:>:]]/#\1/' "${CHROOTDIR-}/usr/local/etc/cyrus.conf"
 fi
 
 sister enable_svc ${CHROOTDIR:+-C "$CHROOTDIR"} cyrus_imapd
