@@ -1,0 +1,105 @@
+#!/bin/sh
+set -e; set -u; set -C
+
+# nuOS 0.0.9.2b1 - bin/nu_smtp - LICENSE: MOZ_PUB
+#
+# Copyright (c) 2008-2013 Chad Jacob Milios and Crop Circle Systems, Inc.
+# All rights reserved.
+#
+# This Source Code Form is subject to the terms of the Mozilla Public License, v2.0.
+# If a copy of the MPL was not distributed alongside this file, you can obtain one at
+# http://mozilla.org/MPL/2.0/ . This software project is not affiliated with the Mozilla
+# Foundation.
+#
+# Official updates and community support available at http://nuos.org .
+# Other licensing options and professional services available at http://ccsys.com .
+
+NUOS_VER=0.0.9.2b1
+
+while getopts C:h:sv OPT; do
+	case $OPT in
+		C)
+			CHROOTDIR="$OPTARG"
+			;;
+		h)
+			HOST_NAME="$OPTARG"
+			;;
+		s)
+			OPT_SSL=y
+			;;
+		v)
+			OPT_VERBOSE=y
+			;;
+		*)
+			echo "usage: `basename \"$0\"` [-sv] [-C chroot-dir] [-h host-name]" >&2
+			exit 1
+	esac
+done
+
+. "$(dirname "$(realpath "$0")")/../lib/nu_system.sh"
+. "$(dirname "$(realpath "$0")")/../lib/nu_common.sh"
+
+nuos_init
+
+echo 'host name       -h HOST_NAME       ' ${HOST_NAME:=$HOST}
+echo
+
+maybe_yell
+
+[ ! -e "${CHROOTDIR-}/usr/local/etc/postfix/virtual" ]
+
+touch "${CHROOTDIR-}/usr/local/etc/postfix/virtual" "${CHROOTDIR-}/usr/local/etc/postfix/aliases"
+
+cat > "${CHROOTDIR-}/usr/local/etc/postfix/domains" <<EOF
+$HOST_NAME	OK
+EOF
+
+postmap "${CHROOTDIR-}/usr/local/etc/postfix/domains"
+postmap "${CHROOTDIR-}/usr/local/etc/postfix/virtual"
+postalias "${CHROOTDIR-}/usr/local/etc/postfix/aliases"
+
+cat >> "${CHROOTDIR-}/usr/local/etc/postfix/main.cf" <<EOF
+mydomain = $HOST_NAME
+EOF
+
+cat >> "${CHROOTDIR-}/usr/local/etc/postfix/main.cf" <<'EOF'
+
+myhostname = $mydomain
+alias_database = hash:$config_directory/aliases
+alias_maps = $alias_database
+message_size_limit = 67108864
+mailbox_size_limit = 1073741824
+virtual_alias_maps = hash:$config_directory/virtual
+mailbox_transport = lmtp:unix:/var/imap/socket/lmtp
+local_recipient_maps = $virtual_alias_maps
+virtual_alias_domains = hash:$config_directory/domains
+smtpd_sender_login_maps = $local_recipient_maps
+smtpd_sasl_auth_enable = yes
+smtpd_sasl_local_domain = $mydomain
+smtpd_sasl_security_options = noanonymous
+smtpd_relay_restrictions = reject_authenticated_sender_login_mismatch, permit_sasl_authenticated, permit_mynetworks, reject_unauth_destination, reject_unlisted_recipient
+smtpd_client_restrictions = permit_sasl_authenticated, permit_mynetworks
+smtpd_helo_required = yes
+smtpd_helo_restrictions = permit_sasl_authenticated, permit_mynetworks, reject_invalid_hostname, reject_unknown_hostname, reject_non_fqdn_hostname
+EOF
+
+if [ -n "${OPT_SSL-}" ]; then
+	mkdir -p "${CHROOTDIR-}/usr/local/etc/postfix/ssl"
+	cp "${CHROOTDIR-}/etc/ssl/$HOST_NAME.crt" "${CHROOTDIR-}/usr/local/etc/postfix/ssl/"
+	cp "${CHROOTDIR-}/etc/ssl/$HOST_NAME.key" "${CHROOTDIR-}/usr/local/etc/postfix/ssl/"
+	cat >> "${CHROOTDIR-}/usr/local/etc/postfix/main.cf" <<'EOF'
+smtpd_tls_security_level = may
+smtpd_tls_cert_file = $config_directory/ssl/$myhostname.crt
+smtpd_tls_key_file = $config_directory/ssl/$myhostname.key
+EOF
+	if [ -f "${CHROOTDIR-}/etc/ssl/$HOST_NAME.ca.crt" ]; then
+		cp "${CHROOTDIR-}/etc/ssl/$HOST_NAME.ca.crt" "${CHROOTDIR-}/usr/local/etc/postfix/ssl/"
+		cat >> "${CHROOTDIR-}/usr/local/etc/postfix/main.cf" <<'EOF'
+smtpd_tls_CAfile = $config_directory/ssl/$myhostname.ca.crt
+EOF
+	fi
+fi
+
+sister enable_svc ${CHROOTDIR:+-C "$CHROOTDIR"} postfix
+
+echo "Configured $HOST_NAME for smtp service."

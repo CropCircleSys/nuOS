@@ -1,0 +1,74 @@
+#!/bin/sh
+set -e; set -u; set -C
+
+# nuOS 0.0.9.2b1 - bin/nu_ns_cache - LICENSE: MOZ_PUB
+#
+# Copyright (c) 2008-2013 Chad Jacob Milios and Crop Circle Systems, Inc.
+# All rights reserved.
+#
+# This Source Code Form is subject to the terms of the Mozilla Public License, v2.0.
+# If a copy of the MPL was not distributed alongside this file, you can obtain one at
+# http://mozilla.org/MPL/2.0/ . This software project is not affiliated with the Mozilla
+# Foundation.
+#
+# Official updates and community support available at http://nuos.org .
+# Other licensing options and professional services available at http://ccsys.com .
+
+NUOS_VER=0.0.9.2b1
+
+while getopts C:sv OPT; do
+	case $OPT in
+		C)
+			CHROOTDIR="$OPTARG"
+			;;
+		s)
+			OPT_SELF_SUFFICIENT=y
+			;;
+		v)
+			OPT_VERBOSE=y
+			;;
+		*)
+			echo "usage: `basename \"$0\"` [-v] [-C chroot-dir]" >&2
+			exit 1
+	esac
+done
+
+. "$(dirname "$(realpath "$0")")/../lib/nu_system.sh"
+. "$(dirname "$(realpath "$0")")/../lib/nu_common.sh"
+
+nuos_init
+
+echo
+
+maybe_yell
+
+[ ! -e "${CHROOTDIR-}/var/service/dnscache" ]
+
+mkdir -p "${CHROOTDIR-}/var/service"
+${CHROOTDIR:+chroot "$CHROOTDIR"} dnscache-conf dnscache dnslog /var/service/dnscache
+
+if [ -z "${OPT_SELF_SUFFICIENT-}" ]; then
+	cat > "${CHROOTDIR-}/etc/dhclient-exit-hooks" <<'EOF'
+if [ -n "$new_domain_name_servers" ]; then
+	for ip in $new_domain_name_servers; do
+		if [ $ip != 127.0.0.1 ]; then
+			echo $ip >> /var/service/dnscache/root/servers/@.new
+		fi
+	done
+	mv /var/service/dnscache/root/servers/@.new /var/service/dnscache/root/servers/@
+fi
+EOF
+	echo 1 > "${CHROOTDIR-}/var/service/dnscache/env/FORWARDONLY"
+	: >| "${CHROOTDIR-}/var/service/dnscache/root/servers/@"
+	if [ -f "${CHROOTDIR-}/etc/resolv.conf" ]; then
+		grep ^nameserver "${CHROOTDIR-}/etc/resolv.conf" | cut -w -f 2 | grep -v 127.0.0.1 >> "${CHROOTDIR-}/var/service/dnscache/root/servers/@"
+	fi
+fi
+
+sister enable_svc ${CHROOTDIR:+-C "$CHROOTDIR"} svscan
+
+cat >> "${CHROOTDIR-}/etc/dhclient.conf" <<'EOF'
+prepend domain-name-servers 127.0.0.1;
+EOF
+
+echo "Configured cache resolver."

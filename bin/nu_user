@@ -16,16 +16,19 @@ set -e; set -u; set -C
 
 NUOS_VER=0.0.9.2b1
 
-while getopts C:m:u:n:p:Psv OPT; do
+while getopts aC:h:m:n:p:Psu:v OPT; do
 	case $OPT in
+		a)
+			OPT_SASL=y
+			;;
 		C)
 			CHROOTDIR="$OPTARG"
 			;;
+		h)
+			HOST_NAME="$OPTARG"
+			;;
 		m)
 			USER_PATH="$OPTARG"
-			;;
-		u)
-			USER_NAME="$OPTARG"
 			;;
 		n)
 			USER_FULL_NAME="$OPTARG"
@@ -38,6 +41,9 @@ while getopts C:m:u:n:p:Psv OPT; do
 			;;
 		s)
 			OPT_SAMBA=y
+			;;
+		u)
+			USER_NAME="$OPTARG"
 			;;
 		v)
 			OPT_VERBOSE=y
@@ -59,63 +65,50 @@ echo 'pool name       -p POOL_NAME      ' ${POOL_NAME:=$POOL_BOOT_NAME}
 echo 'user path       -m USER_PATH      ' ${USER_PATH:=/home/$USER_NAME}
 echo -n 'samba access    -s OPT_SAMBA       ' && [ -n "${OPT_SAMBA-}" ] && echo set || echo null
 echo -n 'passwordless    -P OPT_NO_PASSWD   ' && [ -n "${OPT_NO_PASSWD-}" ] && echo set || echo null
+echo -n 'sasl account    -a OPT_SASL        ' && [ -n "${OPT_SASL-}" ] && echo set || echo null
+echo -n 'sasl domain     -h HOST_NAME       ' && [ -n "${OPT_SASL-}" ] && echo ${HOST_NAME:=$HOST} || echo n/a
 
 maybe_yell
 
-# key_install () {
-# 	local acct="$1" keys="$2"
-# 	for key in $keys; do
-# 		key="${key%.pub}.pub"
-# 		key=`eval echo $key`
-# 		if [ -f $key ]; then
-# 			local home=
-# 			echo "WARNING: authorizing key $key to connect as user $acct" >&2
-# 			: ${home:=`chroot "$trgt_path" pw usershow -n $acct | cut -d : -f 9`}
-# 			if [ ! -d "$trgt_path$home/.ssh" ]; then
-# 				(umask 77 && mkdir "$trgt_path$home/.ssh")
-# 				chroot "$trgt_path" chown $acct "$home/.ssh"
-# 			fi
-# 			if [ ! -f "$trgt_path$home/.ssh/authorized_keys" ]; then
-# 				:> "$trgt_path$home/.ssh/authorized_keys"
-# 				chroot "$trgt_path" chown $acct "$home/.ssh/authorized_keys"
-# 			fi
-# 			cat "$key" >> "$trgt_path$home/.ssh/authorized_keys"
-# 		fi
-# 	done
-# }
+[ -n "$USER_NAME" ]
 
-if [ -n "$USER_NAME" ]; then
-	if [ -z "${OPT_NO_PASSWD-}" ]; then
-		read -p 'user password:' -r password
-		read -p 'repeat password:' -r password_repeat
-		[ "$password" = "$password_repeat" ] || (echo "password entered incorrectly" >&2 && exit 85)
-	fi
-	dataset="$POOL_NAME`dirname "$USER_PATH"`"
-	if zfs list "$dataset"; then
-		echo "Creating dataset $dataset/$USER_NAME for user home."
-		zfs create $dataset/$USER_NAME
-	else
-		echo "No immediate parent dataset, not creating user home dataset."
-	fi
-	
-	${CHROOTDIR:+chroot "$CHROOTDIR"} pw groupadd -n "$USER_NAME" ${GROUP_FLAGS-}
-	if [ -z "${OPT_NO_PASSWD-}" ]; then
-		${CHROOTDIR:+chroot "$CHROOTDIR"} pw useradd -m -n $USER_NAME -g $USER_NAME -c "$USER_FULL_NAME" ${USER_FLAGS-} -h 0 <<EOF
-$password
-EOF
-		if [ -n "${OPT_SAMBA-}" ]; then
-			${CHROOTDIR:+chroot "$CHROOTDIR"} smbpasswd -s -a $USER_NAME <<EOF
-$password
-$password
-EOF
-		fi
-	else
-		${CHROOTDIR:+chroot "$CHROOTDIR"} pw useradd -m -n $USER_NAME -g $USER_NAME -c "$USER_FULL_NAME" ${USER_FLAGS-}
-		if [ -n "${OPT_SAMBA-}" ]; then
-			${CHROOTDIR:+chroot "$CHROOTDIR"} smbpasswd -n -a $USER_NAME
-		fi
-	fi
-	zfs snapshot $dataset/$USER_NAME@genesis
-# 	key_install $USER_NAME "$keys"
-	echo "Account for user $USER_NAME created."
+if [ -z "${OPT_NO_PASSWD-}" ]; then
+	read -p 'user password:' -r password
+	read -p 'repeat password:' -r password_repeat
+	[ "$password" = "$password_repeat" ] || (echo "password entered incorrectly" >&2 && exit 85)
 fi
+dataset="$POOL_NAME`dirname "$USER_PATH"`"
+if zfs list "$dataset"; then
+	echo "Creating dataset $dataset/$USER_NAME for user home."
+	zfs create $dataset/$USER_NAME
+else
+	echo "No immediate parent dataset, not creating user home dataset."
+fi
+
+${CHROOTDIR:+chroot "$CHROOTDIR"} pw groupadd -n "$USER_NAME" ${GROUP_FLAGS-}
+if [ -z "${OPT_NO_PASSWD-}" ]; then
+	${CHROOTDIR:+chroot "$CHROOTDIR"} pw useradd -m -n $USER_NAME -g $USER_NAME -c "$USER_FULL_NAME" ${USER_FLAGS-} -h 0 <<EOF
+$password
+EOF
+	if [ -n "${OPT_SAMBA-}" ]; then
+		${CHROOTDIR:+chroot "$CHROOTDIR"} smbpasswd -s -a $USER_NAME <<EOF
+$password
+$password
+EOF
+	fi
+	if [ -n "${OPT_SASL-}" ]; then
+		${CHROOTDIR:+chroot "$CHROOTDIR"} saslpasswd2 -c -p -u $HOST_NAME $USER_NAME <<EOF
+$password
+EOF
+		if [ -f "${CHROOTDIR-}/usr/local/etc/postfix/virtual" ]; then
+			cat > "${CHROOTDIR-}/usr/local/etc/postfix/virtual" <<EOF
+$USER_NAME@$HOST_NAME	$USER_NAME@$HOST_NAME
+EOF
+			postmap "${CHROOTDIR-}/usr/local/etc/postfix/virtual"
+		fi
+	fi
+else
+	${CHROOTDIR:+chroot "$CHROOTDIR"} pw useradd -m -n $USER_NAME -g $USER_NAME -c "$USER_FULL_NAME" ${USER_FLAGS-}
+fi
+zfs snapshot $dataset/$USER_NAME@genesis
+echo "Account for user $USER_NAME created."
