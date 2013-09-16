@@ -36,7 +36,7 @@ for svc in $*; do
 	svc_switch_egrep="^[[:blank:]]*#*[[:blank:]]*${svc}_enable="
 	if [ -f $confdir/$svc ]; then
 		tempfile=`mktemp -t $(basename "$0").$$`
-		grep -v -E "$svc_switch_egrep" $confdir/$svc >> "$tempfile"
+		grep -v -E "$svc_switch_egrep" $confdir/$svc >> "$tempfile" || true
 		rm $confdir/$svc
 	fi
 	echo ${svc}_enable='"YES"' > $confdir/$svc
@@ -45,7 +45,7 @@ for svc in $*; do
 		rm "$tempfile"
 	fi
 	if [ -f $disabled_confdir/$svc ]; then
-		grep -v -E "$svc_switch_egrep" $disabled_confdir/$svc >> $confdir/$svc
+		grep -v -E "$svc_switch_egrep" $disabled_confdir/$svc >> $confdir/$svc || true
 		rm $disabled_confdir/$svc
 	fi
 	rmdir $disabled_confdir 2>/dev/null || true
