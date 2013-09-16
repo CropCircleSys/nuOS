@@ -16,19 +16,25 @@ set -e; set -u; set -C
 
 NUOS_VER=0.0.9.2b1
 
-while getopts C:sv OPT; do
+while getopts C:h:su:v OPT; do
 	case $OPT in
 		C)
 			CHROOTDIR="$OPTARG"
 			;;
+		h)
+			HOST_NAME="$OPTARG"
+			;;
 		s)
 			OPT_SSL=y
+			;;
+		u)
+			USER_NAME="$OPTARG"
 			;;
 		v)
 			OPT_VERBOSE=y
 			;;
 		*)
-			echo "usage: `basename \"$0\"` [-sv] [-C chroot-dir]" >&2
+			echo "usage: `basename \"$0\"` [-sv] [-C chroot-dir] [-h host-name] [-u user-name]" >&2
 			exit 1
 	esac
 done
@@ -38,9 +44,72 @@ done
 
 nuos_init
 
+echo 'host name       -h HOST_NAME       ' ${HOST_NAME:=$HOST}
+echo 'user name       -u USER_NAME       ' ${USER_NAME:=$(pw usershow $((`pw usernext | cut -d : -f 1`-1)) | cut -d : -f 1)}
 echo -n 'ssl             -s OPT_SSL         ' && [ -n "${OPT_SSL-}" ] && echo set || echo null
 echo
 
 maybe_yell
 
-echo "Configured http host."
+mkdir -p "${CHROOTDIR-}/var/log/httpd-vhost"
+
+${CHROOTDIR:+chroot "$CHROOTDIR"} su -m $USER_NAME -c "mkdir -p /home/$USER_NAME/$HOST_NAME/www/public"
+
+cat > "${CHROOTDIR-}/usr/local/etc/apache24/Includes/$HOST_NAME.conf" <<EOF
+<Directory "/home/$USER_NAME/$HOST_NAME/www/public">
+	Options Indexes FollowSymLinks
+	AllowOverride None
+	Order allow,deny
+	Allow from all
+</Directory>
+EOF
+
+if [ -n "${OPT_SSL-}" ]; then
+	cp "${CHROOTDIR-}/etc/ssl/$HOST_NAME.crt" "${CHROOTDIR-}/usr/local/etc/apache24/ssl/"
+	cp "${CHROOTDIR-}/etc/ssl/$HOST_NAME.key" "${CHROOTDIR-}/usr/local/etc/apache24/ssl/"
+	if [ -f "${CHROOTDIR-}/etc/ssl/$HOST_NAME.ca.crt" ]; then
+		cp "${CHROOTDIR-}/etc/ssl/$HOST_NAME.ca.crt" "${CHROOTDIR-}/usr/local/etc/apache24/ssl/"
+	else
+		self_signed=y
+	fi
+	cat >> "${CHROOTDIR-}/usr/local/etc/apache24/Includes/$HOST_NAME.conf" <<EOF
+<VirtualHost _default_:443>
+	DocumentRoot "/home/$USER_NAME/$HOST_NAME/www/public"
+	ServerName $HOST_NAME:443
+	ServerAdmin webmaster@$HOST_NAME
+	ErrorLog "/var/log/httpd-vhost/$HOST_NAME-error.log"
+	CustomLog "/var/log/httpd-vhost/$HOST_NAME-access.log" common
+	SSLEngine on
+	SSLCertificateFile "/usr/local/etc/apache24/ssl/$HOST_NAME.crt"
+	SSLCertificateKeyFile "/usr/local/etc/apache24/ssl/$HOST_NAME.key"
+	${self_signed:+#}SSLCertificateChainFile "/usr/local/etc/apache24/ssl/$HOST_NAME.ca.crt"
+	BrowserMatch "MSIE [2-5]" nokeepalive ssl-unclean-shutdown downgrade-1.0 force-response-1.0
+	CustomLog "/var/log/httpd-vhost/$HOST_NAME-ssl_request.log" "%t %h %{SSL_PROTOCOL}x %{SSL_CIPHER}x \"%r\" %b"
+</VirtualHost>
+<VirtualHost _default_:443>
+	ServerName www.$HOST_NAME:443
+	Redirect permanent / https://$HOST_NAME/
+</VirtualHost>
+<VirtualHost *:80>
+	ServerName $HOST_NAME
+	ServerAlias www.$HOST_NAME
+	Redirect permanent / https://$HOST_NAME/
+</VirtualHost>
+EOF
+else
+	cat >> "${CHROOTDIR-}/usr/local/etc/apache24/Includes/$HOST_NAME.conf" <<EOF
+<VirtualHost *:80>
+	DocumentRoot "/home/$USER_NAME/$HOST_NAME/www/public"
+	ServerName $HOST_NAME
+	ServerAdmin webmaster@$HOST_NAME
+	ErrorLog "/var/log/httpd-vhost/$HOST_NAME-error.log"
+	CustomLog "/var/log/httpd-vhost/$HOST_NAME-access.log" common
+</VirtualHost>
+<VirtualHost *:80>
+	ServerName www.$HOST_NAME
+	Redirect permanent / http://$HOST_NAME/
+</VirtualHost>
+EOF
+fi
+
+echo "Configured $HOST_NAME for http ${OPT_SSL:+and https }service."
