@@ -80,6 +80,7 @@ EOF
 else
 	sed -i '' -Ee 's/^([[:blank:]]+imaps)[[:>:]]/#\1/;s/^([[:blank:]]+pop3s)[[:>:]]/#\1/' "${CHROOTDIR-}/usr/local/etc/cyrus.conf"
 fi
+${CHROOTDIR:+chroot "$CHROOTDIR"} /usr/local/cyrus/bin/mkimap
 
 sister enable_svc ${CHROOTDIR:+-C "$CHROOTDIR"} cyrus_imapd
 
