@@ -56,10 +56,11 @@ sed -Ee 's/^(NoAnonymous[[:blank:]]+)no$/\1yes/;s/^(MinUID[[:blank:]]+)100$/\110
 
 if [ -n "${OPT_SSL-}" ]; then
 	mkdir "${CHROOTDIR-}/usr/local/etc/pure-ftpd/ssl"
-	(umask 77 && cat "${CHROOTDIR-}/etc/ssl/$HOST_NAME.key" "${CHROOTDIR-}/etc/ssl/$HOST_NAME.crt" > "${CHROOTDIR-}/usr/local/etc/pure-ftpd/ssl/server.pem")
+	(umask 77 && cat "${CHROOTDIR-}/etc/ssl/$HOST_NAME.key" "${CHROOTDIR-}/etc/ssl/$HOST_NAME.crt" > "${CHROOTDIR-}/usr/local/etc/pure-ftpd/ssl/$HOST_NAME.pem")
 	if [ -f "${CHROOTDIR-}/etc/ssl/$HOST_NAME.ca.crt" ]; then
-		cat "${CHROOTDIR-}/etc/ssl/$HOST_NAME.ca.crt" >> "${CHROOTDIR-}/usr/local/etc/pure-ftpd/ssl/server.pem"
+		cat "${CHROOTDIR-}/etc/ssl/$HOST_NAME.ca.crt" >> "${CHROOTDIR-}/usr/local/etc/pure-ftpd/ssl/$HOST_NAME.pem"
 	fi
+	ln -s $HOST_NAME.pem "${CHROOTDIR-}/usr/local/etc/pure-ftpd/ssl/server.pem"
 	sed -i '' -Ee 's/^#[[:blank:]]*(TLS[[:>:]].*)$/\1/;s/^#[[:blank:]]*(TLSCipherSuite[[:>:]].*)$/\1/' "${CHROOTDIR-}/usr/local/etc/pure-ftpd.conf"
 fi
 
