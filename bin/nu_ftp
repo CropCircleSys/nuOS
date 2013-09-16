@@ -1,0 +1,68 @@
+#!/bin/sh
+set -e; set -u; set -C
+
+# nuOS 0.0.9.2b1 - bin/nu_ftp - LICENSE: MOZ_PUB
+#
+# Copyright (c) 2008-2013 Chad Jacob Milios and Crop Circle Systems, Inc.
+# All rights reserved.
+#
+# This Source Code Form is subject to the terms of the Mozilla Public License, v2.0.
+# If a copy of the MPL was not distributed alongside this file, you can obtain one at
+# http://mozilla.org/MPL/2.0/ . This software project is not affiliated with the Mozilla
+# Foundation.
+#
+# Official updates and community support available at http://nuos.org .
+# Other licensing options and professional services available at http://ccsys.com .
+
+NUOS_VER=0.0.9.2b1
+
+while getopts C:h:sv OPT; do
+	case $OPT in
+		C)
+			CHROOTDIR="$OPTARG"
+			;;
+		h)
+			HOST_NAME="$OPTARG"
+			;;
+		s)
+			OPT_SSL=y
+			;;
+		v)
+			OPT_VERBOSE=y
+			;;
+		*)
+			echo "usage: `basename \"$0\"` [-sv] [-C chroot-dir] [-h host-name]" >&2
+			exit 1
+	esac
+done
+
+. "$(dirname "$(realpath "$0")")/../lib/nu_system.sh"
+. "$(dirname "$(realpath "$0")")/../lib/nu_common.sh"
+
+nuos_init
+
+echo 'host name       -h HOST_NAME       ' && [ -n "${OPT_SSL-}" ] && echo ${HOST_NAME:=$HOST} || echo n/a
+echo
+
+maybe_yell
+
+[ ! -e "${CHROOTDIR-}/usr/local/etc/pure-ftpd" ]
+
+mkdir "${CHROOTDIR-}/usr/local/etc/pure-ftpd"
+
+export LC_CTYPE=C
+
+sed -Ee 's/^(NoAnonymous[[:blank:]]+)no$/\1yes/;s/^(MinUID[[:blank:]]+)100$/\11000/;s/^(AllowUserFXP[[:blank:]]+)no$/\1yes/;s/^(CustomerProof[[:blank:]]+)yes$/\1no/' "${CHROOTDIR-}/usr/local/etc/pure-ftpd.conf.sample" > "${CHROOTDIR-}/usr/local/etc/pure-ftpd.conf"
+
+if [ -n "${OPT_SSL-}" ]; then
+	mkdir "${CHROOTDIR-}/usr/local/etc/pure-ftpd/ssl"
+	(umask 77 && cat "${CHROOTDIR-}/etc/ssl/$HOST_NAME.key" "${CHROOTDIR-}/etc/ssl/$HOST_NAME.crt" > "${CHROOTDIR-}/usr/local/etc/pure-ftpd/ssl/server.pem")
+	if [ -f "${CHROOTDIR-}/etc/ssl/$HOST_NAME.ca.crt" ]; then
+		cat "${CHROOTDIR-}/etc/ssl/$HOST_NAME.ca.crt" >> "${CHROOTDIR-}/usr/local/etc/pure-ftpd/ssl/server.pem"
+	fi
+	sed -i '' -Ee 's/^#[[:blank:]]*(TLS[[:>:]].*)$/\1/;s/^#[[:blank:]]*(TLSCipherSuite[[:>:]].*)$/\1/' "${CHROOTDIR-}/usr/local/etc/pure-ftpd.conf"
+fi
+
+sister enable_svc ${CHROOTDIR:+-C "$CHROOTDIR"} pureftpd
+
+echo "Configured ftp service."
