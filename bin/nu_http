@@ -16,16 +16,19 @@ set -e; set -u; set -C
 
 NUOS_VER=0.0.9.2b1
 
-while getopts C:v OPT; do
+while getopts C:sv OPT; do
 	case $OPT in
 		C)
 			CHROOTDIR="$OPTARG"
+			;;
+		s)
+			OPT_SSL=y
 			;;
 		v)
 			OPT_VERBOSE=y
 			;;
 		*)
-			echo "usage: `basename \"$0\"` [-v] [-C chroot-dir]" >&2
+			echo "usage: `basename \"$0\"` [-sv] [-C chroot-dir]" >&2
 			exit 1
 	esac
 done
@@ -35,8 +38,27 @@ done
 
 nuos_init
 
+echo -n 'ssl             -s OPT_SSL    ' && [ -n "${OPT_SSL-}" ] && echo set || echo null
 echo
 
 maybe_yell
+
+export LC_CTYPE=C
+
+sed -i '' -Ee '/^<VirtualHost[[:>:]]/,/^<\/VirtualHost[[:>:]]/s/^/#/' "${CHROOTDIR-}/usr/local/etc/apache24/extra/httpd-vhosts.conf"
+cat >> "${CHROOTDIR-}/usr/local/etc/apache24/extra/httpd-vhosts.conf" <<'EOF'
+<VirtualHost *:80>
+	DocumentRoot "/usr/local/www/apache22/data"
+</VirtualHost>
+EOF
+sed -i '' -Ee 's/^#(Include[[:>:]].*[[:<:]]httpd-(mpm|vhosts|default).conf)$/\1/;' "${CHROOTDIR-}/usr/local/etc/apache24/httpd.conf"
+
+if [ -n "${OPT_SSL-}" ]; then
+	mkdir "${CHROOTDIR-}/usr/local/etc/apache24/ssl"
+	sed -i '' -Ee '/^<VirtualHost[[:>:]]/,/^<\/VirtualHost[[:>:]]/s/^/#/' "${CHROOTDIR-}/usr/local/etc/apache24/extra/httpd-ssl.conf"
+	sed -i '' -Ee 's/^#(Include[[:>:]].*[[:<:]]httpd-ssl.conf)$/\1/;' "${CHROOTDIR-}/usr/local/etc/apache24/httpd.conf"
+fi
+
+sister enable_svc ${CHROOTDIR:+-C "$CHROOTDIR"} apache24
 
 echo "Configured http service."
