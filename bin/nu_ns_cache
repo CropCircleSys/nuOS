@@ -28,7 +28,7 @@ while getopts C:sv OPT; do
 			OPT_VERBOSE=y
 			;;
 		*)
-			echo "usage: `basename \"$0\"` [-v] [-C chroot-dir]" >&2
+			echo "usage: `basename \"$0\"` [-sv] [-C chroot-dir]" >&2
 			exit 1
 	esac
 done
