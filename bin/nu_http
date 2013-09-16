@@ -38,7 +38,7 @@ done
 
 nuos_init
 
-echo -n 'ssl             -s OPT_SSL    ' && [ -n "${OPT_SSL-}" ] && echo set || echo null
+echo -n 'ssl             -s OPT_SSL         ' && [ -n "${OPT_SSL-}" ] && echo set || echo null
 echo
 
 maybe_yell
