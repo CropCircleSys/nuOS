@@ -481,7 +481,7 @@ EOF
 			zfs snapshot -r $POOL_NAME/os/nuOS/$NUOS_VER@developer
 			if [ $PKG_COLLECTION != developer ]; then
 				sister nu_install_pkg -C $POOL_MNT -y mail/postfix
-				sister nu_install_pkg -C $POOL_MNT dns/djbdns security/openvpn net/netatalk3 net/samba36 www/py-rhodecode databases/postgresql92-server databases/mongodb databases/redis www/npm www/apache24 mail/cyrus-imapd24 security/cyrus-sasl2-saslauthd emulators/virtualbox-ose graphics/povray-meta graphics/graphviz x11-fonts/webfonts print/teTeX
+				sister nu_install_pkg -C $POOL_MNT dns/djbdns security/openvpn ftp/pure-ftpd net/netatalk3 net/samba36 www/py-rhodecode databases/postgresql92-server databases/mongodb databases/redis www/npm www/apache24 mail/cyrus-imapd24 security/cyrus-sasl2-saslauthd emulators/virtualbox-ose graphics/povray-meta graphics/graphviz x11-fonts/webfonts print/teTeX
 				zfs snapshot -r $POOL_NAME/os/nuOS/$NUOS_VER@server
 				if [ $PKG_COLLECTION != server ]; then
 					sister nu_install_pkg -C $POOL_MNT graphics/gimp x11/xorg x11/kde4 www/firefox mail/thunderbird editors/libreoffice
