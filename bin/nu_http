@@ -51,12 +51,12 @@ cat >> "${CHROOTDIR-}/usr/local/etc/apache24/extra/httpd-vhosts.conf" <<'EOF'
 	DocumentRoot "/usr/local/www/apache24/data"
 </VirtualHost>
 EOF
-sed -i '' -Ee 's/^#(Include[[:>:]].*[[:<:]]httpd-(mpm|vhosts|default).conf)$/\1/;' "${CHROOTDIR-}/usr/local/etc/apache24/httpd.conf"
+sed -i '' -Ee 's/^#(Include[[:>:]].*[[:<:]]httpd-(mpm|vhosts|default).conf)$/\1/' "${CHROOTDIR-}/usr/local/etc/apache24/httpd.conf"
 
 if [ -n "${OPT_SSL-}" ]; then
 	mkdir "${CHROOTDIR-}/usr/local/etc/apache24/ssl"
 	sed -i '' -Ee '/^<VirtualHost[[:>:]]/,/^<\/VirtualHost[[:>:]]/s/^/#/' "${CHROOTDIR-}/usr/local/etc/apache24/extra/httpd-ssl.conf"
-	sed -i '' -Ee 's/^#(Include[[:>:]].*[[:<:]]httpd-ssl.conf)$/\1/;' "${CHROOTDIR-}/usr/local/etc/apache24/httpd.conf"
+	sed -i '' -Ee 's/^#(Include[[:>:]].*[[:<:]]httpd-ssl.conf)$/\1/;s/^#(LoadModule[[:>:]].*[[:<:]]mod_(ssl|socache_shmcb).so)$/\1/' "${CHROOTDIR-}/usr/local/etc/apache24/httpd.conf"
 fi
 
 sister enable_svc ${CHROOTDIR:+-C "$CHROOTDIR"} apache24
