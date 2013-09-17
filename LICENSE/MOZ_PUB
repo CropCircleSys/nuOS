@@ -10,6 +10,9 @@ Official updates and community support available at http://nuos.org .
 Other licensing options and professional services available at http://ccsys.com .
 
 file(s) herein covered by the Mozilla Public License, v2.0:
+	bin/nu_ftp
+	bin/nu_http
+	bin/nu_http_host
 	bin/nu_imap
 	bin/nu_ns_cache
 	bin/nu_ns_server
