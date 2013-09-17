@@ -114,6 +114,7 @@ cat >> "${CHROOTDIR-}/usr/local/etc/apache24/Includes/$HOST_NAME.conf" <<EOF
 	AllowOverride None
 	Order allow,deny
 	Allow from all
+	Require all granted
 </Directory>
 EOF
 
