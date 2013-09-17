@@ -42,7 +42,8 @@ echo
 
 maybe_yell
 
-
+mkdir "${CHROOTDIR-}/usr/local/etc/rhodecode"
+${CHROOTDIR:+chroot "$CHROOTDIR"} paster make-config RhodeCode /usr/local/etc/rhodecode/production.ini
 
 sister enable_svc ${CHROOTDIR:+-C "$CHROOTDIR"} rhodecode
 
