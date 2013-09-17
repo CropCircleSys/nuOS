@@ -44,8 +44,8 @@ done
 
 nuos_init
 
-echo 'host name       -h HOST_NAME       ' ${HOST_NAME:=$HOST}
-echo 'user name       -u USER_NAME       ' ${USER_NAME:=$(pw usershow $((`pw usernext | cut -d : -f 1`-1)) | cut -d : -f 1)}
+echo 'host name       -h HOST_NAME      ' ${HOST_NAME:=$HOST}
+echo 'user name       -u USER_NAME      ' ${USER_NAME:=$(pw usershow $((`pw usernext | cut -d : -f 1`-1)) | cut -d : -f 1)}
 echo -n 'ssl             -s OPT_SSL         ' && [ -n "${OPT_SSL-}" ] && echo set || echo null
 echo
 
@@ -79,6 +79,11 @@ if [ -n "${OPT_SSL-}" ]; then
 </VirtualHost>
 <VirtualHost _default_:443>
 	ServerName www.$HOST_NAME:443
+	SSLEngine on
+	SSLCertificateFile "/usr/local/etc/apache24/ssl/$HOST_NAME.crt"
+	SSLCertificateKeyFile "/usr/local/etc/apache24/ssl/$HOST_NAME.key"
+	${self_signed:+#}SSLCertificateChainFile "/usr/local/etc/apache24/ssl/$HOST_NAME.ca.crt"
+	BrowserMatch "MSIE [2-5]" nokeepalive ssl-unclean-shutdown downgrade-1.0 force-response-1.0
 	Redirect permanent / https://$HOST_NAME/
 </VirtualHost>
 <VirtualHost *:80>
