@@ -16,6 +16,7 @@ file(s) herein covered by the Mozilla Public License, v2.0:
 	bin/nu_imap
 	bin/nu_ns_cache
 	bin/nu_ns_server
+	bin/nu_repo
 	bin/nu_smtp
 	bin/nu_ssl
 	bin/nu_user
