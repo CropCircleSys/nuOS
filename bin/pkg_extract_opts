@@ -36,10 +36,7 @@ for pkg in `ls /var/db/pkg | grep -v '^pkgdb.db$'`; do
 	opts="`grep '^@comment OPTIONS:' /var/db/pkg/$pkg/+CONTENTS | sed -e 's/^@comment OPTIONS://'`"
 	if [ -n "$opts" ]; then
 		org=`pkg_info -q -o $pkg`
-		pwd=$PWD
-		cd /usr/ports/$org
 		uni=`echo $org | tr / _`
-		cd $pwd
 		tempfile=`mktemp -t $(basename "$0").$$`
 		optlist=''
 		for opt in $opts; do
