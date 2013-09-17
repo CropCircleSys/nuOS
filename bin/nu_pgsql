@@ -16,16 +16,25 @@ set -e; set -u; set -C
 
 NUOS_VER=0.0.9.2b1
 
-while getopts C:v OPT; do
+while getopts C:h:nsv OPT; do
 	case $OPT in
 		C)
 			CHROOTDIR="$OPTARG"
+			;;
+		h)
+			HOST_NAME="$OPTARG"
+			;;
+		n)
+			OPT_NETWORK=y
+			;;
+		s)
+			OPT_SSL=y
 			;;
 		v)
 			OPT_VERBOSE=y
 			;;
 		*)
-			echo "usage: `basename \"$0\"` [-v] [-C chroot-dir]" >&2
+			echo "usage: `basename \"$0\"` [-nsv] [-C chroot-dir] [-h host-name]" >&2
 			exit 1
 	esac
 done
@@ -35,11 +44,35 @@ done
 
 nuos_init
 
+echo -n 'network access  -n OPT_NETWORK      ' && [ -n "${OPT_NETWORK-}" ] && echo set || echo null
+echo -n 'ssl             -s OPT_SSL          ' && [ -n "${OPT_NETWORK-}" ] && echo set || echo n/a
+echo -n 'host name       -h HOST_NAME        ' && [ -n "${OPT_NETWORK-}" -a -n "${OPT_SSL-}" ] && echo ${HOST_NAME:=$HOST} || echo n/a
 echo
 
 maybe_yell
 
+pghome=`${CHROOTDIR:+chroot "$CHROOTDIR"} pw usershow pgsql | cut -d : -f 9`
+[ ! -e "${CHROOTDIR-}$pghome/data" ]
+
 sister enable_svc ${CHROOTDIR:+-C "$CHROOTDIR"} postgresql
 ${CHROOTDIR:+chroot "$CHROOTDIR"} service postgresql initdb
+
+if [ -n "${OPT_NETWORK-}" ]; then
+	cat >> "${CHROOTDIR-}$pghome/data/postgresql.conf" <<'EOF'
+listen_addresses = '*'
+EOF
+	if [ -n "${OPT_SSL-}" ]; then
+		mkdir "${CHROOTDIR-}$pghome/data/ssl"
+		cp "${CHROOTDIR-}/etc/ssl/$HOST_NAME.crt" "${CHROOTDIR-}$pghome/data/ssl/"
+		cp "${CHROOTDIR-}/etc/ssl/$HOST_NAME.key" "${CHROOTDIR-}$pghome/data/ssl/"
+		if [ -f "${CHROOTDIR-}/etc/ssl/$HOST_NAME.ca.crt" ]; then
+			cat "${CHROOTDIR-}/etc/ssl/$HOST_NAME.ca.crt" >> "${CHROOTDIR-}$pghome/data/ssl/$HOST_NAME.crt"
+		fi
+		cat >> "${CHROOTDIR-}$pghome/data/postgresql.conf" <<EOF
+ssl_cert_file = 'ssl/$HOST_NAME.crt'
+ssl_key_file = 'ssl/$HOST_NAME.key'
+EOF
+	fi
+fi
 
 echo "Configured PostgreSQL database."
