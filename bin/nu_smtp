@@ -85,7 +85,7 @@ smtpd_helo_restrictions = permit_sasl_authenticated, permit_mynetworks, reject_i
 EOF
 
 if [ -n "${OPT_SSL-}" ]; then
-	mkdir -p "${CHROOTDIR-}/usr/local/etc/postfix/ssl"
+	mkdir "${CHROOTDIR-}/usr/local/etc/postfix/ssl"
 	cp "${CHROOTDIR-}/etc/ssl/$HOST_NAME.crt" "${CHROOTDIR-}/usr/local/etc/postfix/ssl/"
 	cp "${CHROOTDIR-}/etc/ssl/$HOST_NAME.key" "${CHROOTDIR-}/usr/local/etc/postfix/ssl/"
 	cat >> "${CHROOTDIR-}/usr/local/etc/postfix/main.cf" <<'EOF'
