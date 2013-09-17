@@ -55,15 +55,6 @@ mkdir -p "${CHROOTDIR-}/var/log/httpd-vhost"
 
 ${CHROOTDIR:+chroot "$CHROOTDIR"} su -m $USER_NAME -c "mkdir -p /home/$USER_NAME/$HOST_NAME/www/public"
 
-cat > "${CHROOTDIR-}/usr/local/etc/apache24/Includes/$HOST_NAME.conf" <<EOF
-<Directory "/home/$USER_NAME/$HOST_NAME/www/public">
-	Options Indexes FollowSymLinks
-	AllowOverride None
-	Order allow,deny
-	Allow from all
-</Directory>
-EOF
-
 if [ -n "${OPT_SSL-}" ]; then
 	cp "${CHROOTDIR-}/etc/ssl/$HOST_NAME.crt" "${CHROOTDIR-}/usr/local/etc/apache24/ssl/"
 	cp "${CHROOTDIR-}/etc/ssl/$HOST_NAME.key" "${CHROOTDIR-}/usr/local/etc/apache24/ssl/"
@@ -72,7 +63,7 @@ if [ -n "${OPT_SSL-}" ]; then
 	else
 		self_signed=y
 	fi
-	cat >> "${CHROOTDIR-}/usr/local/etc/apache24/Includes/$HOST_NAME.conf" <<EOF
+	cat > "${CHROOTDIR-}/usr/local/etc/apache24/Includes/$HOST_NAME.conf" <<EOF
 <VirtualHost _default_:443>
 	DocumentRoot "/home/$USER_NAME/$HOST_NAME/www/public"
 	ServerName $HOST_NAME:443
@@ -97,7 +88,7 @@ if [ -n "${OPT_SSL-}" ]; then
 </VirtualHost>
 EOF
 else
-	cat >> "${CHROOTDIR-}/usr/local/etc/apache24/Includes/$HOST_NAME.conf" <<EOF
+	cat > "${CHROOTDIR-}/usr/local/etc/apache24/Includes/$HOST_NAME.conf" <<EOF
 <VirtualHost *:80>
 	DocumentRoot "/home/$USER_NAME/$HOST_NAME/www/public"
 	ServerName $HOST_NAME
@@ -112,4 +103,13 @@ else
 EOF
 fi
 
-echo "Configured $HOST_NAME for http ${OPT_SSL:+and https }service."
+cat >> "${CHROOTDIR-}/usr/local/etc/apache24/Includes/$HOST_NAME.conf" <<EOF
+<Directory "/home/$USER_NAME/$HOST_NAME/www/public">
+	Options Indexes FollowSymLinks
+	AllowOverride None
+	Order allow,deny
+	Allow from all
+</Directory>
+EOF
+
+echo "Configured $HOST_NAME for http${OPT_SSL:+s} service."
