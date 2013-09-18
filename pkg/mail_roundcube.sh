@@ -25,9 +25,9 @@ case $pkg_step in
 		ln -s ../../../etc/roundcube/main.inc.php "${destdir-}/usr/local/www/roundcube/config/"
 		ln -s ../../../etc/roundcube/db.inc.php "${destdir-}/usr/local/www/roundcube/config/"
 		mkdir -p "${destdir-}/var/roundcube"
-		mv "${destdir-}/usr/local/www/roundcube/temp" "${destdir-}/var/roundcube/" || (rm "${destdir-}/usr/local/www/roundcube/temp/.htaccess" && rmdir "${destdir-}/usr/local/www/roundcube/temp")
+		mv "${destdir-}/usr/local/www/roundcube/temp" "${destdir-}/var/roundcube/" || (mv "${destdir-}/usr/local/www/roundcube/temp/.htaccess" "${destdir-}/var/roundcube/temp/" && rmdir "${destdir-}/usr/local/www/roundcube/temp")
 		ln -s ../../../../var/roundcube/temp "${destdir-}/usr/local/www/roundcube/"
-		[ ! -e "${destdir-}/var/log/roundcube" ] && mv "${destdir-}/usr/local/www/roundcube/logs" "${destdir-}/var/log/roundcube" || (rm "${destdir-}/usr/local/www/roundcube/logs/.htaccess" && rmdir "${destdir-}/usr/local/www/roundcube/logs")
+		[ ! -e "${destdir-}/var/log/roundcube" ] && mv "${destdir-}/usr/local/www/roundcube/logs" "${destdir-}/var/log/roundcube" || (mv "${destdir-}/usr/local/www/roundcube/logs/.htaccess" "${destdir-}/var/log/roundcube/" && rmdir "${destdir-}/usr/local/www/roundcube/logs")
 		ln -s ../../../../var/log/roundcube "${destdir-}/usr/local/www/roundcube/logs"
 		mkdir -p "${destdir-}/var/db/roundcube"
 		chown www:www "${destdir-}/var/db/roundcube"
