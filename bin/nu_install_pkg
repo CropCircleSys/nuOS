@@ -69,13 +69,14 @@ for port in $*; do
 	pkg_file=/usr/ports/packages/All/$pkg.tbz
 	if [ ! -f $pkg_file ]; then
 		[ -z "${OPT_NOMAKE-}" ]
-		exit 1 # temporarily disabling build mode until we support deps tree
+		needed_deps=`(cd /usr/ports/$port && make __MAKE_CONF=$make_conf -DBATCH build-depends-list run-depends-list | sort -u | sed -e 's|^/usr/ports/||')`
+		sister nu_install_pkg ${CHROOTDIR:+-C $CHROOTDIR} ${OPT_YES_SUBPROCESS:+-y} $needed_deps
 		destdir=
 		if [ -f "$script" ]; then
 			pkg_step=pre-build
 			. "$script"
 		fi
-		(cd /usr/ports/$port && make clean && make __MAKE_CONF=$make_conf -DBATCH package-recursive && make clean)
+		(cd /usr/ports/$port && make -DNOCLEANDEPENDS clean && make __MAKE_CONF=$make_conf -DBATCH package && make -DNOCLEANDEPENDS clean)
 		if [ -f "$script" ]; then
 			pkg_step=post-build
 			. "$script"
