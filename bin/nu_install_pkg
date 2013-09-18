@@ -16,7 +16,7 @@ set -e; set -u; set -C
 
 NUOS_VER=0.0.9.2b1
 
-while getopts C:Mvy OPT && [ $OPT != '?' ]; do
+while getopts C:MvyY OPT && [ $OPT != '?' ]; do
 	case $OPT in
 		C)
 			CHROOTDIR="$OPTARG"
@@ -29,6 +29,9 @@ while getopts C:Mvy OPT && [ $OPT != '?' ]; do
 			;;
 		y)
 			OPT_YES=y
+			;;
+		Y)
+			OPT_YES_SUBPROCESS=y
 			;;
 		*)
 			echo "usage: `basename \"$0\"` [-Mvy] [-C chroot_dir] port_origin ..." >&2
@@ -46,7 +49,7 @@ done
 maybe_yell
 
 if [ -n "${OPT_YES-}" ]; then
-	yes | sh $0 ${OPT_NOMAKE:+-M} ${OPT_VERBOSE:+-v} ${CHROOTDIR:+-C $CHROOTDIR} $@
+	yes | sh $0 ${OPT_NOMAKE:+-M} ${OPT_VERBOSE:+-v} ${CHROOTDIR:+-C $CHROOTDIR} -Y $@
 	exit $?
 fi
 
@@ -66,6 +69,7 @@ for port in $*; do
 	pkg_file=/usr/ports/packages/All/$pkg.tbz
 	if [ ! -f $pkg_file ]; then
 		[ -z "${OPT_NOMAKE-}" ]
+		exit 1 # temporarily disabling build mode until we support deps tree
 		destdir=
 		if [ -f "$script" ]; then
 			pkg_step=pre-build
@@ -79,11 +83,24 @@ for port in $*; do
 	fi
 	if [ ! -d "${CHROOTDIR-}/var/db/pkg/$pkg" ]; then
 		destdir="${CHROOTDIR-}"
+		tempfile=`mktemp -t $(basename "$0").$$`
+		if pkg_add -nv $pkg_file > $tempfile; then
+		else
+			needed_deps=$( sed -nEe "/^Package '.*' depends on '.*' with '.*' origin./{
+				N
+				s/and was not found.\$/missing/
+				s/ - already installed.\$/installed/
+				s/^Package '(.*)' depends on '(.*)' with '(.*)' origin.\n(.*)\$/\1 \2 \3 \4/
+				p
+			}" "$tempfile" | grep -E '\<missing$' | cut -w -f 3 )
+			sister nu_install_pkg ${CHROOTDIR:+-C $CHROOTDIR} ${OPT_YES_SUBPROCESS:+-y} $needed_deps
+		fi
+		rm "$tempfile"
 		if [ -f "$script" ]; then
 			pkg_step=pre-install
 			. "$script"
 		fi
-		(cd / && pkg_add ${CHROOTDIR:+-C $CHROOTDIR} $pkg_file)
+		(cd / && pkg_add ${CHROOTDIR:+-C $CHROOTDIR} -F -i $pkg_file)
 		if [ -f "$script" ]; then
 			pkg_step=post-install
 			. "$script"
