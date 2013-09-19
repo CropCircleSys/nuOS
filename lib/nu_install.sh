@@ -90,14 +90,14 @@ prepare_make_conf () {
 	else
 		install_lite_vars_init
 		local tempfile=`mktemp -t $(basename "$0").$$`
-		cat >| $tempfile <<EOF
+		cat >| "$tempfile" <<EOF
 CPUTYPE?=$TRGT_OPTZ
 WITH_BDB_VER=48
 WITH_PGSQL_VER=92
 RUBY_DEFAULT_VER=1.9
 PERL_VERSION=5.16.3
 EOF
-		setvar $1 $tempfile
+		setvar $1 "$tempfile"
 		setvar $2 rm
 	fi
 }
@@ -139,8 +139,8 @@ EOF
 	local make_conf cmd_to_retire_make_conf
 	if [ ! -d /usr/obj/usr/src/bin ]; then
 		prepare_make_conf make_conf cmd_to_retire_make_conf
-		(cd /usr/src && make -j $MAKE_JOBS __MAKE_CONF=$make_conf buildworld)
-		$cmd_to_retire_make_conf $make_conf
+		(cd /usr/src && make -j $MAKE_JOBS "__MAKE_CONF=$make_conf" buildworld)
+		$cmd_to_retire_make_conf "$make_conf"
 	fi
 	if [ ! -d /usr/obj/usr/src/sys/$TRGT_KERN ]; then
 		local kern_conf=/usr/src/sys/$TRGT_ARCH/conf/$TRGT_KERN
@@ -152,8 +152,8 @@ options VIMAGE
 EOF
 		fi
 		prepare_make_conf make_conf cmd_to_retire_make_conf
-		(cd /usr/src && make -j $MAKE_JOBS __MAKE_CONF=$make_conf KERNCONF=$TRGT_KERN buildkernel)
-		$cmd_to_retire_make_conf $make_conf
+		(cd /usr/src && make -j $MAKE_JOBS "__MAKE_CONF=$make_conf" KERNCONF=$TRGT_KERN buildkernel)
+		$cmd_to_retire_make_conf "$make_conf"
 	fi
 }
 

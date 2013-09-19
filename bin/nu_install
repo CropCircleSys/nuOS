@@ -124,10 +124,10 @@ if [ -z "${OPT_SKIP_INIT_ZPOOL-}" ]; then
 		i=$(($i + 1))
 	done
 	require_tmp tempdir
-	zpool create -o altroot=$POOL_MNT -o cachefile=$tempdir/zpool.cache -O mountpoint=none -O canmount=off -O devices=off $POOL_OPTS $POOL_NAME $POOL_TYPE $devlist
+	zpool create -o altroot=$POOL_MNT -o "cachefile=$tempdir/zpool.cache" -O mountpoint=none -O canmount=off -O devices=off $POOL_OPTS $POOL_NAME $POOL_TYPE $devlist
 	zpool export $POOL_NAME
 	gnop destroy $devlist
-	zpool import -o altroot=$POOL_MNT -o cachefile=$tempdir/zpool.cache $POOL_NAME
+	zpool import -o altroot=$POOL_MNT -o "cachefile=$tempdir/zpool.cache" $POOL_NAME
 fi
 if [ -n "${OPT_ONLY_INIT_ZPOOL-}" ]; then
 	[ -z "${OPT_SKIP_INIT_ZPOOL-}" ]
@@ -280,8 +280,8 @@ children.max = 256;
 EOF
 	
 	prepare_make_conf -i make_conf cmd_to_retire_make_conf
-	cat $make_conf > $POOL_MNT/etc/make.conf
-	$cmd_to_retire_make_conf $make_conf
+	cat "$make_conf" > $POOL_MNT/etc/make.conf
+	$cmd_to_retire_make_conf "$make_conf"
 	
 	cat >> $POOL_MNT/boot/loader.conf <<'EOF'
 init_script="/boot/init.sh"
@@ -623,11 +623,11 @@ require_tmp tempdir
 if [ -n "${INJECT_CACHE-}" ]; then
 	[ ! -f $POOL_MNT/boot/zfs/zpool.cache ]
 	cp "$INJECT_CACHE" $POOL_MNT/boot/zfs/zpool.cache
-	[ -f $tempdir/zpool.cache ] && rm $tempdir/zpool.cache
+	[ -f "$tempdir/zpool.cache" ] && rm "$tempdir/zpool.cache"
 else
-	mv -n $tempdir/zpool.cache $POOL_MNT/boot/zfs/
+	mv -n "$tempdir/zpool.cache" $POOL_MNT/boot/zfs/
 fi
-rmdir $tempdir
+rmdir "$tempdir"
 
 zfs snapshot -r $POOL_NAME/sys/rescue@sys
 
@@ -713,10 +713,10 @@ if [ -z "${must_build-}" -a -n "${OPT_DEBUG-}" ]; then
 	bpl=`mktemp -t $(basename "$0").$$`
 	pl=`mktemp -t $(basename "$0").$$`
 	report=`mktemp -t $(basename "$0").$$.zpool_report`
-	zfs get -H -t all -o name,property,value -r mountpoint,canmount $POOL_BOOT_NAME | sed -e "s|^$POOL_BOOT_NAME|_pool|" >| $bpl
-	zfs get -H -t all -o name,property,value -r mountpoint,canmount $POOL_NAME | sed -e "s|^$POOL_NAME|_pool|;s|/$POOL_NAME\$|/|;s|/$POOL_NAME||" >| $pl
-	diff $bpl $pl >| $report && rm $report || echo 'WARNING DEBUG: installer reported differences in zpool layout' >&2
-	rm $bpl $pl
+	zfs get -H -t all -o name,property,value -r mountpoint,canmount $POOL_BOOT_NAME | sed -e "s|^$POOL_BOOT_NAME|_pool|" >| "$bpl"
+	zfs get -H -t all -o name,property,value -r mountpoint,canmount $POOL_NAME | sed -e "s|^$POOL_NAME|_pool|;s|/$POOL_NAME\$|/|;s|/$POOL_NAME||" >| "$pl"
+	diff "$bpl" "$pl" >| "$report" && rm "$report" || echo 'WARNING DEBUG: installer reported differences in zpool layout' >&2
+	rm "$bpl" "$pl"
 fi
 
 

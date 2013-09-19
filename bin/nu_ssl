@@ -86,16 +86,16 @@ if [ -z "${CERT_FILE-}" ]; then
 		read -p 'repeat password:' -r key_password_repeat
 		[ "$key_password" = "$key_password_repeat" ] || (echo "password entered incorrectly" >&2 && exit 85)
 		key_password_file=`mktemp -t $(basename "$0").$$`
-		cat >| $key_password_file <<EOF
+		cat >| "$key_password_file" <<EOF
 $key_password
 EOF
-		(umask 77 && openssl genrsa -des3 -passout file:$key_password_file -out "${CHROOTDIR-}/etc/ssl/$SSL_HOST.key" $KEY_BITS)
+		(umask 77 && openssl genrsa -des3 -passout "file:$key_password_file" -out "${CHROOTDIR-}/etc/ssl/$SSL_HOST.key" $KEY_BITS)
 	else
 		(umask 77 && openssl genrsa -out "${CHROOTDIR-}/etc/ssl/$SSL_HOST.key" $KEY_BITS)
 	fi
 	
 	tempfile=`mktemp -t $(basename "$0").$$`
-	cat >| $tempfile <<EOF
+	cat >| "$tempfile" <<EOF
 $COUNTRY
 $STATE
 $CITY
@@ -111,18 +111,18 @@ EOF
 		message="Generated key $SSL_HOST.key and certificate $SSL_HOST.crt in /etc/ssl/."
 	else
 		[ ! -e "${CHROOTDIR-}/etc/ssl/$SSL_HOST.csr" ] || exit 17
-		(echo && echo) >> $tempfile
+		(echo && echo) >> "$tempfile"
 		command="openssl req -new -key ${CHROOTDIR-}/etc/ssl/$SSL_HOST.key -out ${CHROOTDIR-}/etc/ssl/$SSL_HOST.csr"
 		message="Generated key $SSL_HOST.key and certificate signing request $SSL_HOST.csr in /etc/ssl/."
 	fi
 	
 	if [ -z "${OPT_UNSECURE-}" ]; then
-		$command -passin file:$key_password_file < $tempfile 2> /dev/null
-		rm $key_password_file
+		$command -passin "file:$key_password_file" < "$tempfile" 2> /dev/null
+		rm "$key_password_file"
 	else
-		$command < $tempfile 2> /dev/null
+		$command < "$tempfile" 2> /dev/null
 	fi
-	rm $tempfile
+	rm "$tempfile"
 	
 	echo $message
 	

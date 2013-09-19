@@ -72,11 +72,11 @@ prepend domain-name-servers 127.0.0.1;
 EOF
 
 tempfile=`mktemp -t $(basename "$0").$$`
-echo nameserver 127.0.0.1 >| $tempfile
+echo nameserver 127.0.0.1 >| "$tempfile"
 if [ -f "${CHROOTDIR-}/etc/resolv.conf" ]; then
-	grep -Ev '^nameserver[[:blank:]]+127.0.0.1\>' "${CHROOTDIR-}/etc/resolv.conf" >> $tempfile
+	grep -Ev '^nameserver[[:blank:]]+127.0.0.1\>' "${CHROOTDIR-}/etc/resolv.conf" >> "$tempfile"
 fi
-cat $tempfile >| "${CHROOTDIR-}/etc/resolv.conf"
-rm $tempfile
+cat "$tempfile" >| "${CHROOTDIR-}/etc/resolv.conf"
+rm "$tempfile"
 
 echo "Configured cache resolver."
