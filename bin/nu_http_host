@@ -45,10 +45,7 @@ done
 nuos_init
 
 echo 'host name       -h HOST_NAME      ' ${HOST_NAME:=$HOST}
-echo 'user name       -u USER_NAME      ' ${USER_NAME:=$(
-	pw -V "${CHROOTDIR-}/etc" usershow $((
-		`pw -V "${CHROOTDIR-}/etc" usernext | cut -d : -f 1`- 1))\
-	| cut -d : -f 1)}
+echo 'user name       -u USER_NAME      ' ${USER_NAME:=$(pw -V "${CHROOTDIR-}/etc" usershow $((`pw -V "${CHROOTDIR-}/etc" usernext | cut -d : -f 1`- 1))	| cut -d : -f 1)}
 echo -n 'ssl             -s OPT_SSL         ' && [ -n "${OPT_SSL-}" ] && echo set || echo null
 echo
 
