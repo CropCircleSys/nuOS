@@ -85,7 +85,7 @@ for port in $*; do
 	if [ ! -d "${CHROOTDIR-}/var/db/pkg/$pkg" ]; then
 		destdir="${CHROOTDIR-}"
 		tempfile=`mktemp -t $(basename "$0").$$`
-		if pkg_add -nv $pkg_file >| "$tempfile"; then
+		if pkg_add ${CHROOTDIR:+-C $CHROOTDIR} -nv $pkg_file >| "$tempfile"; then
 		else
 			needed_deps=$( sed -nEe "/^Package '.*' depends on '.*' with '.*' origin./{
 				N
