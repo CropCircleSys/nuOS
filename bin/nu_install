@@ -623,7 +623,7 @@ require_tmp tempdir
 if [ -n "${INJECT_CACHE-}" ]; then
 	[ ! -f $POOL_MNT/boot/zfs/zpool.cache ]
 	cp "$INJECT_CACHE" $POOL_MNT/boot/zfs/zpool.cache
-	[ -f "$tempdir/zpool.cache" ] && rm "$tempdir/zpool.cache"
+	[ -f "$tempdir/zpool.cache" ] && rm "$tempdir/zpool.cache" || true
 else
 	mv -n "$tempdir/zpool.cache" $POOL_MNT/boot/zfs/
 fi
