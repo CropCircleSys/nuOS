@@ -710,9 +710,9 @@ zfs snapshot -r $host_ds@genesis
 zfs snapshot -r $home_ds@genesis
 
 if [ -z "${must_build-}" -a -n "${OPT_DEBUG-}" ]; then
-	bpl=`mktemp -t $(basename "$0").$$`
-	pl=`mktemp -t $(basename "$0").$$`
-	report=`mktemp -t $(basename "$0").$$.zpool_report`
+	require_tmp bpl
+	require_tmp pl
+	require_tmp -l zpool_report report
 	zfs get -H -t all -o name,property,value -r mountpoint,canmount $POOL_BOOT_NAME | sed -e "s|^$POOL_BOOT_NAME|_pool|" >| "$bpl"
 	zfs get -H -t all -o name,property,value -r mountpoint,canmount $POOL_NAME | sed -e "s|^$POOL_NAME|_pool|;s|/$POOL_NAME\$|/|;s|/$POOL_NAME||" >| "$pl"
 	diff "$bpl" "$pl" >| "$report" && rm "$report" || echo 'WARNING DEBUG: installer reported differences in zpool layout' >&2

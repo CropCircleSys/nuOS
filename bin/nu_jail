@@ -107,7 +107,7 @@ case $JAIL_TYPE in
 	ip4 = "inherit";   
 	$tmpfs_args = "";
 EOF
-		tempfile=`mktemp -t $(basename "$0").$$`
+		require_tmp tempfile
 		grep ^exec.prestart "${CHROOTDIR-}/etc/jail.conf" | sed -e 's/&& devfs .* applyset &&/\&\&/;s/^/	/' >> "$tempfile"
 		cat "$tempfile" >> "${CHROOTDIR-}/etc/jail.conf"
 		rm "$tempfile"

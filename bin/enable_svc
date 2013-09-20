@@ -35,7 +35,7 @@ mkdir -p $confdir
 for svc in $*; do
 	svc_switch_egrep="^[[:blank:]]*#*[[:blank:]]*${svc}_enable="
 	if [ -f $confdir/$svc ]; then
-		tempfile=`mktemp -t $(basename "$0").$$`
+		require_tmp tempfile
 		grep -v -E "$svc_switch_egrep" $confdir/$svc >> "$tempfile" || true
 		rm $confdir/$svc
 	fi

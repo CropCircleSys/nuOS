@@ -85,7 +85,7 @@ if [ -z "${CERT_FILE-}" ]; then
 		[ $key_password_len -ge 4 ] || (echo "password too short (must be 4 chars or more)" >&2 && exit 85)
 		read -p 'repeat password:' -r key_password_repeat
 		[ "$key_password" = "$key_password_repeat" ] || (echo "password entered incorrectly" >&2 && exit 85)
-		key_password_file=`mktemp -t $(basename "$0").$$`
+		require_tmp key_password_file
 		cat >| "$key_password_file" <<EOF
 $key_password
 EOF
@@ -94,7 +94,7 @@ EOF
 		(umask 77 && openssl genrsa -out "${CHROOTDIR-}/etc/ssl/$SSL_HOST.key" $KEY_BITS)
 	fi
 	
-	tempfile=`mktemp -t $(basename "$0").$$`
+	require_tmp tempfile
 	cat >| "$tempfile" <<EOF
 $COUNTRY
 $STATE

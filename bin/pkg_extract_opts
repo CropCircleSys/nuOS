@@ -37,7 +37,7 @@ for pkg in `ls /var/db/pkg | grep -v '^pkgdb.db$'`; do
 	if [ -n "$opts" ]; then
 		org=`pkg_info -q -o $pkg`
 		uni=`echo $org | tr / _`
-		tempfile=`mktemp -t $(basename "$0").$$`
+		require_tmp tempfile
 		optlist=''
 		for opt in $opts; do
 			bareopt="${opt#[-+]}"
