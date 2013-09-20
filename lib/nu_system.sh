@@ -71,7 +71,8 @@ require_tmp () {
 	
 	[ $# = 1 ]
 	[ -n "$1" ]
-	eval [ -z "\${$1-}" ]
 	
-	setvar "$1" "$(mktemp ${opt_dir:+-d} -t "$(basename "$0").$$${label:+.$label}")"
+	if eval [ -z "\${$1-}" ]; then
+		setvar "$1" "$(mktemp ${opt_dir:+-d} -t "$(basename "$0").$$${label:+.$label}")"
+	fi
 }
