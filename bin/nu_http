@@ -43,22 +43,27 @@ echo
 
 maybe_yell
 
+service=apache24
+
+[ ! -e "${CHROOTDIR-}/etc/rc.conf.d/$service" ] || [ `wc -l "${CHROOTDIR-}/etc/rc.conf.d/$service" | xargs | cut -w -f 1` = 1 ]
+
 export LC_CTYPE=C
 
-sed -i '' -Ee '/^<VirtualHost[[:>:]]/,/^<\/VirtualHost[[:>:]]/s/^/#/' "${CHROOTDIR-}/usr/local/etc/apache24/extra/httpd-vhosts.conf"
-cat >> "${CHROOTDIR-}/usr/local/etc/apache24/extra/httpd-vhosts.conf" <<'EOF'
+sed -i '' -Ee '/^<VirtualHost[[:>:]]/,/^<\/VirtualHost[[:>:]]/s/^/#/' "${CHROOTDIR-}/usr/local/etc/$service/extra/httpd-vhosts.conf"
+cat >> "${CHROOTDIR-}/usr/local/etc/$service/extra/httpd-vhosts.conf" <<EOF
 <VirtualHost *:80>
-	DocumentRoot "/usr/local/www/apache24/data"
+	DocumentRoot "/usr/local/www/$service/data"
 </VirtualHost>
 EOF
-sed -i '' -Ee 's/^#(Include[[:>:]].*[[:<:]]httpd-(mpm|vhosts|default).conf)$/\1/' "${CHROOTDIR-}/usr/local/etc/apache24/httpd.conf"
+sed -i '' -Ee 's/^#(Include[[:>:]].*[[:<:]]httpd-(mpm|vhosts|default).conf)$/\1/' "${CHROOTDIR-}/usr/local/etc/$service/httpd.conf"
 
 if [ -n "${OPT_SSL-}" ]; then
-	mkdir "${CHROOTDIR-}/usr/local/etc/apache24/ssl"
-	sed -i '' -Ee '/^<VirtualHost[[:>:]]/,/^<\/VirtualHost[[:>:]]/s/^/#/' "${CHROOTDIR-}/usr/local/etc/apache24/extra/httpd-ssl.conf"
-	sed -i '' -Ee 's/^#(Include[[:>:]].*[[:<:]]httpd-ssl.conf)$/\1/;s/^#(LoadModule[[:>:]].*[[:<:]]mod_(ssl|socache_shmcb).so)$/\1/' "${CHROOTDIR-}/usr/local/etc/apache24/httpd.conf"
+	mkdir "${CHROOTDIR-}/usr/local/etc/$service/ssl"
+	sed -i '' -Ee '/^<VirtualHost[[:>:]]/,/^<\/VirtualHost[[:>:]]/s/^/#/' "${CHROOTDIR-}/usr/local/etc/$service/extra/httpd-ssl.conf"
+	sed -i '' -Ee 's/^#(Include[[:>:]].*[[:<:]]httpd-ssl.conf)$/\1/;s/^#(LoadModule[[:>:]].*[[:<:]]mod_(ssl|socache_shmcb).so)$/\1/' "${CHROOTDIR-}/usr/local/etc/$service/httpd.conf"
 fi
 
-sister enable_svc ${CHROOTDIR:+-C "$CHROOTDIR"} apache24
+sister enable_svc ${CHROOTDIR:+-C "$CHROOTDIR"} $service
+echo 'apache24_http_accept_enable="YES"' >> "${CHROOTDIR-}/etc/rc.conf.d/$service"
 
 echo "Configured http service."
