@@ -64,5 +64,14 @@ sister () {
 }
 
 require_tmp () {
-	eval [ -n "\${$1-}" ] || setvar $1 "$(mktemp -d -t $(basename "$0").$$)"
+	while getopts dl: OPT; do case $OPT in
+		d) local opt_dir=y;;
+		l) local label=$OPTARG; shift;;
+	esac; shift; done
+	
+	[ $# = 1 ]
+	[ -n "$1" ]
+	eval [ -z "\${$1-}" ]
+	
+	setvar "$1" "$(mktemp ${opt_dir:+-d} -t "$(basename "$0").$$${label:+.$label}")"
 }

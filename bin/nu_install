@@ -123,7 +123,7 @@ if [ -z "${OPT_SKIP_INIT_ZPOOL-}" ]; then
 		push devlist $nextdev
 		i=$(($i + 1))
 	done
-	require_tmp tempdir
+	require_tmp -d tempdir
 	zpool create -o altroot=$POOL_MNT -o "cachefile=$tempdir/zpool.cache" -O mountpoint=none -O canmount=off -O devices=off $POOL_OPTS $POOL_NAME $POOL_TYPE $devlist
 	zpool export $POOL_NAME
 	gnop destroy $devlist
@@ -619,7 +619,7 @@ ln -s ../boot/etc/login.conf.db $POOL_MNT/etc/login.conf.db
 zfs mount $POOL_NAME/sys/rescue/etc
 
 
-require_tmp tempdir
+require_tmp -d tempdir
 if [ -n "${INJECT_CACHE-}" ]; then
 	[ ! -f $POOL_MNT/boot/zfs/zpool.cache ]
 	cp "$INJECT_CACHE" $POOL_MNT/boot/zfs/zpool.cache
