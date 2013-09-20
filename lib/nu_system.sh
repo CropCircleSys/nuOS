@@ -38,7 +38,7 @@ baseos_init () {
 maybe_pause () {
 	if [ -z "${OPT_QUICK-}" ]; then
 		echo
-		echo 'beginning in 10 seconds'
+		echo beginning in 10 seconds
 		echo
 		sleep 10
 		echo
@@ -60,9 +60,9 @@ push () {
 sister () {
 	local bin=$1
 	shift
-	(sh "$(dirname "$(realpath "$0")")/$bin" "$@")
+	sh "$(dirname "$(realpath "$0")")/$bin" "$@"
 }
 
 require_tmp () {
-	eval [ -n "\${$1-}" ] || setvar $1 `mktemp -d -t $(basename "$0").$$`
+	eval [ -n "\${$1-}" ] || setvar $1 "$(mktemp -d -t $(basename "$0").$$)"
 }
