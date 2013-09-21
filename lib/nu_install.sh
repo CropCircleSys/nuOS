@@ -89,7 +89,8 @@ prepare_make_conf () {
 		setvar $2 :
 	else
 		install_lite_vars_init
-		local require_tmp tempfile
+		local tempfile
+		require_tmp tempfile
 		cat >| "$tempfile" <<EOF
 CPUTYPE?=$TRGT_OPTZ
 WITH_BDB_VER=48
