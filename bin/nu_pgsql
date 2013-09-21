@@ -19,6 +19,7 @@ NUOS_VER=0.0.9.2b1
 while getopts C:h:nsv OPT; do
 	case $OPT in
 		C)
+			exit 43
 			CHROOTDIR="$OPTARG"
 			;;
 		h)
