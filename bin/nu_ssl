@@ -16,7 +16,7 @@ set -e; set -u; set -C
 
 NUOS_VER=0.0.9.2b1
 
-while getopts a:b:c:C:h:sSv OPT; do
+while getopts a:b:c:C:h:l:n:p:sSv OPT; do
 	case $OPT in
 		a)
 			AUTH_FILE="$OPTARG"
@@ -32,6 +32,15 @@ while getopts a:b:c:C:h:sSv OPT; do
 			;;
 		h)
 			SSL_HOST="$OPTARG"
+			;;
+		l)
+			CITY="$OPTARG"
+			;;
+		n)
+			COUNTRY="$OPTARG"
+			;;
+		p)
+			STATE="$OPTARG"
 			;;
 		s)
 			OPT_SELF_SIGNED=y
@@ -56,12 +65,12 @@ nuos_init
 echo 'creating ssl    -h SSL_HOST       ' ${SSL_HOST:=$HOST}
 if [ -z "${CERT_FILE-}" ]; then
 	echo 'key bits        -b KEY_BITS       ' ${KEY_BITS:=2048}
-	echo 'country code       COUNTRY        ' $COUNTRY
+	echo 'country code    -n COUNTRY        ' $COUNTRY
 	country_len=${#COUNTRY}
 	[ $country_len -eq 2 ] || (echo "COUNTRY must be 2 chars (standard: ISO 3166-1 alpha-2)" >&2 && exit 85)
-	echo 'state/province     STATE          ' $STATE
+	echo 'state/province  -p STATE          ' $STATE
 	[ -n "$STATE" ] || STATE=undefined
-	echo 'city/locality      CITY           ' ${CITY:=}
+	echo 'city/locality   -l CITY           ' ${CITY:=}
 	echo 'company            COMPANY        ' ${COMPANY:=}
 	[ -n "$COMPANY" ] || COMPANY=undefined
 	echo 'department         DEPT           ' ${DEPT:=}
