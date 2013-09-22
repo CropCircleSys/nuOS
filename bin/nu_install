@@ -16,7 +16,7 @@ set -e; set -u; set -C
 
 NUOS_VER=0.0.9.2b1
 
-while getopts a:b:c:Bd:DFh:i:m:o:p:PqQs:St:u:vzZ OPT; do
+while getopts a:b:c:Bd:DFh:i:l:m:o:p:PqQs:St:u:vzZ OPT; do
 	case $OPT in
 		a)
 			ADMIN_ACCT="$OPTARG"
@@ -54,6 +54,9 @@ while getopts a:b:c:Bd:DFh:i:m:o:p:PqQs:St:u:vzZ OPT; do
 		i)
 			INJECT_CACHE="$OPTARG"
 			;;
+		l)
+			LOCAL_SCRIPT="$OPTARG"
+			;;
 		m)
 			POOL_MNT="$OPTARG"
 			;;
@@ -72,7 +75,7 @@ while getopts a:b:c:Bd:DFh:i:m:o:p:PqQs:St:u:vzZ OPT; do
 		s) # this is the reservation for swap on the pool
 			SWAP_SIZE="$OPTARG"
 			;;
-		S) # this is to install into 8 fat chunks of main mem
+		S) # this installs into 8 memory devices so have a ton of free RAM if you use this
 			OPT_SWAP=y
 			;;
 		t) # raidz (default), raidz2, raidz3, mirror or ''
@@ -92,7 +95,7 @@ while getopts a:b:c:Bd:DFh:i:m:o:p:PqQs:St:u:vzZ OPT; do
 			OPT_ONLY_INIT_ZPOOL=y
 			;;
 		*)
-			echo "usage: `basename $0` [-BFPqSvzZ] [-a admin-acct] [-b backdoor-acct] [-u user-acct] [-c pkg-collection] [-h new-host] [-s swap-size] [-d pool-devs] [-m pool-mnt] [-o pool-opts] [-p pool-name] [-t pool-type]" >&2
+			echo "usage: `basename $0` [-BFPqSvzZ] [-a admin-acct] [-b backdoor-acct] [-u user-acct] [-c pkg-collection] [-h new-host] [-s swap-size] [-d pool-devs] [-l local-script] [-m pool-mnt] [-o pool-opts] [-p pool-name] [-t pool-type]" >&2
 			exit 1
 	esac
 done
@@ -670,6 +673,18 @@ zfs clone -o mountpoint=/ -o canmount=noauto $POOL_NAME/sys/rescue@sys $host_ds
 zfs clone $POOL_NAME/sys/rescue/etc@sys $host_ds/etc
 zfs clone $POOL_NAME/sys/rescue/var@sys $host_ds/var
 zfs clone $POOL_NAME/sys/rescue/var/db@sys $host_ds/var/db
+
+zfs snapshot -r $host_ds@blank
+
+export NEW_HOST
+sister nu_jail -C $POOL_MNT -p $POOL_NAME -t clone -w -j base-lab -o $BASEOS_TYPE/$BASEOS_VER -s bare -i 127.0.0.2 -a '' -u '' -b '' -q
+sister nu_jail -C $POOL_MNT -p $POOL_NAME -t clone -w -j nuos-lab -s blank -i 127.0.0.3 -a '' -u '' -b '' -q
+sister nu_jail -C $POOL_MNT -p $POOL_NAME -t clone -w -j lab -i 127.0.0.4 -a '' -u '' -b '' -q
+
+sister enable_svc -C $POOL_MNT jail2
+
+zfs snapshot -r $host_ds@bare
+
 zfs create -o mountpoint=/var/db/entropy $POOL_NAME/entropy/host
 
 cat > $POOL_MNT/boot/loader.conf.local <<EOF
@@ -697,14 +712,20 @@ zfs create -o mountpoint=/home $home_ds
 
 admin_install -z $POOL_MNT
 
-sister enable_svc -C $POOL_MNT sshd
-sister enable_svc -C $POOL_MNT jail2
-#sister enable_svc -C $POOL_MNT dbus avahi_daemon netatalk
+zfs snapshot -r $host_ds@login
+zfs snapshot -r $home_ds@login
 
-export NEW_HOST
-sister nu_jail -C $POOL_MNT -p $POOL_NAME -t clone -w -j base-lab -o $BASEOS_TYPE/$BASEOS_VER -s bare -i 127.0.0.2 -a '' -u '' -b '' -q
-sister nu_jail -C $POOL_MNT -p $POOL_NAME -t clone -w -j nuos-lab -s blank -i 127.0.0.3 -a '' -u '' -b '' -q
-sister nu_jail -C $POOL_MNT -p $POOL_NAME -t clone -w -j lab -i 127.0.0.4 -a '' -u '' -b '' -q
+if [ -n "${LOCAL_SCRIPT-}" ]; then
+	if [ -d "${LOCAL_SCRIPT-}" ]; then
+		script_files=`rcorder "$LOCAL_SCRIPT/*.sh"`
+		for script_file in $script_files; do
+			. "$script_file"
+		done
+	fi
+	if [ -f "${LOCAL_SCRIPT-}" ]; then
+		. "$LOCAL_SCRIPT"
+	fi
+fi
 
 zfs snapshot -r $host_ds@genesis
 zfs snapshot -r $home_ds@genesis
