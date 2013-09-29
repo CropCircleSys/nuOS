@@ -77,7 +77,7 @@ if [ -z "${CERT_FILE-}" ]; then
 	echo 'company            COMPANY        ' ${COMPANY:=}
 	[ -n "$COMPANY" ] || COMPANY=undefined
 	echo 'department         DEPT           ' ${DEPT:=}
-	echo 'email           -m EMAIL          ' ${EMAIL:=}
+	echo 'email           -m EMAIL          ' ${EMAIL:=operator@$SSL_HOST}
 	echo -n 'self signed     -s OPT_SELF_SIGNED ' && [ -n "${OPT_SELF_SIGNED-}" ] && echo set || echo null
 	echo -n 'unsecure        -S OPT_UNSECURE    ' && [ -n "${OPT_UNSECURE-}" ] && echo set || echo null
 else
