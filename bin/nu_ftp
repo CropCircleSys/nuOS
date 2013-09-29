@@ -53,7 +53,12 @@ mkdir "${CHROOTDIR-}/usr/local/etc/pure-ftpd"
 
 export LC_CTYPE=C
 
-sed -Ee 's/^(NoAnonymous[[:blank:]]+)no$/\1yes/;s/^(MinUID[[:blank:]]+)100$/\11000/;s/^(AllowUserFXP[[:blank:]]+)no$/\1yes/;s/^(CustomerProof[[:blank:]]+)yes$/\1no/' "${CHROOTDIR-}/usr/local/etc/pure-ftpd.conf.sample" > "${CHROOTDIR-}/usr/local/etc/pure-ftpd.conf"
+sed -Ee '
+	/^NoAnonymous[[:>:]]/s/no$/yes/
+	/^MinUID[[:>:]]/s/100$/1000/
+	/^AllowUserFXP[[:>:]]/s/no$/yes/
+	/^CustomerProof[[:>:]]/s/yes$/no/
+' "${CHROOTDIR-}/usr/local/etc/pure-ftpd.conf.sample" > "${CHROOTDIR-}/usr/local/etc/pure-ftpd.conf"
 
 if [ -n "${OPT_SSL-}" ]; then
 	mkdir "${CHROOTDIR-}/usr/local/etc/pure-ftpd/ssl"
@@ -62,7 +67,9 @@ if [ -n "${OPT_SSL-}" ]; then
 		cat "${CHROOTDIR-}/etc/ssl/$HOST_NAME.ca.crt" >> "${CHROOTDIR-}/usr/local/etc/pure-ftpd/ssl/$HOST_NAME.pem"
 	fi
 	ln -s $HOST_NAME.pem "${CHROOTDIR-}/usr/local/etc/pure-ftpd/ssl/server.pem"
-	sed -i '' -Ee 's/^#[[:blank:]]*(TLS[[:>:]].*)$/\1/;s/^#[[:blank:]]*(TLSCipherSuite[[:>:]].*)$/\1/' "${CHROOTDIR-}/usr/local/etc/pure-ftpd.conf"
+	sed -i '' -Ee '
+		/^[#[:blank:]]*TLS(CipherSuite)?[[:>:]]/s/^[#[:blank:]]*//
+	' "${CHROOTDIR-}/usr/local/etc/pure-ftpd.conf"
 fi
 
 sister enable_svc ${CHROOTDIR:+-C "$CHROOTDIR"} pureftpd
