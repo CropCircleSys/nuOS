@@ -142,7 +142,19 @@ $svn_realm
 END
 EOF
 		fi
-		svn checkout https://$SVN_SERVER/$SVN_PATH /usr/src
+		
+		local svn_errors=0
+		svn checkout https://$SVN_SERVER/$SVN_PATH /usr/src || svn_errors=1
+
+		local max_svn_errors=5
+		while [ $svn_errors -gt 0 -a -z "${svn_success-}" -a $svn_errors -lt $max_svn_errors ]; do
+			local svn_retry_pause=15
+			echo suffered $svn_errors errors while checking out base system source code from subversion server at $SVN_SERVER
+			echo pausing for at least $svn_retry_pause seconds
+			(cd /usr/src && svn cleanup && sleep $svn_retry_pause && svn update) && svn_success=y || svn_errors=$(($svn_errors+1))
+		done
+		[ $svn_errors -lt $max_svn_errors ]
+
 		baseos_init
 	fi
 	local make_conf cmd_to_retire_make_conf
