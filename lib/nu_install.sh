@@ -57,6 +57,11 @@ install_vars_init () {
 	echo 'target proc        TRGT_PROC      ' $TRGT_PROC
 	echo 'target kern        TRGT_KERN      ' ${TRGT_KERN:=VIMAGE}
 	echo 'target optimize    TRGT_OPTZ      ' $TRGT_OPTZ
+	if [ -z "${SVN_SERVER-}" ]; then
+		choose_random SVN_SERVER svn0.us-west.FreeBSD.org svn0.us-east.FreeBSD.org
+	fi
+	echo 'subversion server  SVN_SERVER     ' $SVN_SERVER
+	echo 'subversion path    SVN_PATH       ' ${SVN_PATH:=base/releng/9.2}
 	echo -n 'copy ports         COPY_PORTS      ' && [ -n "${COPY_PORTS-}" ] && echo set || echo null
 	echo -n 'copy all pkgs      COPY_DEV_PKGS   ' && [ -n "${COPY_DEV_PKGS-}" ] && echo set || echo null
 	echo -n 'copy src           COPY_SRC        ' && [ -n "${COPY_SRC-}" ] && echo set || echo null
@@ -116,9 +121,13 @@ require_base_src () {
 		[ -d ~/.subversion ] || mkdir ~/.subversion
 		[ -d ~/.subversion/auth ] || (umask 77 && mkdir ~/.subversion/auth)
 		[ -d ~/.subversion/auth/svn.ssl.server ] || mkdir ~/.subversion/auth/svn.ssl.server
-		local srv_pub_key=`eval echo '~/.subversion/auth/svn.ssl.server/87ff8e8fd0384311d1630a5693b2abb5'`
+		local svn_server_lc=`echo $SVN_SERVER | tr '[:upper:]' '[:lower:]'`
+		local svn_realm=https://$svn_server_lc:443
+		local svn_realm_len=${#svn_realm}
+		local svn_realm_hash=`echo -n $svn_realm | md5`
+		local srv_pub_key=`eval echo '~/.subversion/auth/svn.ssl.server/$svn_realm_hash'`
 		if [ ! -f $srv_pub_key ]; then
-			cat > $srv_pub_key <<'EOF'
+			cat > $srv_pub_key <<EOF
 K 10
 ascii_cert
 V 2216
@@ -129,12 +138,12 @@ V 2
 12
 K 15
 svn:realmstring
-V 36
-https://svn0.us-east.freebsd.org:443
+V $svn_realm_len
+$svn_realm
 END
 EOF
 		fi
-		svn checkout https://svn0.us-east.FreeBSD.org/base/releng/9.2 /usr/src
+		svn checkout https://$SVN_SERVER/$SVN_PATH /usr/src
 		baseos_init
 	fi
 	local make_conf cmd_to_retire_make_conf
