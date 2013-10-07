@@ -54,7 +54,7 @@ maybe_yell () {
 push () {
 	local var=$1
 	shift
-	eval setvar \$var \"\${$var:+\$$var }$*\"
+	eval setvar $var \"\${$var:+\$$var }$*\"
 }
 
 sister () {
