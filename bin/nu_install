@@ -634,10 +634,7 @@ rmdir "$tempdir"
 
 zfs snapshot -r $POOL_NAME/sys/rescue@sys
 
-# TODO: The '-o sync=always' here is about avoiding crashes due to memory pressure race conditions and not at all about making the writes durable. It may be safe to remove it after much further testing and confirmation that FreeBSD has fixed any such races. Using it causes swapping to be far slower than normal. This is a safe though not very viable swap scenario especially when used with hard disks. An L2ARC on high-end SSD helps a lot but the ultimate goal should certainly be to return to the default syncing behavior once crashes can deterministically be shown to be always avoided. For now plan to swap a little as possible, which should almost certainly already be your plan, anyway. 
-# TODO: '-o primarycache=none -o secondarycache=none' is a super-safe mode if we are planning to go beta any time soon. Forget what I said about L2ARC, it needs to be tested further that swapping into the pool via L2ARC doesn't race at all. Metadata in primary memory should also be further investigated. We should instead be using '-o primarycache=metadata' when deemed safe.
-zfs create -o mountpoint=none -o canmount=off -o compression=off -o primarycache=none -o secondarycache=none -o sync=always -o org.freebsd:swap=on $POOL_NAME/swap
-#zfs create -o mountpoint=none -o canmount=off -o primarycache=metadata -o org.freebsd:swap=on $POOL_NAME/swap # TODO: Testing ideal case
+zfs create -o mountpoint=none -o canmount=off -o primarycache=metadata -o org.freebsd:swap=on $POOL_NAME/swap
 
 if [ "$SWAP_SIZE" != 0 ]; then
 	zfs create -b 4K -V $SWAP_SIZE $POOL_NAME/swap/host
