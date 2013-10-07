@@ -76,3 +76,10 @@ require_tmp () {
 		setvar "$1" "$(mktemp ${opt_dir:+-d} -t "$(basename "$0").$$${label:+.$label}")"
 	fi
 }
+
+choose_random () {
+	local var=$1
+	shift
+	local rand=$((`dd bs=4 count=1 if=/dev/urandom 2> /dev/null | od -D | head -n 1 | cut -w -f 2` % $# + 1))
+	eval setvar $var \$$rand
+}
