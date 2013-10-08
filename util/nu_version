@@ -52,6 +52,6 @@ sed -i '' -Ee "s/#([[:blank:]]*)nuOS $nuos_ver_escd[[:>:]]/#\\1nuOS $new_ver/" $
 sed -i '' -Ee "s/[[:<:]]NUOS_VER=$nuos_ver_escd[[:>:]]/NUOS_VER=$new_ver/" $bins
 sed -i '' -Ee "s/[[:<:]]nuos_lib_ver=$nuos_ver_escd[[:>:]]/nuos_lib_ver=$new_ver/;s/\\\$NUOS_VER([[:blank:]]+)=([[:blank:]]+)$nuos_ver_escd[[:>:]]/\$NUOS_VER\\1=\\2$new_ver/" $libs
 
-grep -n -r $nuos_ver_escd * && echo 'WARNING: old version string still present in codebase, see above' >&2
+grep -n -r -E "$nuos_ver_escd\>" * && echo 'WARNING: old version string still present in codebase, see above' >&2
 
 echo "Switched version label of nuOS $NUOS_VER codebase at $NUOS_CODE_ROOT to $new_ver."
