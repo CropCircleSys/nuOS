@@ -30,4 +30,5 @@ nuos_init () {
 	echo 'nuos support       NUOS_SUPPORTED ' ${NUOS_SUPPORTED:=UNSUPPORTED}
 	echo 'host opsys                        ' ${HOSTOS_TYPE:=$BASEOS_TYPE}
 	echo 'host opsys v#                     ' ${HOSTOS_VER:=$BASEOS_VER}
+	echo "host pkg collec'n                 " ${HOSTOS_PKG_COLLECTION:=desktop}
 }

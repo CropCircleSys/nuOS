@@ -49,7 +49,7 @@ install_vars_init () {
 	echo 'pool mnt pt     -m POOL_MNT       ' ${POOL_MNT:=/$POOL_NAME}
 	echo 'pool type       -t POOL_TYPE      ' ${POOL_TYPE=raidz}
 	echo 'pool options    -o POOL_OPTS      ' ${POOL_OPTS="-O atime=off -O compression=lz4"}
-	echo 'pkg collection  -c PKG_COLLECTION ' ${PKG_COLLECTION:=desktop}
+	echo 'pkg collection  -c PKG_COLLECTION ' ${PKG_COLLECTION:=$HOSTOS_PKG_COLLECTION}
 	echo 'swap size       -s SWAP_SIZE      ' ${SWAP_SIZE:=512M}
 	echo 'new host name   -h NEW_HOST       ' ${NEW_HOST:=$POOL_NAME.`hostname | sed -e 's/^[^\.]*\.//'`}
 	echo 'make jobs          MAKE_JOBS      ' ${MAKE_JOBS:=$((2+`sysctl -n kern.smp.cpus`))}
