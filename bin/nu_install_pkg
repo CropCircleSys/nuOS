@@ -75,8 +75,22 @@ for port in $*; do
 			[ -z "`pkg_info -qO $port`" ]
 			make_target="install package"
 		fi
-		needed_deps=`cd /usr/ports/$port && make "__MAKE_CONF=$make_conf" -DBATCH build-depends-list run-depends-list | sed -e 's|^/usr/ports/||' | sort -u`
-		sister nu_install_pkg ${CHROOTDIR:+-C $CHROOTDIR} ${OPT_YES_SUBPROCESS:+-y} $needed_deps
+		require_tmp build_deps
+		require_tmp run_deps
+		require_tmp deps_union
+		require_tmp build_only_deps
+		(
+			cd /usr/ports/$port
+			make "__MAKE_CONF=$make_conf" -DBATCH build-depends-list | sed -e 's|^/usr/ports/||' >| "$build_deps"
+			make "__MAKE_CONF=$make_conf" -DBATCH run-depends-list | sed -e 's|^/usr/ports/||' >| "$run_deps"
+		)
+		cat "$build_deps" "$run_deps" | sort | uniq -d >| "$deps_union"
+		cat "$build_deps" "$deps_union" | sort | uniq -u >| "$build_only_deps"
+		rm "$build_deps" "$deps_union"
+		sister nu_install_pkg ${OPT_YES_SUBPROCESS:+-y} `cat "$build_only_deps"`
+		rm "$build_only_deps"
+		sister nu_install_pkg ${CHROOTDIR:+-C $CHROOTDIR} ${OPT_YES_SUBPROCESS:+-y} `cat "$run_deps"`
+		rm "$run_deps"
 		destdir=
 		if [ -f "$script" ]; then
 			pkg_step=pre-build
