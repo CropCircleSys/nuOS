@@ -36,7 +36,18 @@ bins="bin/* util/*"
 
 nuos_ver_escd="$(echo $NUOS_VER | sed -e 's/\./\\./g')"
 
-sed -i '' -Ee "s/[[:<:]]nuOS $nuos_ver_escd[[:>:]]/nuOS $new_ver/g" $readmes
+old_len=${#NUOS_VER}
+new_len=${#new_ver}
+
+if [ $old_len -gt $new_len ]; then
+	add_spc=`printf %$(($old_len - $new_len))s ''`
+fi
+if [ $old_len -lt $new_len ]; then
+	del_spc=`printf %$(($new_len - $old_len))s ''`
+fi
+
+sed -i '' -Ee "s/[[:<:]]nuOS $nuos_ver_escd[[:>:]]${del_spc-}/nuOS $new_ver${add_spc-}/g;s/[[:<:]]nuOS $nuos_ver_escd[[:>:]]/nuOS $new_ver/g" $readmes
+
 sed -i '' -Ee "s/#([[:blank:]]*)nuOS $nuos_ver_escd[[:>:]]/#\\1nuOS $new_ver/" $libs $bins
 sed -i '' -Ee "s/[[:<:]]NUOS_VER=$nuos_ver_escd[[:>:]]/NUOS_VER=$new_ver/" $bins
 sed -i '' -Ee "s/[[:<:]]nuos_lib_ver=$nuos_ver_escd[[:>:]]/nuos_lib_ver=$new_ver/;s/\\\$NUOS_VER([[:blank:]]+)=([[:blank:]]+)$nuos_ver_escd[[:>:]]/\$NUOS_VER\\1=\\2$new_ver/" $libs
