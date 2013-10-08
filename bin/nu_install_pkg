@@ -69,6 +69,12 @@ for port in $*; do
 	pkg_file=/usr/ports/packages/All/$pkg.tbz
 	if [ ! -f $pkg_file ]; then
 		[ -z "${OPT_NOMAKE-}" ]
+		if [ -d /var/db/pkg/$pkg ]; then
+			make_target=package-noinstall
+		else
+			[ -z "`pkg_info -qO $port`" ]
+			make_target="install package"
+		fi
 		needed_deps=`(cd /usr/ports/$port && make "__MAKE_CONF=$make_conf" -DBATCH build-depends-list run-depends-list | sort -u | sed -e 's|^/usr/ports/||')`
 		sister nu_install_pkg ${CHROOTDIR:+-C $CHROOTDIR} ${OPT_YES_SUBPROCESS:+-y} $needed_deps
 		destdir=
@@ -76,7 +82,7 @@ for port in $*; do
 			pkg_step=pre-build
 			. "$script"
 		fi
-		(cd /usr/ports/$port && make -DNOCLEANDEPENDS clean && make "__MAKE_CONF=$make_conf" -DBATCH package && make -DNOCLEANDEPENDS clean)
+		(cd /usr/ports/$port && make -DNOCLEANDEPENDS clean && make "__MAKE_CONF=$make_conf" -DBATCH $make_target && make -DNOCLEANDEPENDS clean)
 		if [ -f "$script" ]; then
 			pkg_step=post-build
 			. "$script"
