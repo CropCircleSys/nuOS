@@ -75,7 +75,7 @@ for port in $*; do
 			[ -z "`pkg_info -qO $port`" ]
 			make_target="install package"
 		fi
-		needed_deps=`(cd /usr/ports/$port && make "__MAKE_CONF=$make_conf" -DBATCH build-depends-list run-depends-list | sort -u | sed -e 's|^/usr/ports/||')`
+		needed_deps=`cd /usr/ports/$port && make "__MAKE_CONF=$make_conf" -DBATCH build-depends-list run-depends-list | sort -u | sed -e 's|^/usr/ports/||'`
 		sister nu_install_pkg ${CHROOTDIR:+-C $CHROOTDIR} ${OPT_YES_SUBPROCESS:+-y} $needed_deps
 		destdir=
 		if [ -f "$script" ]; then
