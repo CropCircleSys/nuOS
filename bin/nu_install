@@ -454,6 +454,7 @@ HOSTOS_OPTZ=$TRGT_OPTZ
 EOF
 		
 	zfs snapshot -r $POOL_NAME/os/nuOS/$NUOS_VER@blank
+	if [ $PKG_COLLECTION != blank ]; then
 	
 	sister nu_install_pkg -C $POOL_MNT sysutils/memtest86+
 
@@ -496,6 +497,7 @@ EOF
 				fi
 			fi
 		fi
+	fi
 	fi
 	
 else
