@@ -15,6 +15,7 @@ set -e; set -u; set -C
 # Other licensing options and professional services available at http://ccsys.com .
 
 NUOS_VER=0.0.9.2b1
+
 NUOS_CODE_ROOT="$(realpath "$(dirname "$(realpath "$0")")/../")"
 
 [ "$NUOS_CODE_ROOT" != /usr/nuos -a "$NUOS_CODE_ROOT" != /usr -a "$NUOS_CODE_ROOT" != / ]
@@ -30,15 +31,16 @@ cd "$NUOS_CODE_ROOT"
 export LC_CTYPE=C
 
 readmes="`find -E . -type f -depth 1 -regex './[[:upper:]]+'`"
-libs=lib/*.sh
-bins=bin/*
-utils=util/*
+libs="lib/*.sh pkg/*.sh"
+bins="bin/* util/*"
 
 nuos_ver_escd="$(echo $NUOS_VER | sed -e 's/\./\\./g')"
 
-sed -i '' -Ee "s/nuOS $nuos_ver_escd[[:>:]]/nuOS $new_ver/g" $readmes
-sed -i '' -Ee "s/^# nuOS $nuos_ver_escd[[:>:]]/# nuOS $new_ver/" $libs $bins $utils
-sed -i '' -e "s/^NUOS_VER=$nuos_ver_escd\$/NUOS_VER=$new_ver/" $bins $utils
-sed -i '' -e "s/^nuos_lib_ver=$nuos_ver_escd\$/nuos_lib_ver=$new_ver/" $libs
+sed -i '' -Ee "s/[[:<:]]nuOS $nuos_ver_escd[[:>:]]/nuOS $new_ver/g" $readmes
+sed -i '' -Ee "s/#([[:blank:]]*)nuOS $nuos_ver_escd[[:>:]]/#\\1nuOS $new_ver/" $libs $bins
+sed -i '' -Ee "s/[[:<:]]NUOS_VER=$nuos_ver_escd[[:>:]]/NUOS_VER=$new_ver/" $bins
+sed -i '' -Ee "s/[[:<:]]nuos_lib_ver=$nuos_ver_escd[[:>:]]/nuos_lib_ver=$new_ver/;s/\\\$NUOS_VER([[:blank:]]+)=([[:blank:]]+)$nuos_ver_escd[[:>:]]/\$NUOS_VER\\1=\\2$new_ver/" $libs
+
+grep -n -r $nuos_ver_escd * && echo 'WARNING: old version string still present in codebase, see above' >&2
 
 echo "Switched version label of nuOS $NUOS_VER codebase at $NUOS_CODE_ROOT to $new_ver."
