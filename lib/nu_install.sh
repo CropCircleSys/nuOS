@@ -82,6 +82,9 @@ require_ports_tree () {
 	if [ ! -d /usr/ports/packages ]; then
 		mkdir /usr/ports/packages
 	fi
+	if [ ! -d /usr/ports/packages/All ]; then
+		mkdir /usr/ports/packages/All
+	fi
 }
 
 prepare_make_conf () {
