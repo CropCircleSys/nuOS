@@ -127,6 +127,7 @@ for port in $*; do
 			. "$script"
 		fi
 	fi
+	[ -d "${CHROOTDIR-}/var/db/pkg/$pkg" ]
 done
 if [ -n "${nullfs_mounted-}" ]; then
 	umount "$CHROOTDIR/usr/ports/packages"
