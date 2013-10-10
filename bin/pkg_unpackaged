@@ -34,7 +34,16 @@ for pkg in `ls /var/db/pkg | grep -v '^pkgdb.db$'`; do
 	if [ ! -f /usr/ports/packages/All/$pkg.tbz ]; then
 		if [ -n "${OPT_YES-}" ]; then
 			pkg_origin origin $pkg
-			(cd /usr/ports/$origin && make package-noinstall)
+			(
+				cd /usr/ports/$origin
+				no_stage=`make -V NO_STAGE`
+				if [ -n "${no_stage-}" ]; then
+					make_target=package-noinstall
+				else
+					make_target="stage package clean"
+				fi
+				make $make_target
+			)
 		else
 			if [ -n "${OPT_ORIGIN-}" ]; then
 				pkg_origin origin $pkg
