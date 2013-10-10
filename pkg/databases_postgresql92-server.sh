@@ -18,7 +18,9 @@ set -e; set -u; set -C
 
 case $pkg_step in
 	post-build|post-install)
-		mv "${destdir-}/usr/local/pgsql" "${destdir-}/var/db/"
+		if [ ! -d "${destdir-}/var/db/pgsql" ]; then
+			mv "${destdir-}/usr/local/pgsql" "${destdir-}/var/db/"
+		fi
 		${destdir:+chroot "$destdir"} pw usermod pgsql -d /var/db/pgsql
 		;;
 esac
