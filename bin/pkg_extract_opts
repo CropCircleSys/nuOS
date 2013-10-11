@@ -16,6 +16,8 @@ set -e; set -u; set -C
 # for installed ports/packages currently on the system. Its format is current as of
 # FreeBSD 9.2-RELEASE and 2013-08-12-0000 /usr/ports/Mk
 
+NUOS_VER=0.0.9.2d12
+
 while getopts d:v OPT; do
 	case $OPT in
 		d)
@@ -29,6 +31,8 @@ while getopts d:v OPT; do
 			exit 1
 	esac
 done
+
+. "$(dirname "$(realpath "$0")")/../lib/nu_system.sh"
 
 : ${DBDIR:=/var/db/ports}
 mkdir $DBDIR
