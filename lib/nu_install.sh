@@ -101,7 +101,7 @@ prepare_make_conf () {
 		require_tmp tempfile
 		cat >| "$tempfile" <<EOF
 CPUTYPE?=$TRGT_OPTZ
-DEFAULT_VERSIONS= perl5=5.16 ruby=1.9
+DEFAULT_VERSIONS= perl5=5.18 ruby=1.9
 WITH_BDB_VER=48
 WITH_PGSQL_VER=92
 EOF
