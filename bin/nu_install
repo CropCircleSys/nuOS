@@ -131,9 +131,10 @@ if [ -z "${OPT_SKIP_INIT_ZPOOL-}" ]; then
 	done
 	require_tmp -d tempdir
 	zpool create -o altroot=$POOL_MNT -o "cachefile=$tempdir/zpool.cache" -O mountpoint=none -O canmount=off -O devices=off $POOL_OPTS $POOL_NAME $POOL_TYPE $devlist
+	zpool_id=`zpool get guid $POOL_NAME | grep -E "^$POOL_NAME[[:blank:]]+guid\>" |cut -w -f 3`
 	zpool export $POOL_NAME
 	gnop destroy $devlist
-	zpool import -o altroot=$POOL_MNT -o "cachefile=$tempdir/zpool.cache" $POOL_NAME
+	zpool import -o altroot=$POOL_MNT -o "cachefile=$tempdir/zpool.cache" $zpool_id
 fi
 if [ -n "${OPT_ONLY_INIT_ZPOOL-}" ]; then
 	[ -z "${OPT_SKIP_INIT_ZPOOL-}" ]
