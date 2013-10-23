@@ -493,6 +493,7 @@ EOF
 					zfs snapshot -r $POOL_NAME/os/nuOS/$NUOS_VER@server
 					if [ $PKG_COLLECTION != server ]; then
 						sister nu_install_pkg -C $POOL_MNT graphics/gimp x11/xorg x11/kde4 www/firefox mail/thunderbird editors/libreoffice
+						sister enable_svc -C $POOL_MNT hald kdm4
 						zfs snapshot -r $POOL_NAME/os/nuOS/$NUOS_VER@desktop
 					fi
 				fi
