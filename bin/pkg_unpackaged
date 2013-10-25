@@ -42,7 +42,7 @@ for pkg in `ls /var/db/pkg | grep -v '^pkgdb.db$'`; do
 				else
 					make_target="stage package clean"
 				fi
-				make $make_target
+				make -DBATCH $make_target
 			)
 		else
 			if [ -n "${OPT_ORIGIN-}" ]; then
