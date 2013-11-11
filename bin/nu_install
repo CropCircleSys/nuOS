@@ -317,6 +317,7 @@ EOF
 	if [ -z "${OPT_NOBRAND-}" ]; then
 		
 		baseos_type_lc=`echo "$BASEOS_TYPE" | tr '[:upper:]' '[:lower:]'`
+		baseos_info_url="http://$baseos_type_lc.org"
 		
 		mv -n $POOL_MNT/etc/motd $POOL_MNT/etc/motd.$baseos_type_lc
 		head -n 1 $POOL_MNT/etc/motd.$baseos_type_lc > $POOL_MNT/etc/motd
@@ -326,6 +327,9 @@ nuOS $NUOS_VER
 Welcome to nuOS!
 
 Official updates and community support available at http://nuos.org .
+
+This is the $BASEOS_TYPE edition of nuOS, extending $BASEOS_TYPE $BASEOS_VER.
+More information about $BASEOS_TYPE available at $baseos_info_url .
 
 If you would like to donate to the nuOS Project, please send BTC to one, any or
 all of the following seven addresses. Your contributions are greatly appreciated
@@ -350,7 +354,6 @@ EOF
 		nuos_supported_len=${#NUOS_SUPPORTED}
 		[ $nuos_supported_len -le 23 ]
 		nuos_supported_23_chrs=`echo "$NUOS_SUPPORTED" | awk '{printf "%-23s", $1}'`
-		baseos_info_url="http://$baseos_type_lc.org"
 		
 # 		patch -b '' $POOL_MNT/boot/beastie.4th <<EOF
 # 174a175,197
