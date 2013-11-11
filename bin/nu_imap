@@ -65,15 +65,15 @@ EOF
 
 if [ -n "${OPT_SSL-}" ]; then
 	mkdir "${CHROOTDIR-}/usr/local/etc/cyrus/ssl"
-	cp "${CHROOTDIR-}/etc/ssl/$HOST_NAME.crt" "${CHROOTDIR-}/usr/local/etc/cyrus/ssl/"
-	cp "${CHROOTDIR-}/etc/ssl/$HOST_NAME.key" "${CHROOTDIR-}/usr/local/etc/cyrus/ssl/"
+	cp "${CHROOTDIR-}/etc/ssl/certs/$HOST_NAME.crt" "${CHROOTDIR-}/usr/local/etc/cyrus/ssl/"
+	cp "${CHROOTDIR-}/etc/ssl/private/$HOST_NAME.key" "${CHROOTDIR-}/usr/local/etc/cyrus/ssl/"
 	chown cyrus "${CHROOTDIR-}/usr/local/etc/cyrus/ssl/$HOST_NAME.key"
 	cat >> "${CHROOTDIR-}/usr/local/etc/imapd.conf" <<EOF
 tls_cert_file: /usr/local/etc/cyrus/ssl/$HOST_NAME.crt
 tls_key_file: /usr/local/etc/cyrus/ssl/$HOST_NAME.key
 EOF
-	if [ -f "${CHROOTDIR-}/etc/ssl/$HOST_NAME.ca.crt" ]; then
-		cp "${CHROOTDIR-}/etc/ssl/$HOST_NAME.ca.crt" "${CHROOTDIR-}/usr/local/etc/cyrus/ssl/"
+	if [ -f "${CHROOTDIR-}/etc/ssl/certs/$HOST_NAME.ca.crt" ]; then
+		cp "${CHROOTDIR-}/etc/ssl/certs/$HOST_NAME.ca.crt" "${CHROOTDIR-}/usr/local/etc/cyrus/ssl/"
 		cat >> "${CHROOTDIR-}/usr/local/etc/imapd.conf" <<EOF
 tls_ca_file: /usr/local/etc/cyrus/ssl/$HOST_NAME.ca.crt
 EOF

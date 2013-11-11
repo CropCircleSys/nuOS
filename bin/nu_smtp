@@ -86,15 +86,15 @@ EOF
 
 if [ -n "${OPT_SSL-}" ]; then
 	mkdir "${CHROOTDIR-}/usr/local/etc/postfix/ssl"
-	cp "${CHROOTDIR-}/etc/ssl/$HOST_NAME.crt" "${CHROOTDIR-}/usr/local/etc/postfix/ssl/"
-	cp "${CHROOTDIR-}/etc/ssl/$HOST_NAME.key" "${CHROOTDIR-}/usr/local/etc/postfix/ssl/"
+	cp "${CHROOTDIR-}/etc/ssl/certs/$HOST_NAME.crt" "${CHROOTDIR-}/usr/local/etc/postfix/ssl/"
+	cp "${CHROOTDIR-}/etc/ssl/private/$HOST_NAME.key" "${CHROOTDIR-}/usr/local/etc/postfix/ssl/"
 	cat >> "${CHROOTDIR-}/usr/local/etc/postfix/main.cf" <<'EOF'
 smtpd_tls_security_level = may
 smtpd_tls_cert_file = $config_directory/ssl/$myhostname.crt
 smtpd_tls_key_file = $config_directory/ssl/$myhostname.key
 EOF
-	if [ -f "${CHROOTDIR-}/etc/ssl/$HOST_NAME.ca.crt" ]; then
-		cp "${CHROOTDIR-}/etc/ssl/$HOST_NAME.ca.crt" "${CHROOTDIR-}/usr/local/etc/postfix/ssl/"
+	if [ -f "${CHROOTDIR-}/etc/ssl/certs/$HOST_NAME.ca.crt" ]; then
+		cp "${CHROOTDIR-}/etc/ssl/certs/$HOST_NAME.ca.crt" "${CHROOTDIR-}/usr/local/etc/postfix/ssl/"
 		cat >> "${CHROOTDIR-}/usr/local/etc/postfix/main.cf" <<'EOF'
 smtpd_tls_CAfile = $config_directory/ssl/$myhostname.ca.crt
 EOF

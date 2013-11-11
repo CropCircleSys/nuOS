@@ -92,8 +92,14 @@ echo
 maybe_yell
 
 if [ -z "${CERT_FILE-}" ]; then
-		
-	[ ! -e "${CHROOTDIR-}/etc/ssl/$SSL_HOST.key" ] || exit 17
+	
+	if [ ! -d "${CHROOTDIR-}/etc/ssl/private" ]; then
+		(umask 77 && mkdir "${CHROOTDIR-}/etc/ssl/private")
+	fi
+	if [ ! -d "${CHROOTDIR-}/etc/ssl/certs" ]; then
+		mkdir "${CHROOTDIR-}/etc/ssl/certs"
+	fi
+	[ ! -e "${CHROOTDIR-}/etc/ssl/private/$SSL_HOST.key" ] || exit 17
 	if [ -z "${OPT_UNSECURE-}" ]; then
 		read -p 'keyfile password:' -r key_password
 		key_password_len=${#key_password}
@@ -104,9 +110,9 @@ if [ -z "${CERT_FILE-}" ]; then
 		cat >| "$key_password_file" <<EOF
 $key_password
 EOF
-		(umask 77 && openssl genrsa -des3 -passout "file:$key_password_file" -out "${CHROOTDIR-}/etc/ssl/$SSL_HOST.key" $KEY_BITS)
+		(umask 77 && openssl genrsa -des3 -passout "file:$key_password_file" -out "${CHROOTDIR-}/etc/ssl/private/$SSL_HOST.key" $KEY_BITS)
 	else
-		(umask 77 && openssl genrsa -out "${CHROOTDIR-}/etc/ssl/$SSL_HOST.key" $KEY_BITS)
+		(umask 77 && openssl genrsa -out "${CHROOTDIR-}/etc/ssl/private/$SSL_HOST.key" $KEY_BITS)
 	fi
 	
 	require_tmp tempfile
@@ -121,13 +127,16 @@ $EMAIL
 EOF
 	
 	if [ -n "${OPT_SELF_SIGNED-}" ]; then
-		[ ! -e "${CHROOTDIR-}/etc/ssl/$SSL_HOST.crt" ] || exit 17
-		command="openssl req -new -x509 -nodes -sha1 -key ${CHROOTDIR-}/etc/ssl/$SSL_HOST.key -out ${CHROOTDIR-}/etc/ssl/$SSL_HOST.crt"
+		[ ! -e "${CHROOTDIR-}/etc/ssl/certs/$SSL_HOST.crt" ] || exit 17
+		command="openssl req -new -x509 -nodes -sha1 -key ${CHROOTDIR-}/etc/ssl/private/$SSL_HOST.key -out ${CHROOTDIR-}/etc/ssl/certs/$SSL_HOST.crt"
 		message="Generated key $SSL_HOST.key and certificate $SSL_HOST.crt in /etc/ssl/."
 	else
-		[ ! -e "${CHROOTDIR-}/etc/ssl/$SSL_HOST.csr" ] || exit 17
+		if [ ! -d "${CHROOTDIR-}/etc/ssl/csrs" ]; then
+			mkdir "${CHROOTDIR-}/etc/ssl/csrs"
+		fi
+		[ ! -e "${CHROOTDIR-}/etc/ssl/csrs/$SSL_HOST.csr" ] || exit 17
 		(echo && echo) >> "$tempfile"
-		command="openssl req -new -key ${CHROOTDIR-}/etc/ssl/$SSL_HOST.key -out ${CHROOTDIR-}/etc/ssl/$SSL_HOST.csr"
+		command="openssl req -new -key ${CHROOTDIR-}/etc/ssl/private/$SSL_HOST.key -out ${CHROOTDIR-}/etc/ssl/csrs/$SSL_HOST.csr"
 		message="Generated key $SSL_HOST.key and certificate signing request $SSL_HOST.csr in /etc/ssl/."
 	fi
 	
@@ -143,16 +152,16 @@ EOF
 	
 else
 	
-	[ -e "${CHROOTDIR-}/etc/ssl/$SSL_HOST.key" ] || exit 2
-	[ ! -e "${CHROOTDIR-}/etc/ssl/$SSL_HOST.crt" ] || exit 17
-	[ ! -e "${CHROOTDIR-}/etc/ssl/$SSL_HOST.ca.crt" ] || exit 17
+	[ -e "${CHROOTDIR-}/etc/ssl/private/$SSL_HOST.key" ] || exit 2
+	[ ! -e "${CHROOTDIR-}/etc/ssl/certs/$SSL_HOST.crt" ] || exit 17
+	[ ! -e "${CHROOTDIR-}/etc/ssl/certs/$SSL_HOST.ca.crt" ] || exit 17
 	[ $SSL_HOST = `openssl x509 -noout -subject -nameopt sep_multiline -in $CERT_FILE | sed -e '/^    CN=/!d;s/^    CN=//'` ] || exit 85
-	cat $CERT_FILE > "${CHROOTDIR-}/etc/ssl/$SSL_HOST.crt"
-	echo "Inserted certificate $CERT_FILE as $SSL_HOST.crt in /etc/ssl/."
+	cat $CERT_FILE > "${CHROOTDIR-}/etc/ssl/certs/$SSL_HOST.crt"
+	echo "Inserted certificate $CERT_FILE as $SSL_HOST.crt in /etc/ssl/certs/."
 	if [ -n "${AUTH_FILE-}" ]; then
 		openssl x509 -noout -in $AUTH_FILE
-		cat $AUTH_FILE > "${CHROOTDIR-}/etc/ssl/$SSL_HOST.ca.crt"
-		echo "Inserted authority certificate chain $AUTH_FILE as $SSL_HOST.ca.crt in /etc/ssl/."
+		cat $AUTH_FILE > "${CHROOTDIR-}/etc/ssl/certs/$SSL_HOST.ca.crt"
+		echo "Inserted authority certificate chain $AUTH_FILE as $SSL_HOST.ca.crt in /etc/ssl/certs/."
 	fi
 	
 fi

@@ -58,10 +58,10 @@ user_home=`pw -V "${CHROOTDIR-}/etc" usershow $USER_NAME | cut -d : -f 9`
 ${CHROOTDIR:+chroot "$CHROOTDIR"} su -m $USER_NAME -c "mkdir -p \"$user_home/$HOST_NAME/www/public\""
 
 if [ -n "${OPT_SSL-}" ]; then
-	cp "${CHROOTDIR-}/etc/ssl/$HOST_NAME.crt" "${CHROOTDIR-}/usr/local/etc/apache24/ssl/"
-	cp "${CHROOTDIR-}/etc/ssl/$HOST_NAME.key" "${CHROOTDIR-}/usr/local/etc/apache24/ssl/"
-	if [ -f "${CHROOTDIR-}/etc/ssl/$HOST_NAME.ca.crt" ]; then
-		cp "${CHROOTDIR-}/etc/ssl/$HOST_NAME.ca.crt" "${CHROOTDIR-}/usr/local/etc/apache24/ssl/"
+	cp "${CHROOTDIR-}/etc/ssl/certs/$HOST_NAME.crt" "${CHROOTDIR-}/usr/local/etc/apache24/ssl/"
+	cp "${CHROOTDIR-}/etc/ssl/private/$HOST_NAME.key" "${CHROOTDIR-}/usr/local/etc/apache24/ssl/"
+	if [ -f "${CHROOTDIR-}/etc/ssl/certs/$HOST_NAME.ca.crt" ]; then
+		cp "${CHROOTDIR-}/etc/ssl/certs/$HOST_NAME.ca.crt" "${CHROOTDIR-}/usr/local/etc/apache24/ssl/"
 	else
 		self_signed=y
 	fi
