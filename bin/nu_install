@@ -731,8 +731,8 @@ zfs snapshot -r $home_ds@login
 
 if [ -n "${LOCAL_SCRIPT-}" ]; then
 	if [ -d "${LOCAL_SCRIPT-}" ]; then
-		script_files=`rcorder "$LOCAL_SCRIPT/*.sh"`
-		for script_file in $script_files; do
+		script_files=`rcorder "$LOCAL_SCRIPT"/*.sh`
+		for script_file in "$script_files"; do
 			. "$script_file"
 		done
 	fi
