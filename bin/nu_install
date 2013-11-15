@@ -204,6 +204,7 @@ EOF
 	
 	cat >> $POOL_MNT/boot/loader.conf <<'EOF'
 autoboot_delay="3"
+aesni_load="YES"
 ipfw_load="YES"
 #linux_load="YES"
 sem_load="YES"
