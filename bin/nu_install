@@ -134,7 +134,7 @@ if [ -z "${OPT_SKIP_INIT_ZPOOL-}" ]; then
 	done
 	require_tmp -d tempdir
 	zpool create -o altroot=$POOL_MNT -o "cachefile=$tempdir/zpool.cache" -O mountpoint=none -O canmount=off -O devices=off $POOL_OPTS $POOL_NAME $POOL_TYPE $devlist
-	zpool_id=`zpool get guid $POOL_NAME | grep -E "^$POOL_NAME[[:blank:]]+guid\>" |cut -w -f 3`
+	zpool_id=`zpool get guid $POOL_NAME | grep -E "^$POOL_NAME[[:blank:]]+guid\>" | cut -w -f 3`
 	zpool export $POOL_NAME
 	gnop destroy $devlist
 	zpool import -o altroot=$POOL_MNT -o "cachefile=$tempdir/zpool.cache" $zpool_id
@@ -223,6 +223,7 @@ EOF
 	cat >> $POOL_MNT/etc/rc.conf <<'EOF'
 #linux_enable="YES"
 entropy_file="/var/db/entropy/seed"
+geli_swap_flags="-e aes-cbc -l 256 -s 4096 -d"
 firewall_enable="YES"
 firewall_type="open"
 firewall_nat_flags="same_ports reset"
@@ -232,6 +233,105 @@ sendmail_submit_enable="NO"
 sendmail_outbound_enable="NO"
 sendmail_msp_queue_enable="NO"
 EOF
+	
+	cat > $POOL_MNT/etc/rc.d/nuos_zpool <<'EOF'
+#!/bin/sh
+
+# PROVIDE: nuos_zpool
+# REQUIRE: zfs var
+# BEFORE: cleanvar
+# KEYWORD: nojail
+
+. /etc/rc.subr
+
+name=nuos_zpool
+rcvar=${name}_enable
+start_cmd=${name}_start
+stop_cmd=:
+
+: ${nuos_zpool_enable=NO}
+
+nuos_zpool_start () {
+	if checkyesno nuos_zpool_enable && [ -n "$nuos_zpool_list" ]; then
+		for _pool in $nuos_zpool_list; do
+			if ! zpool list $_pool > /dev/null 2>&1; then
+				zpool import $_pool
+			fi
+		done
+	fi
+}
+
+load_rc_config $name
+run_rc_command "$1"
+EOF
+	chmod +x $POOL_MNT/etc/rc.d/nuos_zpool
+
+	cat > $POOL_MNT/etc/rc.d/nuos_pvt_init <<'EOF'
+#!/bin/sh
+
+# PROVIDE: nuos_pvt_init
+# REQUIRE: initrandom
+# BEFORE: disks
+# KEYWORD: nojail
+
+. /etc/rc.subr
+
+name=nuos_pvt_init
+rcvar=${name}_enable
+start_cmd=${name}_start
+stop_cmd=:
+
+: ${nuos_pvt_init_enable:=NO}
+: ${nuos_pvt_init_delay:=300}
+
+nuos_pvt_init_start () {
+	if checkyesno nuos_pvt_init_enable; then
+		local mountfrom=`kenv vfs.root.mountfrom`
+		local root_ds=${mountfrom#zfs:}
+		local pool=${root_ds%%/*}
+		if zfs list $pool/private > /dev/null 2>&1; then
+			echo Waiting $nuos_pvt_init_delay seconds for private key for storage pool $pool...
+			tick=0
+			until [ -e /dev/gpt/$pool-key -o $tick -gt $nuos_pvt_init_delay ]; do
+				sleep 1
+				tick=$(($tick+1))
+			done
+			if [ -e /dev/gpt/$pool-key ]; then
+EOF
+	blank_key_gpt_type=deadbeef-4657-11e3-9570-002590742cc4
+	cat >> $POOL_MNT/etc/rc.d/nuos_pvt_init <<EOF
+				local blank_key_type=$blank_key_gpt_type
+EOF
+	cat >> $POOL_MNT/etc/rc.d/nuos_pvt_init <<'EOF'
+				local pvt_key_type=bee31337-4657-11e3-9570-002590742cc4
+				local key_part=`glabel status -s | grep -E "^[[:blank:]]*gpt/$pool-key\>" | xargs -L1 | cut -w -f 3`
+				local key_dev=`gpart status -s | grep -E "^[[:blank:]]*$key_part\>" | xargs -L1 | cut -w -f 3`
+				local blank_key_part_idx=`gpart show -r $key_dev | sed -nEe "/^(=>)?[[:blank:]]*[[:digit:]]+[[:blank:]]+[[:digit:]]+[[:blank:]]+([[:digit:]]+)[[:blank:]]+$blank_key_type[[:>:]].*\$/{s//\2/;p;}"`
+				if [ -n "$blank_key_part_idx" ]; then
+					if gpart modify -i $blank_key_part_idx -t !$pvt_key_type $key_dev; then
+						dd if=/dev/random of=/dev/gpt/$pool-key bs=512 count=1
+						geli init -l 256 -s 4096 -K /dev/gpt/$pool-key -P -B none zvol/$pool/private
+						geli attach -k /dev/gpt/$pool-key -p zvol/$pool/private
+						zpool create -o autoexpand=on -O mountpoint=none -O canmount=off -O devices=off $nuos_pvt_init_opts $pool-pvt zvol/$pool/private.eli
+						zfs create $pool-pvt/sys
+						zfs create $pool-pvt/sys/host
+						zfs create -o mountpoint=/etc/ssl/private $pool-pvt/sys/host/ssl
+						chmod go-rx /etc/ssl/private
+						zfs create -o mountpoint=/etc/ssh/private $pool-pvt/sys/host/ssh
+						chmod go-rx /etc/ssh/private
+						zpool export $pool-pvt
+						geli detach zvol/$pool/private.eli
+					fi
+				fi
+			fi
+		fi
+	fi
+}
+
+load_rc_config $name
+run_rc_command "$1"
+EOF
+	chmod +x $POOL_MNT/etc/rc.d/nuos_pvt_init
 	
 	cat > $POOL_MNT/etc/rc.conf.local <<'EOF'
 #ifconfig_%%INTERFACE%%_name="net0"
@@ -714,6 +814,31 @@ cat >> $POOL_MNT/etc/nuos.conf <<EOF
 POOL_BOOT_NAME=$POOL_NAME
 EOF
 
+if [ -n "${OPT_ELI-}" ]; then
+	private_chunk=$((`zfs get -H -p available $POOL_NAME | cut -w -f 3`/24/4096*4096))
+	zfs create -s -b 4K -V $private_chunk -o compression=off -o checksum=off $POOL_NAME/private
+	pvt_eli_key_dev=`mdconfig -s 512k`
+	gpart create -s GPT $pvt_eli_key_dev
+	gpart add -s 1 -t !$blank_key_gpt_type -l $POOL_NAME-key $pvt_eli_key_dev
+	
+	(umask 77 && mkdir $POOL_MNT/etc/ssl/private)
+	chflags schg $POOL_MNT/etc/ssl/private
+	(umask 77 && mkdir $POOL_MNT/etc/ssh/private)
+	chflags schg $POOL_MNT/etc/ssh/private
+	for key_filename in ssh_host_dsa_key ssh_host_ecdsa_key ssh_host_key ssh_host_rsa_key; do
+		(umask 77 && ln -s private/$key_filename $POOL_MNT/etc/ssh/$key_filename)
+	done
+	
+	cat >> $POOL_MNT/etc/rc.conf.local <<EOF
+geli_devices="zvol/$POOL_NAME/private"
+geli_zvol_${POOL_NAME}_private_autodetach="NO"
+geli_zvol_${POOL_NAME}_private_flags="-p -k /dev/gpt/$POOL_NAME-key"
+nuos_pvt_init_enable="YES"
+nuos_zpool_enable="YES"
+nuos_zpool_list="$POOL_NAME-pvt"
+EOF
+fi
+
 sed -i '' -e "s/\.my\.domain\$/.`echo $NEW_HOST | sed -e 's/^[^\.]*\.//'` $NEW_HOST `echo $NEW_HOST | sed -e 's/\..*//'`/" $POOL_MNT/etc/hosts
 
 (umask 77 && dd if=/dev/random of=$POOL_MNT/var/db/entropy/seed count=1 bs=4k)
@@ -755,5 +880,7 @@ if [ -z "${must_build-}" -a -n "${OPT_DEBUG-}" ]; then
 	rm "$bpl" "$pl"
 fi
 
-
+if [ -n "${OPT_ELI-}" ]; then
+	echo "NOTICE: Blank key is created in memory device $pvt_eli_key_dev."
+fi
 echo "Initialization of $NEW_HOST running nuOS/$NUOS_VER over $BASEOS_TYPE-$BASEOS_VER onto pool $POOL_NAME is complete."
