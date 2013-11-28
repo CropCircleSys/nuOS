@@ -323,6 +323,8 @@ EOF
 						geli detach zvol/$pool/private.eli
 					fi
 				fi
+			else
+				echo Giving up.
 			fi
 		fi
 	fi
@@ -817,7 +819,7 @@ EOF
 if [ -n "${OPT_ELI-}" ]; then
 	private_chunk=$((`zfs get -H -p available $POOL_NAME | cut -w -f 3`/24/4096*4096))
 	zfs create -s -b 4K -V $private_chunk -o compression=off -o checksum=off $POOL_NAME/private
-	pvt_eli_key_dev=`mdconfig -s 512k`
+	pvt_eli_key_dev=`mdconfig -s 1440k`
 	gpart create -s GPT $pvt_eli_key_dev
 	gpart add -s 1 -t !$blank_key_gpt_type -l $POOL_NAME-key $pvt_eli_key_dev
 	
