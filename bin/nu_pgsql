@@ -64,8 +64,14 @@ listen_addresses = '*'
 EOF
 	if [ -n "${OPT_SSL-}" ]; then
 		mkdir "${CHROOTDIR-}$pghome/data/ssl"
+		(umask 77 && mkdir "${CHROOTDIR-}$pghome/data/ssl/private")
+		if zfs list $POOL_BOOT_NAME/private > /dev/null 2>&1; then
+			chflags schg "${CHROOTDIR-}$pghome/data/ssl/private"
+			zfs create -o mountpoint=$pghome/data/ssl/private $POOL_BOOT_NAME-pvt/sys/host/pg-ssl
+			chmod go-rx "${CHROOTDIR-}$pghome/data/ssl/private"
+		fi
 		cp "${CHROOTDIR-}/etc/ssl/certs/$HOST_NAME.crt" "${CHROOTDIR-}$pghome/data/ssl/"
-		cp "${CHROOTDIR-}/etc/ssl/private/$HOST_NAME.key" "${CHROOTDIR-}$pghome/data/ssl/"
+		cp "${CHROOTDIR-}/etc/ssl/private/$HOST_NAME.key" "${CHROOTDIR-}$pghome/data/ssl/private/"
 		if [ -f "${CHROOTDIR-}/etc/ssl/certs/$HOST_NAME.ca.crt" ]; then
 			cat "${CHROOTDIR-}/etc/ssl/certs/$HOST_NAME.ca.crt" >> "${CHROOTDIR-}$pghome/data/ssl/$HOST_NAME.crt"
 		fi
@@ -73,7 +79,7 @@ EOF
 		cat >> "${CHROOTDIR-}$pghome/data/postgresql.conf" <<EOF
 ssl = on
 ssl_cert_file = 'ssl/$HOST_NAME.crt'
-ssl_key_file = 'ssl/$HOST_NAME.key'
+ssl_key_file = 'ssl/private/$HOST_NAME.key'
 EOF
 	fi
 fi
