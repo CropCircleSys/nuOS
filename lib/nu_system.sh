@@ -123,14 +123,5 @@ sets_intrsctn () {
 	
 	[ $# -ge 1 ]
 	
-	case $# in
-		1|2)
-			cat "$@" | sort | uniq -d >| "$ret_tmp";;
-		*)
-			local new_tmp=
-			require_tmp new_tmp
-			sets_intrsctn "$new_tmp" "$1" "$2"; shift; shift
-			sets_intrsctn "$ret_tmp" "$new_tmp" "$@"
-			retire_tmp new_tmp
-	esac
+	cat "$@" | sort | uniq -c | sed -nEe "/^[[:blank:]]*$# /{s///;p;}" >| "$ret_tmp"
 }
