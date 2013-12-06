@@ -77,17 +77,17 @@ for port in $*; do
 		fi
 		require_tmp build_deps
 		require_tmp run_deps
-		require_tmp deps_union
+		require_tmp deps_intrsctn
 		require_tmp build_only_deps
 		(
 			cd /usr/ports/$port
 			make "__MAKE_CONF=$make_conf" -DBATCH build-depends-list | sed -e 's|^/usr/ports/||' >| "$build_deps"
 			make "__MAKE_CONF=$make_conf" -DBATCH run-depends-list | sed -e 's|^/usr/ports/||' >| "$run_deps"
 		)
-		cat "$build_deps" "$run_deps" | sort | uniq -d >| "$deps_union"
-		cat "$build_deps" "$deps_union" | sort | uniq -u >| "$build_only_deps"
+		cat "$build_deps" "$run_deps" | sort | uniq -d >| "$deps_intrsctn"
+		cat "$build_deps" "$deps_intrsctn" | sort | uniq -u >| "$build_only_deps"
 		retire_tmp build_deps
-		retire_tmp deps_union
+		retire_tmp deps_intrsctn
 		sister nu_install_pkg ${OPT_YES_SUBPROCESS:+-y} `cat "$build_only_deps"`
 		retire_tmp build_only_deps
 		sister nu_install_pkg ${CHROOTDIR:+-C $CHROOTDIR} ${OPT_YES_SUBPROCESS:+-y} `cat "$run_deps"`
