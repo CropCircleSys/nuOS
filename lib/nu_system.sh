@@ -64,9 +64,9 @@ sister () {
 }
 
 require_tmp () {
-	local label
+	local opt_dir= label=
 	while getopts dl: OPT; do case $OPT in
-		d) local opt_dir=y;;
+		d) opt_dir=y;;
 		l) label=$OPTARG; shift;;
 	esac; shift; done
 	
