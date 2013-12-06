@@ -118,6 +118,14 @@ sets_union () {
 	cat "$@" | sort -u >| "$ret_tmp"
 }
 
+sets_sym_diff () {
+	local ret_tmp=$1; shift
+	
+	[ $# -ge 2 ]
+	
+	cat "$@" | sort | uniq -u >| "$ret_tmp"
+}
+
 sets_intrsctn () {
 	local ret_tmp=$1; shift
 	
