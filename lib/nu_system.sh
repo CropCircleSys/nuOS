@@ -64,17 +64,43 @@ sister () {
 }
 
 require_tmp () {
+	local label
 	while getopts dl: OPT; do case $OPT in
 		d) local opt_dir=y;;
-		l) local label=$OPTARG; shift;;
+		l) label=$OPTARG; shift;;
 	esac; shift; done
 	
 	[ $# = 1 ]
 	[ -n "$1" ]
 	
-	if eval [ -z "\${$1-}" ]; then
+	: ${label=$1}
+	
+	if eval [ -n "\${$1-}" ]; then
+		eval [ -w \"\$$1\" ]
+	else
 		setvar "$1" "$(mktemp ${opt_dir:+-d} -t "$(basename "$0").$$${label:+.$label}")"
 	fi
+}
+
+retire_tmp () {
+	[ $# = 1 ]
+	[ -n "$1" ]
+	
+	if [ -n "${OPT_DEBUG-}" ]; then
+		require_tmp -d -l debug_out _retire_tmp_debug_out
+		if eval [ -e \"\$_retire_tmp_debug_out\/\$1\" ]; then
+			eval mv -n \"\$_retire_tmp_debug_out\/\$1\" \"\$_retire_tmp_debug_out\/0.\$1\"
+		fi
+		local i
+		while eval [ -e \"\$_retire_tmp_debug_out\/${i:-0}.\$1\" ]; do
+			: ${i:=0}
+			i=$(($i+1))
+		done
+		eval mv -n \"\$$1\" \"\$_retire_tmp_debug_out\/${i:+$i.}\$1\"
+	else
+		eval rm -r \"\$$1\"
+	fi
+	eval unset "$1"
 }
 
 choose_random () {

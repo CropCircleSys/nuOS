@@ -86,11 +86,12 @@ for port in $*; do
 		)
 		cat "$build_deps" "$run_deps" | sort | uniq -d >| "$deps_union"
 		cat "$build_deps" "$deps_union" | sort | uniq -u >| "$build_only_deps"
-		rm "$build_deps" "$deps_union"
+		retire_tmp build_deps
+		retire_tmp deps_union
 		sister nu_install_pkg ${OPT_YES_SUBPROCESS:+-y} `cat "$build_only_deps"`
-		rm "$build_only_deps"
+		retire_tmp build_only_deps
 		sister nu_install_pkg ${CHROOTDIR:+-C $CHROOTDIR} ${OPT_YES_SUBPROCESS:+-y} `cat "$run_deps"`
-		rm "$run_deps"
+		retire_tmp run_deps
 		destdir=
 		if [ -f "$script" ]; then
 			pkg_step=pre-build
@@ -116,7 +117,7 @@ for port in $*; do
 			}" "$tempfile" | grep -E '\<missing$' | cut -w -f 3 )
 			sister nu_install_pkg ${CHROOTDIR:+-C $CHROOTDIR} ${OPT_YES_SUBPROCESS:+-y} $needed_deps
 		fi
-		rm "$tempfile"
+		retire_tmp tempfile
 		if [ -f "$script" ]; then
 			pkg_step=pre-install
 			. "$script"
