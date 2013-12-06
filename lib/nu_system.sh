@@ -52,14 +52,12 @@ maybe_yell () {
 }
 
 push () {
-	local var=$1
-	shift
+	local var=$1; shift
 	eval setvar $var \"\${$var:+\$$var }$*\"
 }
 
 sister () {
-	local bin=$1
-	shift
+	local bin=$1; shift
 	sh "$(dirname "$(realpath "$0")")/$bin" "$@"
 }
 
