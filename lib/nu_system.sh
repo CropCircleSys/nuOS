@@ -62,7 +62,7 @@ sister () {
 }
 
 require_tmp () {
-	local opt_dir= label=
+	local opt_dir= label; unset label
 	while getopts dl: OPT; do case $OPT in
 		d) opt_dir=y;;
 		l) label=$OPTARG; shift;;
@@ -73,7 +73,7 @@ require_tmp () {
 	
 	: ${label=$1}
 	
-	if eval [ -n \"\$$1\" ]; then
+	if eval [ -n \"\${$1-}\" ]; then
 		eval [ -w \"\$$1\" ]
 	else
 		setvar "$1" "$(mktemp ${opt_dir:+-d} -t "$(basename "$0").$$${label:+.$label}")"
