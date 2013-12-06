@@ -75,7 +75,7 @@ require_tmp () {
 	
 	: ${label=$1}
 	
-	if eval [ -n "\${$1-}" ]; then
+	if eval [ -n \"\$$1\" ]; then
 		eval [ -w \"\$$1\" ]
 	else
 		setvar "$1" "$(mktemp ${opt_dir:+-d} -t "$(basename "$0").$$${label:+.$label}")"
@@ -108,4 +108,29 @@ choose_random () {
 	shift
 	local rand=$((`dd bs=4 count=1 if=/dev/urandom 2> /dev/null | od -D | head -n 1 | cut -w -f 2` % $# + 1))
 	eval setvar $var \$$rand
+}
+
+sets_union () {
+	local ret_tmp=$1; shift
+	
+	[ $# -ge 1 ]
+	
+	cat "$@" | sort -u >| "$ret_tmp"
+}
+
+sets_intrsctn () {
+	local ret_tmp=$1; shift
+	
+	[ $# -ge 1 ]
+	
+	case $# in
+		1|2)
+			cat "$@" | sort | uniq -d >| "$ret_tmp";;
+		*)
+			local new_tmp=
+			require_tmp new_tmp
+			sets_intrsctn "$new_tmp" "$1" "$2"; shift; shift
+			sets_intrsctn "$ret_tmp" "$new_tmp" "$@"
+			retire_tmp new_tmp
+	esac
 }
