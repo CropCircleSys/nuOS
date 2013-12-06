@@ -106,7 +106,7 @@ WITH_BDB_VER=48
 WITH_PGSQL_VER=92
 EOF
 		setvar $1 "$tempfile"
-		setvar $2 rm
+		setvar $2 retire_tmp
 	fi
 }
 
