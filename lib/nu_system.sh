@@ -123,5 +123,11 @@ sets_intrsctn () {
 	
 	[ $# -ge 2 ]
 	
-	cat "$@" | sort | uniq -c | sed -nEe "/^[[:blank:]]*$# /{s///;p;}" >| "$ret_tmp"
+	case $# in
+		2)
+			cat "$@" | sort | uniq -d >| "$ret_tmp"
+			;;
+		*)
+			cat "$@" | sort | uniq -c | sed -nEe "/^[[:blank:]]*$# /{s///;p;}" >| "$ret_tmp"
+	esac
 }
