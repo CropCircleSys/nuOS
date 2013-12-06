@@ -121,7 +121,7 @@ sets_union () {
 sets_intrsctn () {
 	local ret_tmp=$1; shift
 	
-	[ $# -ge 1 ]
+	[ $# -ge 2 ]
 	
 	cat "$@" | sort | uniq -c | sed -nEe "/^[[:blank:]]*$# /{s///;p;}" >| "$ret_tmp"
 }
