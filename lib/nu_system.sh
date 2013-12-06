@@ -111,6 +111,7 @@ sets_union () {
 	local ret_tmp=$1; shift
 	
 	[ $# -ge 1 ]
+	[ -w "$ret_tmp" -a ! -s "$ret_tmp" ]
 	
 	cat "$@" | sort -u >| "$ret_tmp"
 }
@@ -119,6 +120,7 @@ sets_sym_diff () {
 	local ret_tmp=$1; shift
 	
 	[ $# = 2 ]
+	[ -w "$ret_tmp" -a ! -s "$ret_tmp" ]
 	
 	cat "$@" | sort | uniq -u >| "$ret_tmp"
 }
@@ -127,6 +129,7 @@ sets_intrsctn () {
 	local ret_tmp=$1; shift
 	
 	[ $# -ge 2 ]
+	[ -w "$ret_tmp" -a ! -s "$ret_tmp" ]
 	
 	case $# in
 		2)
