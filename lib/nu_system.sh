@@ -118,7 +118,7 @@ sets_union () {
 sets_sym_diff () {
 	local ret_tmp=$1; shift
 	
-	[ $# -ge 2 ]
+	[ $# = 2 ]
 	
 	cat "$@" | sort | uniq -u >| "$ret_tmp"
 }
