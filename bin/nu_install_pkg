@@ -44,6 +44,8 @@ while [ $OPTIND -gt 1 ]; do
 done
 
 . "$(dirname "$(realpath "$0")")/../lib/nu_system.sh"
+. "$(dirname "$(realpath "$0")")/../lib/nu_make.sh"
+. "$(dirname "$(realpath "$0")")/../lib/nu_ports.sh"
 . "$(dirname "$(realpath "$0")")/../lib/nu_install.sh"
 
 maybe_yell

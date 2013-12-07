@@ -1,0 +1,147 @@
+#!/bin/sh
+set -e; set -u; set -C
+
+# nuOS 0.0.9.2d12 - bin/nu_update - LICENSE: BSD_SMPL
+#
+# Copyright (c) 2008-2013 Chad Jacob Milios and Crop Circle Systems, Inc.
+# All rights reserved.
+#
+# This Source Code Form is subject to the terms of the Simplified BSD License.
+# If a copy of the Simplified BSD License was not distributed alongside this file, you can
+# obtain one at http://www.freebsd.org/copyright/freebsd-license.html . This software
+# project is not affiliated with the FreeBSD Project.
+#
+# Official updates and community support available at http://nuos.org .
+# Other licensing options and professional services available at http://ccsys.com .
+
+NUOS_VER=0.0.9.2d12
+
+while getopts Dqv OPT; do
+	case $OPT in
+		D)
+			OPT_DEBUG=y
+			;;
+		q)
+			OPT_QUICK=y
+			;;
+		v)
+			OPT_VERBOSE=y
+			;;
+		*)
+			echo "usage: `basename $0` [-qv]" >&2
+			exit 1
+	esac
+done
+
+. "$(dirname "$(realpath "$0")")/../lib/nu_system.sh"
+. "$(dirname "$(realpath "$0")")/../lib/nu_common.sh"
+
+baseos_init
+nuos_init
+
+maybe_pause
+maybe_yell
+
+snaptime=t`date +%s`
+zfs snapshot -r $POOL_BOOT_NAME/os/$BASEOS_TYPE/ports@$snaptime $POOL_BOOT_NAME/os/$HOSTOS_TYPE/pkg/$POOL_HOSTOS_VER@$snaptime
+if [ $POOL_HOSTOS_VER != $NUOS_VER ]; then
+	zfs set canmount=off $POOL_BOOT_NAME/os/$HOSTOS_TYPE/pkg/$POOL_HOSTOS_VER
+	zfs clone -o mountpoint=/usr/ports/packages $POOL_BOOT_NAME/os/$HOSTOS_TYPE/pkg/$POOL_HOSTOS_VER@$snaptime $POOL_BOOT_NAME/os/$HOSTOS_TYPE/pkg/$NUOS_VER
+fi
+
+portsnap fetch
+require_tmp portsnap_update_out
+portsnap update | tee -a "$portsnap_update_out"
+
+require_tmp all_updated_ports
+sed -nEe '/^\/usr\/ports\/([[:lower:]].*)\/$/{s//\1/;s/\/$//;p;}' "$portsnap_update_out" >| "$all_updated_ports"
+retire_tmp portsnap_update_out
+
+require_tmp my_current_ports
+pkg_info -qoa >| "$my_current_ports"
+
+require_tmp -d new_to_old
+require_tmp -d old_to_new
+for port in `cat "$my_current_ports"`; do
+	port_=`echo $port | tr / _`
+	echo $port > "$new_to_old/$port_"
+	echo $port > "$old_to_new/$port_"
+done
+
+require_tmp old_moved
+grep -v '^#' /usr/ports/.zfs/snapshot/$snaptime/MOVED | cut -d '|' -f 1-3 >| $old_moved
+require_tmp new_moved
+grep -v '^#' /usr/ports/MOVED | cut -d '|' -f 1-3 >| $new_moved
+require_tmp moved_ports
+diff "$old_moved" "$new_moved" | sed -nEe '/^>[[:blank:]]+/{s///;p;}' >| "$moved_ports"
+retire_tmp old_moved
+retire_tmp new_moved
+
+require_tmp -d deleted_ports_dir
+while IFS='|' read old new date; do
+	old_=`echo $old | tr / _`
+	if [ -e "$new_to_old/$old_" ]; then
+		if [ -n "$new" ]; then
+			echo $new >| "$old_to_new/`cat "$new_to_old/$old_" | tr / _`"
+			new_=`echo $new | tr / _`
+			mv -n "$new_to_old/$old_" "$new_to_old/$new_" 2> /dev/null && true
+		else
+			: >| "$old_to_new/`cat "$new_to_old/$port_" | tr / _`"
+			mv -n "$new_to_old/$old_" "$deleted_ports_dir/" 2> /dev/null && true
+		fi
+	fi
+done < "$moved_ports"
+retire_tmp moved_ports
+
+require_tmp my_ports
+for port in `cat "$my_current_ports"`; do
+	port_=`echo $port | tr / _`
+	if [ -e "$deleted_ports_dir/$port_" ]; then
+		require_tmp -l deleted_ports my_deleted_ports
+		echo $port `pkg_info -qO $port` >> "$my_deleted_ports"
+	else
+		if [ -s "$old_to_new/$port_" ]; then
+			cat "$old_to_new/$port_" >> "$my_ports"
+		fi 
+	fi
+done
+retire_tmp my_current_ports
+retire_tmp deleted_ports_dir
+retire_tmp -k my_deleted_ports
+
+sets_intrsctn updated_ports "$my_ports" "$all_updated_ports"
+retire_tmp my_ports
+retire_tmp all_updated_ports
+
+require_tmp -l updated_ports_table updt_tbl
+require_tmp -l upgraded_principals prncpls
+require_tmp -l dependants_of_upgrades deps
+require_tmp -l updated_principals updt_prncpls
+require_tmp -l dependants_of_updates updt_deps
+for port in `cat "$updated_ports"`; do
+	port_=`echo $port | tr / _`
+	old=$(pkg_info -qO `cat "$new_to_old/$port_"`)
+	[ -n "$old" ]
+	new=`cd /usr/ports/$port && make -VPKGNAME`
+	[ -n "$new" ]
+	if [ $old = $new ]; then
+		indicator==
+		echo $old >> "$updt_prncpls"
+		pkg_info -qR $old >> "$updt_deps"
+	else
+		indicator=+
+		echo $old >> "$prncpls"
+		pkg_info -qR $old >> "$deps"
+	fi
+	echo $indicator `cat "$new_to_old/$port_"` $port $old $new | tee -a "$updt_tbl"
+done
+retire_tmp updated_ports
+retire_tmp new_to_old
+retire_tmp old_to_new
+retire_tmp -k updt_tbl
+retire_tmp -k prncpls
+retire_tmp -k deps
+retire_tmp -k updt_prncpls
+retire_tmp -k updt_deps
+
+echo "Upgrade complete."

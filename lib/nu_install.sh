@@ -17,22 +17,12 @@ set -e; set -u; set -C
 nuos_lib_ver=0.0.9.2d12
 [ $nuos_lib_ver = "$NUOS_VER" ]
 [ -n "${nuos_lib_system_loaded-}" ]
+[ -n "${nuos_lib_make_loaded-}" ]
 [ -z "${nuos_lib_install_loaded-}" ]
 nuos_lib_install_loaded=y
 
-install_lite_vars_init () {
-	: ${TRGT_PROC:=`uname -p`}
-	if [ $TRGT_PROC = amd64 ]; then
-		local default_optz=core2
-	fi
-	if [ $TRGT_PROC = i386 ]; then
-		local default_optz=pentium3
-	fi
-	: ${TRGT_OPTZ:=$default_optz}
-}
-
 install_vars_init () {
-	install_lite_vars_init
+	make_vars_init
 	if [ -z "${POOL_DEVS-}" ]; then # u shud spec a blank target media
 		if [ -n "${OPT_SWAP-}" ]; then # or ask to use these in (-S)wap
 			# have 2 - 8 GB of xtra ram depending on install options
@@ -66,48 +56,6 @@ install_vars_init () {
 	echo -n 'copy all pkgs      COPY_DEV_PKGS   ' && [ -n "${COPY_DEV_PKGS-}" ] && echo set || echo null
 	echo -n 'copy src           COPY_SRC        ' && [ -n "${COPY_SRC-}" ] && echo set || echo null
 	echo -n 'copy svn repo      COPY_SVN        ' && [ -n "${COPY_SRC-}" ] && ([ -n "${COPY_SVN-}" ] && echo set || echo null) || echo n/a
-}
-
-require_portsnap_files () {
-	if [ ! -d /var/db/portsnap/files ]; then
-		portsnap fetch
-	fi
-}
-
-require_ports_tree () {
-	if [ ! -f /usr/ports/Mk/bsd.port.mk ]; then
-		require_portsnap_files
-		portsnap extract
-	fi
-	if [ ! -d /usr/ports/packages ]; then
-		mkdir /usr/ports/packages
-	fi
-	if [ ! -d /usr/ports/packages/All ]; then
-		mkdir /usr/ports/packages/All
-	fi
-}
-
-prepare_make_conf () {
-	if [ -i = $1 ]; then
-		shift
-		local opt_init=y
-	fi
-	if [ -z "${opt_init-}" ] && [ -s "${CHROOTDIR-}/etc/make.conf" ]; then
-		setvar $1 "${CHROOTDIR-}/etc/make.conf"
-		setvar $2 :
-	else
-		install_lite_vars_init
-		local tempfile
-		require_tmp tempfile
-		cat >| "$tempfile" <<EOF
-CPUTYPE?=$TRGT_OPTZ
-DEFAULT_VERSIONS= perl5=5.18 ruby=1.9
-WITH_BDB_VER=48
-WITH_PGSQL_VER=92
-EOF
-		setvar $1 "$tempfile"
-		setvar $2 retire_tmp
-	fi
 }
 
 require_subversion () {
