@@ -41,13 +41,16 @@ require_ports_tree () {
 }
 
 port_deps () {
-	local ret_build_tmp=$1; shift
-	local ret_run_tmp=$1; shift
+	local ret_build_var=$1; shift
+	local ret_run_var=$1; shift
 	local port=$1; shift
 	
 	[ $# = 0 ]
-	[ -w "$ret_build_tmp" -a ! -s "$ret_build_tmp" ]
-	[ -w "$ret_run_tmp" -a ! -s "$ret_run_tmp" ]
+	
+	local build=
+	require_tmp -l $ret_build_var ret_build_tmp
+	local run=
+	require_tmp -l $ret_run_var ret_run_tmp
 	
 	require_ports_tree
 	
@@ -61,6 +64,9 @@ port_deps () {
 		(cd /usr/ports/$port && make "__MAKE_CONF=$make_conf" -DBATCH $action-depends-list | sed -e 's|^/usr/ports/||') >| "$outfile"
 	done
 	$retire_make_conf_cmd "$make_conf"
+	
+	setvar $ret_build_var "$ret_build_tmp"
+	setvar $ret_run_var "$ret_run_tmp"
 }
 
 pkg_deps () {
@@ -69,11 +75,12 @@ pkg_deps () {
 		m) opt_missing=y;;
 	esac; shift; done
 	
-	local ret_tmp=$1; shift
+	local ret_var=$1; shift
 	local pkg=$1; shift
 	
 	[ $# = 0 ]
-	[ -w "$ret_tmp" -a ! -s "$ret_tmp" ]
+	local ret_tmp=
+	require_tmp -l $ret_var ret_tmp
 	
 	local pkg_file=/usr/ports/packages/All/$pkg.tbz
 	[ -f $pkg_file ]
@@ -94,4 +101,6 @@ pkg_deps () {
 	else
 		pkg_info -qv $pkg_file | sed -nEe '/^@pkgdep /{N;s/^@pkgdep ([[:graph:]]+)\n@comment DEPORIGIN:([[:graph:]]+)$/\1 \2/;p;}' | cut -w -f 2 >| "$ret_tmp"
 	fi
+	
+	setvar $ret_var "$ret_tmp"
 }
