@@ -26,9 +26,16 @@ nuos_init () {
 	if [ -r "${CHROOTDIR-}/etc/nuos.conf" ]; then
 		. "${CHROOTDIR-}/etc/nuos.conf"
 	fi
-	echo 'nuos app v#                       ' $NUOS_VER
-	echo 'nuos support       NUOS_SUPPORTED ' ${NUOS_SUPPORTED:=UNSUPPORTED}
-	echo 'host opsys                        ' ${HOSTOS_TYPE:=$BASEOS_TYPE}
-	echo 'host opsys v#                     ' ${HOSTOS_VER:=$BASEOS_VER}
-	echo "host pkg collec'n                 " ${HOSTOS_PKG_COLLECTION:=desktop}
+	
+	: ${NUOS_SUPPORTED:=UNSUPPORTED}
+	: ${HOSTOS_TYPE:=$BASEOS_TYPE}
+	: ${HOSTOS_VER:=$BASEOS_VER}
+	: ${HOSTOS_PKG_COLLECTION:=desktop}
+	if [ -q != "${1-}" ]; then
+		echo 'nuos app v#                       ' $NUOS_VER
+		echo 'nuos support       NUOS_SUPPORTED ' "$NUOS_SUPPORTED"
+		echo 'host opsys                        ' "$HOSTOS_TYPE"
+		echo 'host opsys v#                     ' $HOSTOS_VER
+		echo "host pkg collec'n                 " $HOSTOS_PKG_COLLECTION
+	fi
 }

@@ -34,6 +34,8 @@ while getopts Dqv OPT; do
 done
 
 . "$(dirname "$(realpath "$0")")/../lib/nu_system.sh"
+. "$(dirname "$(realpath "$0")")/../lib/nu_make.sh"
+. "$(dirname "$(realpath "$0")")/../lib/nu_ports.sh"
 . "$(dirname "$(realpath "$0")")/../lib/nu_common.sh"
 
 baseos_init
@@ -98,7 +100,7 @@ for port in `cat "$my_current_ports"`; do
 	port_=`echo $port | tr / _`
 	if [ -e "$deleted_ports_dir/$port_" ]; then
 		require_tmp -l deleted_ports my_deleted_ports
-		echo $port `pkg_info -qO $port` >> "$my_deleted_ports"
+		echo $port `pkg_name -i $port` >> "$my_deleted_ports"
 	else
 		if [ -s "$old_to_new/$port_" ]; then
 			cat "$old_to_new/$port_" >> "$my_ports"
@@ -120,9 +122,9 @@ require_tmp -l updated_principals updt_prncpls
 require_tmp -l dependants_of_updates updt_deps
 for port in `cat "$updated_ports"`; do
 	port_=`echo $port | tr / _`
-	old=$(pkg_info -qO `cat "$new_to_old/$port_"`)
+	old=$(pkg_name -i `cat "$new_to_old/$port_"`)
 	[ -n "$old" ]
-	new=`cd /usr/ports/$port && make -VPKGNAME`
+	new=`pkg_name $port`
 	[ -n "$new" ]
 	if [ $old = $new ]; then
 		indicator==

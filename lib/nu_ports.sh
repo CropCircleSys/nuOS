@@ -40,6 +40,41 @@ require_ports_tree () {
 	fi
 }
 
+pkg_name () {
+	local opt_installed=
+	while getopts i OPT; do case $OPT in
+		i) opt_installed=y;;
+	esac; shift; done
+	
+	local port=$1; shift
+	
+	[ $# = 0 ]
+	
+	if [ -n "$opt_installed" ]; then
+		pkg_info -qO $port
+	else
+		require_ports_tree
+		(cd /usr/ports/$port && make -VPKGNAME)
+	fi
+}
+
+pkg_orgn () {
+	local opt_installed=
+	while getopts i OPT; do case $OPT in
+		i) opt_installed=y;;
+	esac; shift; done
+	
+	local pkg=$1; shift
+	
+	[ $# = 0 ]
+	
+	if [ -n "$opt_installed" ]; then
+		pkg_info -qo $pkg
+	else
+		exit 43
+	fi
+}
+
 port_deps () {
 	local ret_build_var=$1; shift
 	local ret_run_var=$1; shift
@@ -47,9 +82,9 @@ port_deps () {
 	
 	[ $# = 0 ]
 	
-	local build=
+	local ret_build_tmp=
 	require_tmp -l $ret_build_var ret_build_tmp
-	local run=
+	local ret_run_tmp=
 	require_tmp -l $ret_run_var ret_run_tmp
 	
 	require_ports_tree
@@ -60,7 +95,7 @@ port_deps () {
 	local make_conf= retire_make_conf_cmd=
 	prepare_make_conf make_conf retire_make_conf_cmd
 	for action in build run; do
-		local outfile=`eval echo '"$ret_'$action'_tmp"'`
+		eval local outfile=\"\$ret_${action}_tmp\"
 		(cd /usr/ports/$port && make "__MAKE_CONF=$make_conf" -DBATCH $action-depends-list | sed -e 's|^/usr/ports/||') >| "$outfile"
 	done
 	$retire_make_conf_cmd "$make_conf"
@@ -70,9 +105,11 @@ port_deps () {
 }
 
 pkg_deps () {
-	local opt_missing=
-	while getopts m OPT; do case $OPT in
+	local opt_installed= opt_missing= opt_ports=
+	while getopts imp OPT; do case $OPT in
+		i) opt_installed=y;;
 		m) opt_missing=y;;
+		p) opt_ports=y;;
 	esac; shift; done
 	
 	local ret_var=$1; shift
@@ -82,24 +119,43 @@ pkg_deps () {
 	local ret_tmp=
 	require_tmp -l $ret_var ret_tmp
 	
-	local pkg_file=/usr/ports/packages/All/$pkg.tbz
-	[ -f $pkg_file ]
-	
-	if [ -n "$opt_missing" ]; then
-		local pkg_add_output=
-		require_tmp pkg_add_output
-		if ! pkg_add ${CHROOTDIR:+-C $CHROOTDIR} -nv $pkg_file >| "$pkg_add_output"; then
-			sed -nEe "/^Package '.*' depends on '.*' with '.*' origin./{
-				N
-				s/and was not found.\$/missing/
-				s/ - already installed.\$/installed/
-				s/^Package '(.*)' depends on '(.*)' with '(.*)' origin.\n(.*)\$/\1 \2 \3 \4/
-				p
-			}" "$pkg_add_output" | grep -E '\<missing$' | cut -w -f 3 >| "$ret_tmp"
+	if [ -n "$opt_installed" ]; then
+		[ -z "$opt_missing" ]
+		local pkg_list=
+		if [ -n "$opt_ports" ]; then
+			require_tmp pkg_list
+		else
+			pkg_list=$ret_tmp
 		fi
-		retire_tmp pkg_add_output
+		pkg_info -qr $pkg | sed -ne '/^@pkgdep /{s///;p;}' >| "$pkg_list"
+		if [ -n "$opt_port" ]; then
+			cat "$pkg_list" | xargs -L1 pkg_info -qo >| "$ret_tmp"
+		fi
 	else
-		pkg_info -qv $pkg_file | sed -nEe '/^@pkgdep /{N;s/^@pkgdep ([[:graph:]]+)\n@comment DEPORIGIN:([[:graph:]]+)$/\1 \2/;p;}' | cut -w -f 2 >| "$ret_tmp"
+		local pkg_file=/usr/ports/packages/All/$pkg.tbz
+		[ -f $pkg_file ]
+		local field_no=
+		if [ -n "$opt_ports" ]; then
+			field_no=2
+		else
+			field_no=1
+		fi
+		if [ -n "$opt_missing" ]; then
+			local pkg_add_output=
+			require_tmp pkg_add_output
+			if ! pkg_add ${CHROOTDIR:+-C $CHROOTDIR} -nv $pkg_file >| "$pkg_add_output"; then
+				sed -nEe "/^Package '.*' depends on '.*' with '.*' origin./{
+					N
+					s/and was not found.\$/missing/
+					s/ - already installed.\$/installed/
+					s/^Package '[^']*' depends on '([^']*)' with '([^']*)' origin.\n(.*)\$/\1 \2 \3/
+					p
+				}" "$pkg_add_output" | grep -E '\<missing$' | cut -w -f $field_no >| "$ret_tmp"
+			fi
+			retire_tmp pkg_add_output
+		else
+			pkg_info -qv $pkg_file | sed -nEe '/^@pkgdep /{N;s/^@pkgdep ([[:graph:]]+)\n@comment DEPORIGIN:([[:graph:]]+)$/\1 \2/;p;}' | cut -w -f $field_no >| "$ret_tmp"
+		fi
 	fi
 	
 	setvar $ret_var "$ret_tmp"
