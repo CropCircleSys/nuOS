@@ -16,15 +16,17 @@ set -e; set -u; set -C
 
 NUOS_VER=0.0.9.2d12
 
-while getopts Do:v OPT; do case $OPT in
+while getopts Do:Orv OPT; do case $OPT in
 	D) OPT_DEBUG=y;;
 	o) case $OPTARG in
-		dot|xml|txt|tbl) out_type=$OPTARG; shift
-			setvar file_$out_type "$2"; shift;;
+		dot|xml|txt|tbl) out_type=$OPTARG;
+			eval setvar file_$out_type \"\$$OPTIND\"; shift $OPTIND;;
 		*) exit 22; esac;;
+	O) OPT_NOOPTIONS=y;;
+	r) OPT_RUNONLY=y;;
 	v) OPT_VERBOSE=y;;
-	*) echo "usage: `basename $0` [-Dv] [-o <type> <filename> ...]" >&2; exit 1
-esac; shift; done
+	*) echo "usage: `basename $0` [-DOrv] [-o <type> <filename> ...]" >&2; exit 1
+esac; done; shift $(($OPTIND-1))
 
 . "$(dirname "$(realpath "$0")")/../lib/nu_system.sh"
 . "$(dirname "$(realpath "$0")")/../lib/nu_make.sh"
@@ -37,6 +39,16 @@ collection_vars_init
 
 maybe_yell
 
+if [ -n "${OPT_RUNONLY-}" ]; then
+	recurse=run
+else
+	recurse=all
+fi
+if [ -n "${OPT_NOOPTIONS-}" ]; then
+	opt_args="_ _"
+else
+	opt_args="def_opts my_opts"
+fi
 for type in dot xml txt tbl; do
 	if eval [ -n \"\${file_$type-}\" ]; then
 		eval [ ! -e \"\$file_$type\" -o ! -s \"\$file_$type\" ]
@@ -60,8 +72,8 @@ main () {
 			mkdir -p "$work_dir/$arg_/dependencies"
 			case $arg in
 				[^/]*/*)
-					local      def_opts= my_opts= build_deps= run_deps=
-					port_deps  def_opts  my_opts  build_deps  run_deps  $arg
+					local def_opts= my_opts= build_deps= run_deps=
+					port_deps $opt_args build_deps run_deps $arg
 					local       all_deps=
 					sets_union  all_deps  "$build_deps" "$run_deps"
 					local          buildonly_deps=
@@ -78,13 +90,24 @@ main () {
 						fi
 					done
 					retire_tmp build_deps
-					retire_tmp run_deps
 					retire_tmp buildonly_deps
-					cat "$def_opts" > "$work_dir/$arg_/options"
-					diff "$def_opts" "$my_opts" | sed -nEe '/^>[[:blank:]]+([^=]+=[^:]*):?.*$/{s//\1/;p;}' > "$work_dir/$arg_/settings"
-					retire_tmp def_opts
-					retire_tmp my_opts
-					main `cat "$all_deps"`
+					if [ -z "${OPT_NOOPTIONS-}" ]; then
+						if [ -s "$def_opts" ]; then
+							cat "$def_opts" > "$work_dir/$arg_/options"
+							local opts_diff=
+							require_tmp opts_diff
+							diff "$def_opts" "$my_opts" >| "$opts_diff" || true
+							if [ -s "$opts_diff" ]; then
+								sed -nEe '/^>[[:blank:]]+([^=]+=[^:]*):?.*$/{s//\1/;p;}' "$opts_diff" > "$work_dir/$arg_/settings"
+							fi
+							retire_tmp opts_diff
+						fi
+						retire_tmp def_opts
+						retire_tmp my_opts
+					fi
+					eval local recurse_deps=\"\$${recurse}_deps\"
+					main `cat "$recurse_deps"`
+					retire_tmp run_deps
 					retire_tmp all_deps
 					;;
 				[^/]*)

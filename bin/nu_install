@@ -546,11 +546,6 @@ HOSTOS_KERN=$TRGT_KERN
 HOSTOS_OPTZ=$TRGT_OPTZ
 EOF
 		
-	zfs snapshot -r $POOL_NAME/os/nuOS/$NUOS_VER@blank
-	if [ $PKG_COLLECTION != blank ]; then
-		
-		sister nu_install_pkg -C $POOL_MNT sysutils/memtest86+
-		
 # 		patch -b '' $POOL_MNT/boot/menu-commands.4th <<'EOF'
 # 190a191,196
 # > 
@@ -571,28 +566,19 @@ EOF
 # > \ set ansi_caption[8]="Mem[1mT[37mest86+ RAM test"
 # > 
 # EOF
-		
-		sister nu_install_pkg -C $POOL_MNT sysutils/jail2
-		zfs snapshot -r $POOL_NAME/os/nuOS/$NUOS_VER@bare
-		if [ $PKG_COLLECTION != bare ]; then
-			sister nu_install_pkg -C $POOL_MNT sysutils/screen misc/buffer sysutils/pipemeter archivers/lzop sysutils/smartmontools net/rsync
-			zfs snapshot -r $POOL_NAME/os/nuOS/$NUOS_VER@lite
-			if [ $PKG_COLLECTION != lite ]; then
-				sister nu_install_pkg -C $POOL_MNT devel/subversion devel/git ports-mgmt/portupgrade
-				zfs snapshot -r $POOL_NAME/os/nuOS/$NUOS_VER@developer
-				if [ $PKG_COLLECTION != developer ]; then
-					sister nu_install_pkg -C $POOL_MNT -y mail/postfix
-					sister nu_install_pkg -C $POOL_MNT sysutils/pefs-kmod security/gnupg dns/djbdns security/openvpn ftp/pure-ftpd net/netatalk3 net/samba36 net-p2p/rtorrent net-p2p/bitcoin www/py-rhodecode databases/postgresql92-server databases/mongodb databases/redis www/npm www/apache24 mail/cyrus-imapd24 security/cyrus-sasl2-saslauthd emulators/virtualbox-ose graphics/povray-meta graphics/graphviz x11-fonts/webfonts print/teTeX lang/php55-extensions mail/roundcube-sieverules
-					zfs snapshot -r $POOL_NAME/os/nuOS/$NUOS_VER@server
-					if [ $PKG_COLLECTION != server ]; then
-						sister nu_install_pkg -C $POOL_MNT graphics/gimp x11/xorg x11/kde4 net/x11vnc net/tightvnc www/firefox mail/thunderbird editors/libreoffice multimedia/vlc
-						sister enable_svc -C $POOL_MNT hald kdm4
-						zfs snapshot -r $POOL_NAME/os/nuOS/$NUOS_VER@desktop
-					fi
-				fi
-			fi
-		fi
-	fi
+
+	require_tmp pkg_tree
+	sister nu_pkg_tree -O -r -o txt "$pkg_tree" $PKG_COLLECTION
+	for line in `cat "$pkg_tree"`; do
+		case $arg in
+			[^/]*/*)
+				sister nu_install_pkg -C $POOL_MNT -M -R $arg
+				;;
+			[^/]*)
+				zfs snapshot -r $POOL_NAME/os/nuOS/$NUOS_VER@$arg
+				;;
+		esac
+	done
 	
 else
 	zfs send -R $POOL_BOOT_NAME/os/$BASEOS_TYPE/$BASEOS_VER@bare | zfs receive -vd $POOL_NAME

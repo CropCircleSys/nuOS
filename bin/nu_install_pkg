@@ -16,13 +16,16 @@ set -e; set -u; set -C
 
 NUOS_VER=0.0.9.2d12
 
-while getopts C:MvyY OPT && [ $OPT != '?' ]; do
+while getopts C:MRvyY OPT && [ $OPT != '?' ]; do
 	case $OPT in
 		C)
 			CHROOTDIR="$OPTARG"
 			;;
 		M)
 			OPT_NOMAKE=y
+			;;
+		R)
+			OPT_NORECURSE=y
 			;;
 		v)
 			OPT_VERBOSE=y
@@ -34,7 +37,7 @@ while getopts C:MvyY OPT && [ $OPT != '?' ]; do
 			OPT_YES_SUBPROCESS=y
 			;;
 		*)
-			echo "usage: `basename \"$0\"` [-Mvy] [-C chroot_dir] port_origin ..." >&2
+			echo "usage: `basename \"$0\"` [-MRvy] [-C chroot_dir] port_origin ..." >&2
 			exit 1
 	esac
 done
@@ -51,7 +54,7 @@ done
 maybe_yell
 
 if [ -n "${OPT_YES-}" ]; then
-	yes | sh $0 ${OPT_NOMAKE:+-M} ${OPT_VERBOSE:+-v} ${CHROOTDIR:+-C $CHROOTDIR} -Y $@
+	yes | sh $0 ${OPT_NOMAKE:+-M} ${OPT_NORECURSE:+-R} ${OPT_VERBOSE:+-v} ${CHROOTDIR:+-C $CHROOTDIR} -Y $@
 	exit $?
 fi
 
@@ -70,7 +73,7 @@ for port in $*; do
 	pkg=`pkg_name $port`
 	pkg_file=/usr/ports/packages/All/$pkg.tbz
 	if [ ! -f $pkg_file ]; then
-		[ -z "${OPT_NOMAKE-}" ]
+		[ -z "${OPT_NOMAKE-}" -a -z "${OPT_NORECURSE-}" ]
 		port_deps def_opts my_opts build_deps run_deps $port
 		retire_tmp def_opts
 		retire_tmp my_opts
@@ -94,9 +97,11 @@ for port in $*; do
 		fi
 	fi
 	if [ ! -d "${CHROOTDIR-}/var/db/pkg/$pkg" ]; then
-		pkg_deps -m -p needed_deps $pkg
-		sister nu_install_pkg ${CHROOTDIR:+-C $CHROOTDIR} ${OPT_YES_SUBPROCESS:+-y} `cat "$needed_deps"`
-		retire_tmp needed_deps
+		if [ -z "${OPT_NORECURSE-}" ]; then
+			pkg_deps -m -p needed_deps $pkg
+			sister nu_install_pkg ${CHROOTDIR:+-C $CHROOTDIR} ${OPT_YES_SUBPROCESS:+-y} `cat "$needed_deps"`
+			retire_tmp needed_deps
+		fi
 		destdir="${CHROOTDIR-}"
 		if [ -f "$script" ]; then
 			pkg_step=pre-install

@@ -82,8 +82,10 @@ pkg_orgn () {
 port_deps () {
 	for new in def opt build run; do
 		eval local ret_${new}_var=\$1; shift
-		eval local ret_${new}_tmp=
-		eval require_tmp -l \$ret_${new}_var ret_${new}_tmp
+		if eval [ \"\$ret_${new}_var\" != _ ]; then
+			eval local ret_${new}_tmp=
+			eval require_tmp -l \$ret_${new}_var ret_${new}_tmp
+		fi
 	done
 	local port=$1; shift
 	
@@ -96,8 +98,8 @@ port_deps () {
 	
 	local make_conf= retire_make_conf_cmd=
 	prepare_make_conf make_conf retire_make_conf_cmd
-	(cd /usr/ports/$port && make "__MAKE_CONF=$make_conf" PORT_DBDIR=/var/empty -DBATCH showconfig) >| "$ret_def_tmp"
-	(cd /usr/ports/$port && make "__MAKE_CONF=$make_conf" -DBATCH showconfig) >| "$ret_opt_tmp"
+	[ -z "${ret_def_tmp-}" ] || (cd /usr/ports/$port && make "__MAKE_CONF=$make_conf" PORT_DBDIR=/var/empty -DBATCH showconfig) >| "$ret_def_tmp"
+	[ -z "${ret_opt_tmp-}" ] || (cd /usr/ports/$port && make "__MAKE_CONF=$make_conf" -DBATCH showconfig) >| "$ret_opt_tmp"
 	for action in build run; do
 		eval local outfile=\"\$ret_${action}_tmp\"
 		(cd /usr/ports/$port && make "__MAKE_CONF=$make_conf" -DBATCH $action-depends-list | sed -e 's|^/usr/ports/||') >| "$outfile"
@@ -105,7 +107,7 @@ port_deps () {
 	$retire_make_conf_cmd "$make_conf"
 	
 	for new in def opt build run; do
-		eval setvar \$ret_${new}_var \"\$ret_${new}_tmp\"
+		eval [ \"\$ret_${new}_var\" = _ ] || eval setvar \$ret_${new}_var \"\$ret_${new}_tmp\"
 	done
 }
 
