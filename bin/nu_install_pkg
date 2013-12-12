@@ -61,6 +61,7 @@ fi
 require_ports_tree
 prepare_make_conf make_conf cmd_to_retire_make_conf
 
+metainfo_dir="$(dirname "$(realpath "$0")")/../pkg"
 if [ -n "${CHROOTDIR-}" ]; then
 	if [ ! -d "$CHROOTDIR/usr/ports/packages/All" ]; then
 		mount -t nullfs /usr/ports/packages "$CHROOTDIR/usr/ports/packages"
@@ -69,7 +70,11 @@ if [ -n "${CHROOTDIR-}" ]; then
 fi
 for port in $*; do
 	uni=`echo $port | tr / _`
-	script="$(dirname "$(realpath "$0")")/../pkg/$uni.sh"
+	args="$metainfo_dir/$uni.args"
+	if [ -f "$args" ]; then
+		sh $0 ${OPT_NOMAKE:+-M} ${OPT_NORECURSE:+-R} ${OPT_VERBOSE:+-v} ${CHROOTDIR:+-C $CHROOTDIR} `cat "$args"` $port
+	fi
+	script="$metainfo_dir/$uni.sh"
 	pkg=`pkg_name $port`
 	pkg_file=/usr/ports/packages/All/$pkg.tbz
 	if [ ! -f $pkg_file ]; then
