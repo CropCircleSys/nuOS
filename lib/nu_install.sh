@@ -45,7 +45,7 @@ install_vars_init () {
 	echo 'make jobs          MAKE_JOBS      ' ${MAKE_JOBS:=$((2+`sysctl -n kern.smp.cpus`))}
 	echo 'target arch        TRGT_ARCH      ' ${TRGT_ARCH:=`uname -m`}
 	echo 'target proc        TRGT_PROC      ' $TRGT_PROC
-	echo 'target kern        TRGT_KERN      ' ${TRGT_KERN:=VIMAGE}
+	echo 'target kern        TRGT_KERN      ' ${TRGT_KERN:=NUOS}
 	echo 'target optimize    TRGT_OPTZ      ' $TRGT_OPTZ
 	if [ -z "${SVN_SERVER-}" ]; then
 		choose_random SVN_SERVER svn0.us-west.FreeBSD.org svn0.us-east.FreeBSD.org
@@ -116,11 +116,13 @@ EOF
 	fi
 	if [ ! -d /usr/obj/usr/src/sys/$TRGT_KERN ]; then
 		local kern_conf=/usr/src/sys/$TRGT_ARCH/conf/$TRGT_KERN
-		if [ ! -f $kern_conf -a $TRGT_KERN = VIMAGE ]; then
+		if [ ! -f $kern_conf -a $TRGT_KERN = NUOS ]; then
 			cat > $kern_conf <<EOF
 include GENERIC
-ident VIMAGE
+ident NUOS
 options VIMAGE
+options RACCT
+options RCTL
 EOF
 		fi
 		prepare_make_conf make_conf cmd_to_retire_make_conf
