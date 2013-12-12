@@ -110,6 +110,7 @@ done
 . "$(dirname "$(realpath "$0")")/../lib/nu_common.sh"
 . "$(dirname "$(realpath "$0")")/../lib/nu_admin.sh"
 . "$(dirname "$(realpath "$0")")/../lib/nu_make.sh"
+. "$(dirname "$(realpath "$0")")/../lib/nu_ports.sh"
 . "$(dirname "$(realpath "$0")")/../lib/nu_install.sh"
 
 baseos_init
