@@ -51,10 +51,13 @@ pkg_name () {
 	[ $# = 0 ]
 	
 	if [ -n "$opt_installed" ]; then
-		pkg_info -qO $port
+		${CHROOTDIR:+chroot "$CHROOTDIR"} pkg_info -qO $port
 	else
 		require_ports_tree
-		(cd /usr/ports/$port && make -VPKGNAME)
+		local make_conf= retire_make_conf_cmd=
+		prepare_make_conf make_conf retire_make_conf_cmd
+		(cd /usr/ports/$port && make "__MAKE_CONF=$make_conf" -VPKGNAME)
+		$retire_make_conf_cmd "$make_conf"
 	fi
 }
 
@@ -69,23 +72,22 @@ pkg_orgn () {
 	[ $# = 0 ]
 	
 	if [ -n "$opt_installed" ]; then
-		pkg_info -qo $pkg
+		${CHROOTDIR:+chroot "$CHROOTDIR"} pkg_info -qo $pkg
 	else
-		exit 43
+		require_ports_tree
+		(cd /usr/ports && make search name=$pkg | sed -nEe "/^Port:[[:blank:]]*$pkg\$/{N;s|^.*\nPath:[[:blank:]]*/usr/ports/(.*)\$|\1|;p;}")
 	fi
 }
 
 port_deps () {
-	local ret_build_var=$1; shift
-	local ret_run_var=$1; shift
+	for new in def opt build run; do
+		eval local ret_${new}_var=\$1; shift
+		eval local ret_${new}_tmp=
+		eval require_tmp -l \$ret_${new}_var ret_${new}_tmp
+	done
 	local port=$1; shift
 	
 	[ $# = 0 ]
-	
-	local ret_build_tmp=
-	require_tmp -l $ret_build_var ret_build_tmp
-	local ret_run_tmp=
-	require_tmp -l $ret_run_var ret_run_tmp
 	
 	require_ports_tree
 	
@@ -94,14 +96,17 @@ port_deps () {
 	
 	local make_conf= retire_make_conf_cmd=
 	prepare_make_conf make_conf retire_make_conf_cmd
+	(cd /usr/ports/$port && make "__MAKE_CONF=$make_conf" PORT_DBDIR=/var/empty -DBATCH showconfig) >| "$ret_def_tmp"
+	(cd /usr/ports/$port && make "__MAKE_CONF=$make_conf" -DBATCH showconfig) >| "$ret_opt_tmp"
 	for action in build run; do
 		eval local outfile=\"\$ret_${action}_tmp\"
 		(cd /usr/ports/$port && make "__MAKE_CONF=$make_conf" -DBATCH $action-depends-list | sed -e 's|^/usr/ports/||') >| "$outfile"
 	done
 	$retire_make_conf_cmd "$make_conf"
 	
-	setvar $ret_build_var "$ret_build_tmp"
-	setvar $ret_run_var "$ret_run_tmp"
+	for new in def opt build run; do
+		eval setvar \$ret_${new}_var \"\$ret_${new}_tmp\"
+	done
 }
 
 pkg_deps () {
@@ -127,9 +132,9 @@ pkg_deps () {
 		else
 			pkg_list=$ret_tmp
 		fi
-		pkg_info -qr $pkg | sed -ne '/^@pkgdep /{s///;p;}' >| "$pkg_list"
+		${CHROOTDIR:+chroot "$CHROOTDIR"} pkg_info -qr $pkg | sed -ne '/^@pkgdep /{s///;p;}' >| "$pkg_list"
 		if [ -n "$opt_port" ]; then
-			cat "$pkg_list" | xargs -L1 pkg_info -qo >| "$ret_tmp"
+			cat "$pkg_list" | xargs -L1 ${CHROOTDIR:+chroot "$CHROOTDIR"} pkg_info -qo >| "$ret_tmp"
 		fi
 	else
 		local pkg_file=/usr/ports/packages/All/$pkg.tbz
@@ -154,7 +159,7 @@ pkg_deps () {
 			fi
 			retire_tmp pkg_add_output
 		else
-			pkg_info -qv $pkg_file | sed -nEe '/^@pkgdep /{N;s/^@pkgdep ([[:graph:]]+)\n@comment DEPORIGIN:([[:graph:]]+)$/\1 \2/;p;}' | cut -w -f $field_no >| "$ret_tmp"
+			pkg_info -qv "${CHROOTDIR-}$pkg_file" | sed -nEe '/^@pkgdep /{N;s/^@pkgdep ([[:graph:]]+)\n@comment DEPORIGIN:([[:graph:]]+)$/\1 \2/;p;}' | cut -w -f $field_no >| "$ret_tmp"
 		fi
 	fi
 	

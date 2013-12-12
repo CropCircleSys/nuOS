@@ -67,59 +67,37 @@ fi
 for port in $*; do
 	uni=`echo $port | tr / _`
 	script="$(dirname "$(realpath "$0")")/../pkg/$uni.sh"
-	pkg=`cd /usr/ports/$port && make -V PKGNAME`
+	pkg=`pkg_name $port`
 	pkg_file=/usr/ports/packages/All/$pkg.tbz
 	if [ ! -f $pkg_file ]; then
 		[ -z "${OPT_NOMAKE-}" ]
-		if [ -d /var/db/pkg/$pkg ]; then
-			make_target=package-noinstall
-		else
-			[ -z "`pkg_info -qO $port`" ]
-			make_target="install package"
-		fi
-		require_tmp build_deps
-		require_tmp run_deps
-		require_tmp deps_intrsctn
-		require_tmp build_only_deps
-		(
-			cd /usr/ports/$port
-			make "__MAKE_CONF=$make_conf" -DBATCH build-depends-list | sed -e 's|^/usr/ports/||' >| "$build_deps"
-			make "__MAKE_CONF=$make_conf" -DBATCH run-depends-list | sed -e 's|^/usr/ports/||' >| "$run_deps"
-		)
-		cat "$build_deps" "$run_deps" | sort | uniq -d >| "$deps_intrsctn"
-		cat "$build_deps" "$deps_intrsctn" | sort | uniq -u >| "$build_only_deps"
+		port_deps def_opts my_opts build_deps run_deps $port
+		retire_tmp def_opts
+		retire_tmp my_opts
+		sets_union all_deps "$build_deps" "$run_deps"
 		retire_tmp build_deps
-		retire_tmp deps_intrsctn
-		sister nu_install_pkg ${OPT_YES_SUBPROCESS:+-y} `cat "$build_only_deps"`
-		retire_tmp build_only_deps
-		sister nu_install_pkg ${CHROOTDIR:+-C $CHROOTDIR} ${OPT_YES_SUBPROCESS:+-y} `cat "$run_deps"`
+		sister nu_install_pkg ${OPT_YES_SUBPROCESS:+-y} `cat "$all_deps"`
+		retire_tmp all_deps
+		if [ -n "${CHROOTDIR-}" ]; then
+			sister nu_install_pkg -C $CHROOTDIR ${OPT_YES_SUBPROCESS:+-y} `cat "$run_deps"`
+		fi
 		retire_tmp run_deps
 		destdir=
 		if [ -f "$script" ]; then
 			pkg_step=pre-build
 			. "$script"
 		fi
-		(cd /usr/ports/$port && make -DNOCLEANDEPENDS clean && make "__MAKE_CONF=$make_conf" -DBATCH $make_target && make -DNOCLEANDEPENDS clean)
+		(cd /usr/ports/$port && make -DNOCLEANDEPENDS clean && make "__MAKE_CONF=$make_conf" -DBATCH install package && make -DNOCLEANDEPENDS clean)
 		if [ -f "$script" ]; then
 			pkg_step=post-build
 			. "$script"
 		fi
 	fi
 	if [ ! -d "${CHROOTDIR-}/var/db/pkg/$pkg" ]; then
+		pkg_deps -m -p needed_deps $pkg
+		sister nu_install_pkg ${CHROOTDIR:+-C $CHROOTDIR} ${OPT_YES_SUBPROCESS:+-y} `cat "$needed_deps"`
+		retire_tmp needed_deps
 		destdir="${CHROOTDIR-}"
-		require_tmp tempfile
-		if pkg_add ${CHROOTDIR:+-C $CHROOTDIR} -nv $pkg_file >| "$tempfile"; then
-		else
-			needed_deps=$( sed -nEe "/^Package '.*' depends on '.*' with '.*' origin./{
-				N
-				s/and was not found.\$/missing/
-				s/ - already installed.\$/installed/
-				s/^Package '(.*)' depends on '(.*)' with '(.*)' origin.\n(.*)\$/\1 \2 \3 \4/
-				p
-			}" "$tempfile" | grep -E '\<missing$' | cut -w -f 3 )
-			sister nu_install_pkg ${CHROOTDIR:+-C $CHROOTDIR} ${OPT_YES_SUBPROCESS:+-y} $needed_deps
-		fi
-		retire_tmp tempfile
 		if [ -f "$script" ]; then
 			pkg_step=pre-install
 			. "$script"

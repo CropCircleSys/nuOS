@@ -16,12 +16,14 @@ set -e; set -u; set -C
 
 NUOS_VER=0.0.9.2d12
 
-while getopts Dv OPT; do case $OPT in
+while getopts Do:v OPT; do case $OPT in
 	D) OPT_DEBUG=y;;
+	o) case $OPTARG in
+		dot|xml|txt|tbl) out_type=$OPTARG; shift
+			setvar file_$out_type "$2"; shift;;
+		*) exit 22; esac;;
 	v) OPT_VERBOSE=y;;
-	*)
-		echo "usage: `basename $0` [-Dv]" >&2
-		exit 1
+	*) echo "usage: `basename $0` [-Dv] [-o <type> <filename> ...]" >&2; exit 1
 esac; shift; done
 
 . "$(dirname "$(realpath "$0")")/../lib/nu_system.sh"
@@ -35,45 +37,80 @@ collection_vars_init
 
 maybe_yell
 
+for type in dot xml txt tbl; do
+	if eval [ -n \"\${file_$type-}\" ]; then
+		eval [ ! -e \"\$file_$type\" -o ! -s \"\$file_$type\" ]
+		require_tmp tmp_$type
+	fi
+done
 require_tmp -d work_dir
 main () {
 	local depth=$((${depth--1}+1))
-	local arg= is_port=
+	[ $depth -gt 0 ] || echo $@ > "$work_dir/root"
+	mark_as_dependant () {
+		local dep_=`echo $dep | tr / _`
+		mkdir -p "$work_dir/$dep_/dependants"
+		echo $arg >> "$work_dir/$dep_/dependants/$dep_type"
+	}
+	local arg=
 	for arg in $@; do
-		if echo $arg | grep -q /; then
-			is_port=y
-		else
-			is_port=
-		fi
-		if [ -n "$is_port" ]; then
-			local arg_=`echo $arg | tr / _`
-			if [ ! -d "$work_dir/$arg_/dependencies" ]; then
-				local build_deps= run_deps= all_deps= buildonly_deps=
-				port_deps build_deps run_deps $arg
-				sets_union all_deps "$build_deps" "$run_deps"
-				sets_sym_diff buildonly_deps "$all_deps" "$run_deps"
-				mkdir -p "$work_dir/$arg_/dependencies"
-				for dep_type in build run all buildonly; do
-					eval local deps=\"\$${dep_type}_deps\"
-					cat "$deps" > "$work_dir/$arg_/dependencies/$dep_type"
-					for dep in `cat "$deps"`; do
-						local dep_=`echo $dep | tr / _`
-						mkdir -p "$work_dir/$arg_/dependants"
-						echo $arg >> "$work_dir/$arg_/dependants/$dep_type"
+		local arg_=`echo $arg | tr / _`
+		local dep_type=
+		if [ ! -d "$work_dir/$arg_/dependencies" ]; then
+			mkdir -p "$work_dir/$arg_/dependencies"
+			case $arg in
+				[^/]*/*)
+					local      def_opts= my_opts= build_deps= run_deps=
+					port_deps  def_opts  my_opts  build_deps  run_deps  $arg
+					local       all_deps=
+					sets_union  all_deps  "$build_deps" "$run_deps"
+					local          buildonly_deps=
+					sets_sym_diff  buildonly_deps  "$all_deps" "$run_deps"
+					
+					for dep_type in build run all buildonly; do
+						eval local dep_file=\"\$${dep_type}_deps\"
+						if [ -s "$dep_file" ]; then
+							cat "$dep_file" > "$work_dir/$arg_/dependencies/$dep_type"
+							local dep=
+							for dep in `cat "$dep_file"`; do
+								mark_as_dependant
+							done
+						fi
 					done
-				done
-				main `cat "$all_deps"`
-				retire_tmp build_deps
-				retire_tmp run_deps
-				retire_tmp all_deps
-				retire_tmp buildonly_deps
-				echo $arg 1>&2
-			fi
-		else
-			eval main "\$COLL_$arg"
-			echo $arg 1>&2
+					retire_tmp build_deps
+					retire_tmp run_deps
+					retire_tmp buildonly_deps
+					cat "$def_opts" > "$work_dir/$arg_/options"
+					diff "$def_opts" "$my_opts" | sed -nEe '/^>[[:blank:]]+([^=]+=[^:]*):?.*$/{s//\1/;p;}' > "$work_dir/$arg_/settings"
+					retire_tmp def_opts
+					retire_tmp my_opts
+					main `cat "$all_deps"`
+					retire_tmp all_deps
+					;;
+				[^/]*)
+					eval local deps=\"\$COLL_$arg\"
+					dep_type=collection
+					echo $deps >> "$work_dir/$arg_/dependencies/$dep_type"
+					for dep in $deps; do
+						mark_as_dependant
+					done
+					main $deps
+					;;
+				*) exit 22
+			esac
+			echo $arg
+			[ -n "${file_txt-}" ] && echo "`printf %${depth}s | tr ' ' '\t'`$arg"  >> "$tmp_txt"
 		fi
 	done
 }
 main ${@:-$HOSTOS_PKG_COLLECTION}
 retire_tmp -k work_dir
+for type in dot xml txt tbl; do
+	if eval [ -n \"\${file_$type-}\" ]; then
+		eval cat \"\$tmp_$type\" '>|' \"\$file_$type\"
+		retire_tmp tmp_$type
+	fi
+done
+
+echo
+echo "Port dependency mapping complete."
