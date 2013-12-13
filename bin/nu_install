@@ -131,7 +131,7 @@ if [ -z "${OPT_SKIP_INIT_ZPOOL-}" ]; then
 		gpart set -a bootme -i 2 /dev/$dev
 		gpart bootcode -b /boot/pmbr -p /boot/gptzfsboot -i 1 /dev/$dev
 		gnop create -S 4096 /dev/gpt/$POOL_NAME$i
-		nextdev="/dev/gpt/$POOL_NAME$i.nop"
+		nextdev=/dev/gpt/$POOL_NAME$i.nop
 		push devlist $nextdev
 		i=$(($i + 1))
 	done
@@ -818,6 +818,7 @@ if [ -n "${OPT_ELI-}" ]; then
 	chflags schg $POOL_MNT/etc/ssh/private
 	for key_filename in ssh_host_dsa_key ssh_host_ecdsa_key ssh_host_key ssh_host_rsa_key; do
 		(umask 77 && ln -s private/$key_filename $POOL_MNT/etc/ssh/$key_filename)
+		chflags -h schg $POOL_MNT/etc/ssh/$key_filename
 	done
 	
 	cat >> $POOL_MNT/etc/rc.conf.local <<EOF
