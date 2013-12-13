@@ -747,7 +747,7 @@ cat >> $POOL_MNT/etc/fstab <<EOF
 $POOL_NAME/sys/rescue/var /var zfs rw 0 0
 $POOL_NAME/sys/rescue/var/db /var/db zfs rw 0 0
 EOF
-if [ -n "${OPT_ELI-}" ]; then
+if [ -n "${OPT_ELI-}" -a -n "$SWAP_SIZE" -a "$SWAP_SIZE" != 0 ]; then
 	cat >> $POOL_MNT/etc/fstab <<EOF
 $swap_fstab_entry
 EOF
@@ -807,6 +807,9 @@ EOF
 
 if [ -n "${OPT_ELI-}" ]; then
 	private_chunk=$((`zfs get -H -p available $POOL_NAME | cut -w -f 3`/24/4096*4096))
+	if [ $private_chunk -lt 67112960 ]; then # minimum zpool vdev size plus an extra geli metadata block
+		private_chunk=67112960
+	fi
 	zfs create -s -b 4K -V $private_chunk -o compression=off -o checksum=off $POOL_NAME/private
 	pvt_eli_key_dev=`mdconfig -s 1440k`
 	gpart create -s GPT $pvt_eli_key_dev
