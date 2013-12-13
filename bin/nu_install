@@ -747,11 +747,14 @@ cat >> $POOL_MNT/etc/fstab <<EOF
 $POOL_NAME/sys/rescue/var /var zfs rw 0 0
 $POOL_NAME/sys/rescue/var/db /var/db zfs rw 0 0
 EOF
-if [ -n "${OPT_ELI-}" -a -n "$SWAP_SIZE" -a "$SWAP_SIZE" != 0 ]; then
-	cat >> $POOL_MNT/etc/fstab <<EOF
+maybe_add_eli_swap_to_fstab () {
+	if [ -n "${OPT_ELI-}" -a -n "$SWAP_SIZE" -a "$SWAP_SIZE" != 0 ]; then
+		cat >> $POOL_MNT/etc/fstab <<EOF
 $swap_fstab_entry
 EOF
-fi
+	fi
+}
+maybe_add_eli_swap_to_fstab
 
 cat > $POOL_MNT/boot/loader.conf.local <<EOF
 vfs.root.mountfrom="zfs:$POOL_NAME/sys/rescue"
@@ -791,11 +794,7 @@ cat > $POOL_MNT/boot/loader.conf.local <<EOF
 vfs.root.mountfrom="zfs:$host_ds"
 EOF
 
-if [ -n "${OPT_ELI-}" ]; then
-	cat >> $POOL_MNT/etc/fstab <<EOF
-$swap_fstab_entry
-EOF
-fi
+maybe_add_eli_swap_to_fstab
 
 cat >> $POOL_MNT/etc/rc.conf.local <<EOF
 hostname="$NEW_HOST"
