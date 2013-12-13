@@ -1,7 +1,7 @@
 #!/usr/bin/false
 set -e; set -u; set -C
 
-# nuOS 0.0.9.2d12 - lib/nu_admin.sh - LICENSE: BSD_SMPL
+# nuOS 0.0.9.2a23 - lib/nu_admin.sh - LICENSE: BSD_SMPL
 #
 # Copyright (c) 2008-2013 Chad Jacob Milios and Crop Circle Systems, Inc.
 # All rights reserved.
@@ -14,7 +14,7 @@ set -e; set -u; set -C
 # Official updates and community support available at http://nuos.org .
 # Other licensing options and professional services available at http://ccsys.com .
 
-nuos_lib_ver=0.0.9.2d12
+nuos_lib_ver=0.0.9.2a23
 [ $nuos_lib_ver = "$NUOS_VER" ]
 [ -z "${nuos_lib_admin_loaded-}" ]
 nuos_lib_admin_loaded=y
