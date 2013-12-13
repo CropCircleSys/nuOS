@@ -82,7 +82,7 @@ admin_install () {
 			if [ -n "$opt_zfs_create" ]; then
 				zfs create $POOL_NAME/home/$acct
 			fi
-			chroot "$trgt_path" pw groupadd -n "$acct" $groupadd_flags
+			chroot "$trgt_path" pw groupadd -n $acct $groupadd_flags
 			if [ -n "$pass" ]; then
 				chroot "$trgt_path" pw useradd -m -n $acct -g $acct -c "$name" $useradd_flags -h 0 <<EOF
 $pass
