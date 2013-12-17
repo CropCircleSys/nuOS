@@ -122,7 +122,7 @@ main () {
 				*) exit 22
 			esac
 			echo $arg
-			[ -n "${file_txt-}" ] && echo "`printf %${depth}s | tr ' ' '\t'`$arg"  >> "$tmp_txt"
+			[ -z "${file_txt-}" ] || echo "`printf %${depth}s | tr ' ' '\t'`$arg"  >> "$tmp_txt"
 		fi
 	done
 }

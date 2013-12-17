@@ -580,6 +580,7 @@ EOF
 				;;
 		esac
 	done
+	retire_tmp pkg_tree
 	
 else
 	zfs send -R $POOL_BOOT_NAME/os/$BASEOS_TYPE/$BASEOS_VER@bare | zfs receive -vd $POOL_NAME
