@@ -26,5 +26,5 @@ collection_vars_init () {
 	COLL_lite='bare sysutils/screen misc/buffer sysutils/pipemeter archivers/lzop sysutils/smartmontools net/rsync'
 	COLL_developer='lite devel/subversion devel/git ports-mgmt/portupgrade'
 	COLL_server='developer mail/postfix sysutils/pefs-kmod security/gnupg dns/djbdns security/openvpn ftp/pure-ftpd net/netatalk3 net/samba36 net-p2p/rtorrent net-p2p/bitcoin-daemon net-p2p/litecoin-daemon www/py-rhodecode databases/postgresql92-server databases/mongodb databases/redis www/npm www/apache24 mail/cyrus-imapd24 security/cyrus-sasl2-saslauthd emulators/virtualbox-ose graphics/povray-meta graphics/graphviz x11-fonts/webfonts print/teTeX lang/php55-extensions mail/roundcube-sieverules'
-	COLL_desktop='server graphics/gimp x11/xorg x11/kde4 net-p2p/bitcoin net-p2p/litecoin net/x11vnc net/tightvnc www/firefox mail/thunderbird editors/libreoffice multimedia/vlc'
+	COLL_desktop='server graphics/gimp x11/xorg x11/kde4 net-p2p/bitcoin net-p2p/litecoin net-p2p/retroshare net/x11vnc net/tightvnc www/firefox mail/thunderbird editors/libreoffice multimedia/vlc'
 }
