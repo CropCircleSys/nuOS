@@ -147,6 +147,7 @@ if [ -n "${OPT_ONLY_INIT_ZPOOL-}" ]; then
 	exit
 fi
 
+blank_key_gpt_type=deadbeef-4657-11e3-9570-002590742cc4
 if [ -n "${OPT_FORCE_BUILD-}" \
 	-o "${POOL_BASEOS_TYPE-}" != $BASEOS_TYPE \
 	-o "${POOL_BASEOS_VER-}" != $BASEOS_VER \
@@ -301,7 +302,6 @@ nuos_pvt_init_start () {
 			done
 			if [ -e /dev/gpt/$pool-key ]; then
 EOF
-	blank_key_gpt_type=deadbeef-4657-11e3-9570-002590742cc4
 	cat >> $POOL_MNT/etc/rc.d/nuos_pvt_init <<EOF
 				local blank_key_type=$blank_key_gpt_type
 EOF
