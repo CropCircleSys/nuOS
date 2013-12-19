@@ -67,7 +67,7 @@ for pkg in `ls /var/db/pkg | grep -v '^pkgdb.db$'`; do
 			_OPTIONS_READ=$pkg
 			_FILE_COMPLETE_OPTIONS_LIST=$optlist
 		EOF
-		rm "$tempfile"
+		retire_tmp tempfile
 		if [ -n "${OPT_VERBOSE-}" ]; then
 			echo $uni >&2
 		fi
