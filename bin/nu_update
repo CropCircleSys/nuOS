@@ -138,7 +138,7 @@ for port in `cat "$updated_ports"`; do
 		dependants=$deps
 	fi
 	echo $old >> "$principals"
-	pkg_info -qR $old | sed -e "/^\$/d;/s/^/$old /" >> "$dependants"
+	pkg_info -qR $old | sed -e "/^\$/d;s/^/$old /" >> "$dependants"
 	echo $indicator `cat "$new_to_old/$port_"` $port $old $new | tee -a "$updt_tbl"
 done
 retire_tmp updated_ports
