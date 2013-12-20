@@ -130,15 +130,15 @@ for port in `cat "$updated_ports"`; do
 	[ -n "$new" ]
 	if [ $old = $new ]; then
 		indicator==
-		echo $old >> "$updt_prncpls"
-		#pkg_info -qR $old >> "$updt_deps"
-		pkg_info -qR $old | sed -e "s/^/$old /" >> "$updt_deps"
+		principals=$updt_prncpls
+		dependants=$updt_deps
 	else
 		indicator=+
-		echo $old >> "$prncpls"
-		#pkg_info -qR $old >> "$deps"
-		pkg_info -qR $old | sed -e "s/^/$old /" >> "$deps"
+		principals=$prncpls
+		dependants=$deps
 	fi
+	echo $old >> "$principals"
+	pkg_info -qR $old | sed -e "/^\$/d;/s/^/$old /" >> "$dependants"
 	echo $indicator `cat "$new_to_old/$port_"` $port $old $new | tee -a "$updt_tbl"
 done
 retire_tmp updated_ports
