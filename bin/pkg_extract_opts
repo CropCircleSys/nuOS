@@ -37,7 +37,7 @@ done
 : ${DBDIR:=/var/db/ports}
 mkdir $DBDIR
 for pkg in `ls /var/db/pkg | grep -v '^pkgdb.db$'`; do
-	opts="`grep '^@comment OPTIONS:' /var/db/pkg/$pkg/+CONTENTS | sed -e 's/^@comment OPTIONS://'`"
+	opts="`sed -n -e '/^@comment OPTIONS:/{s///;p;}' /var/db/pkg/$pkg/+CONTENTS`"
 	if [ -n "$opts" ]; then
 		org=`pkg_info -q -o $pkg`
 		uni=`echo $org | tr / _`
