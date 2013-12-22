@@ -19,7 +19,6 @@ NUOS_VER=0.0.9.2a23
 while getopts C:h:nsv OPT; do
 	case $OPT in
 		C)
-			exit 43
 			CHROOTDIR="$OPTARG"
 			;;
 		h)
@@ -39,6 +38,8 @@ while getopts C:h:nsv OPT; do
 			exit 1
 	esac
 done
+
+[ -z "${CHROOTDIR-}" ] || exit 43 # initdb requires the system up so CHROOTDIR is unsupported, though we want to remedy this some day so most of the code is still written with support
 
 . "$(dirname "$(realpath "$0")")/../lib/nu_system.sh"
 . "$(dirname "$(realpath "$0")")/../lib/nu_common.sh"
@@ -64,18 +65,22 @@ listen_addresses = '*'
 EOF
 	if [ -n "${OPT_SSL-}" ]; then
 		mkdir "${CHROOTDIR-}$pghome/data/ssl"
+		${CHROOTDIR:+chroot "$CHROOTDIR"} chown pgsql $pghome/data/ssl
 		(umask 77 && mkdir "${CHROOTDIR-}$pghome/data/ssl/private")
-		if zfs list $POOL_BOOT_NAME/private > /dev/null 2>&1; then
+		${CHROOTDIR:+chroot "$CHROOTDIR"} chown pgsql $pghome/data/ssl/private
+		if zfs list $POOL_BOOT_NAME/private > /dev/null 2>&1; then # this check will need to be refined if ever we support CHROOTDIR
 			chflags schg "${CHROOTDIR-}$pghome/data/ssl/private"
-			zfs create -o mountpoint=$pghome/data/ssl/private $POOL_BOOT_NAME-pvt/sys/host/pg-ssl
+			zfs create -o mountpoint=$pghome/data/ssl/private $POOL_BOOT_NAME-pvt/sys/host/pgsql-ssl
 			chmod go-rx "${CHROOTDIR-}$pghome/data/ssl/private"
+			${CHROOTDIR:+chroot "$CHROOTDIR"} chown pgsql:pgsql $pghome/data/ssl/private
 		fi
 		cp "${CHROOTDIR-}/etc/ssl/certs/$HOST_NAME.crt" "${CHROOTDIR-}$pghome/data/ssl/"
+		${CHROOTDIR:+chroot "$CHROOTDIR"} chown pgsql $pghome/data/ssl/$HOST_NAME.crt
 		cp "${CHROOTDIR-}/etc/ssl/private/$HOST_NAME.key" "${CHROOTDIR-}$pghome/data/ssl/private/"
+		${CHROOTDIR:+chroot "$CHROOTDIR"} chown pgsql $pghome/data/ssl/private/$HOST_NAME.key
 		if [ -f "${CHROOTDIR-}/etc/ssl/certs/$HOST_NAME.ca.crt" ]; then
 			cat "${CHROOTDIR-}/etc/ssl/certs/$HOST_NAME.ca.crt" >> "${CHROOTDIR-}$pghome/data/ssl/$HOST_NAME.crt"
 		fi
-		${CHROOTDIR:+chroot "$CHROOTDIR"} chown -R pgsql $pghome/data/ssl
 		cat >> "${CHROOTDIR-}$pghome/data/postgresql.conf" <<EOF
 ssl = on
 ssl_cert_file = 'ssl/$HOST_NAME.crt'
