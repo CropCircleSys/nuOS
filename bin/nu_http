@@ -33,6 +33,8 @@ while getopts C:sv OPT; do
 	esac
 done
 
+[ -z "${CHROOTDIR-}" ] || exit 43 # CHROOTDIR is unsupported, though we want to some day so most of the code is still written with support
+
 . "$(dirname "$(realpath "$0")")/../lib/nu_system.sh"
 . "$(dirname "$(realpath "$0")")/../lib/nu_common.sh"
 
