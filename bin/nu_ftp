@@ -36,6 +36,8 @@ while getopts C:h:sv OPT; do
 	esac
 done
 
+[ -z "${CHROOTDIR-}" ] || exit 43 # CHROOTDIR is unsupported, though we want to some day so most of the code is still written with support
+
 . "$(dirname "$(realpath "$0")")/../lib/nu_system.sh"
 . "$(dirname "$(realpath "$0")")/../lib/nu_common.sh"
 
@@ -62,11 +64,17 @@ sed -Ee '
 
 if [ -n "${OPT_SSL-}" ]; then
 	mkdir "${CHROOTDIR-}/usr/local/etc/pure-ftpd/ssl"
-	(umask 77 && cat "${CHROOTDIR-}/etc/ssl/private/$HOST_NAME.key" "${CHROOTDIR-}/etc/ssl/certs/$HOST_NAME.crt" > "${CHROOTDIR-}/usr/local/etc/pure-ftpd/ssl/$HOST_NAME.pem")
-	if [ -f "${CHROOTDIR-}/etc/ssl/certs/$HOST_NAME.ca.crt" ]; then
-		cat "${CHROOTDIR-}/etc/ssl/certs/$HOST_NAME.ca.crt" >> "${CHROOTDIR-}/usr/local/etc/pure-ftpd/ssl/$HOST_NAME.pem"
+	(umask 77 && mkdir "${CHROOTDIR-}/usr/local/etc/pure-ftpd/ssl/private")
+	if zfs list $POOL_BOOT_NAME/private > /dev/null 2>&1; then # this check will need to be refined if ever we support CHROOTDIR
+		chflags schg "${CHROOTDIR-}/usr/local/etc/pure-ftpd/ssl/private"
+		zfs create -o mountpoint=/usr/local/etc/pure-ftpd/ssl/private $POOL_BOOT_NAME-pvt/sys/host/ftp-ssl
+		chmod go-rx "${CHROOTDIR-}/usr/local/etc/pure-ftpd/ssl/private"
 	fi
-	ln -s $HOST_NAME.pem "${CHROOTDIR-}/usr/local/etc/pure-ftpd/ssl/server.pem"
+	(umask 77 && cat "${CHROOTDIR-}/etc/ssl/private/$HOST_NAME.key" "${CHROOTDIR-}/etc/ssl/certs/$HOST_NAME.crt" > "${CHROOTDIR-}/usr/local/etc/pure-ftpd/ssl/private/$HOST_NAME.pem")
+	if [ -f "${CHROOTDIR-}/etc/ssl/certs/$HOST_NAME.ca.crt" ]; then
+		cat "${CHROOTDIR-}/etc/ssl/certs/$HOST_NAME.ca.crt" >> "${CHROOTDIR-}/usr/local/etc/pure-ftpd/ssl/private/$HOST_NAME.pem"
+	fi
+	ln -s private/$HOST_NAME.pem "${CHROOTDIR-}/usr/local/etc/pure-ftpd/ssl/server.pem"
 	sed -i '' -Ee '
 		/^[#[:blank:]]*TLS(CipherSuite)?[[:>:]]/s/^[#[:blank:]]*//
 	' "${CHROOTDIR-}/usr/local/etc/pure-ftpd.conf"
