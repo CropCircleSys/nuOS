@@ -43,8 +43,8 @@ done
 
 nuos_init
 
-echo 'host name       -h HOST_NAME       ' ${HOST_NAME:=$HOST}
-echo -n 'ssl             -s OPT_SSL    ' && [ -n "${OPT_SSL-}" ] && echo set || echo null
+echo 'host name       -h HOST_NAME      ' ${HOST_NAME:=$HOST}
+echo -n 'ssl             -s OPT_SSL         ' && [ -n "${OPT_SSL-}" ] && echo set || echo null
 echo
 
 maybe_yell
