@@ -36,6 +36,8 @@ while getopts C:h:sv OPT; do
 	esac
 done
 
+[ -z "${CHROOTDIR-}" ] || exit 43 # CHROOTDIR is unsupported, though we want to some day so most of the code is still written with support
+
 . "$(dirname "$(realpath "$0")")/../lib/nu_system.sh"
 . "$(dirname "$(realpath "$0")")/../lib/nu_common.sh"
 
@@ -86,12 +88,18 @@ EOF
 
 if [ -n "${OPT_SSL-}" ]; then
 	mkdir "${CHROOTDIR-}/usr/local/etc/postfix/ssl"
+	(umask 77 && mkdir "${CHROOTDIR-}/usr/local/etc/postfix/ssl/private")
+	if zfs list $POOL_BOOT_NAME/private > /dev/null 2>&1; then # this check will need to be refined if ever we support CHROOTDIR
+		chflags schg "${CHROOTDIR-}/usr/local/etc/postfix/ssl/private"
+		zfs create -o mountpoint=/usr/local/etc/postfix/ssl/private $POOL_BOOT_NAME-pvt/sys/host/smtp-ssl
+		chmod go-rx "${CHROOTDIR-}/usr/local/etc/postfix/ssl/private"
+	fi
 	cp "${CHROOTDIR-}/etc/ssl/certs/$HOST_NAME.crt" "${CHROOTDIR-}/usr/local/etc/postfix/ssl/"
-	cp "${CHROOTDIR-}/etc/ssl/private/$HOST_NAME.key" "${CHROOTDIR-}/usr/local/etc/postfix/ssl/"
+	cp "${CHROOTDIR-}/etc/ssl/private/$HOST_NAME.key" "${CHROOTDIR-}/usr/local/etc/postfix/ssl/private/"
 	cat >> "${CHROOTDIR-}/usr/local/etc/postfix/main.cf" <<'EOF'
 smtpd_tls_security_level = may
 smtpd_tls_cert_file = $config_directory/ssl/$myhostname.crt
-smtpd_tls_key_file = $config_directory/ssl/$myhostname.key
+smtpd_tls_key_file = $config_directory/ssl/private/$myhostname.key
 EOF
 	if [ -f "${CHROOTDIR-}/etc/ssl/certs/$HOST_NAME.ca.crt" ]; then
 		cp "${CHROOTDIR-}/etc/ssl/certs/$HOST_NAME.ca.crt" "${CHROOTDIR-}/usr/local/etc/postfix/ssl/"
