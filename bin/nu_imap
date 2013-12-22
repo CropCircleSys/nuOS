@@ -36,6 +36,8 @@ while getopts C:h:sv OPT; do
 	esac
 done
 
+[ -z "${CHROOTDIR-}" ] || exit 43 # CHROOTDIR is unsupported, though we want to some day so most of the code is still written with support
+
 . "$(dirname "$(realpath "$0")")/../lib/nu_system.sh"
 . "$(dirname "$(realpath "$0")")/../lib/nu_common.sh"
 
@@ -53,7 +55,7 @@ mkdir "${CHROOTDIR-}/usr/local/etc/cyrus"
 
 export LC_CTYPE=C
 
-sed -i '' -Ee 's/^#([[:blank:]]+idled)[[:>:]]/\1/' "${CHROOTDIR-}/usr/local/etc/cyrus.conf"
+sed -i '' -Ee 's/^#([[:blank:]]*idled)[[:>:]]/\1/' "${CHROOTDIR-}/usr/local/etc/cyrus.conf"
 
 cat >> "${CHROOTDIR-}/usr/local/etc/imapd.conf" <<EOF
 
@@ -65,12 +67,20 @@ EOF
 
 if [ -n "${OPT_SSL-}" ]; then
 	mkdir "${CHROOTDIR-}/usr/local/etc/cyrus/ssl"
+	(umask 77 && mkdir "${CHROOTDIR-}/usr/local/etc/cyrus/ssl/private")
+	${CHROOTDIR:+chroot "$CHROOTDIR"} chown cyrus /usr/local/etc/cyrus/ssl/private
+	if zfs list $POOL_BOOT_NAME/private > /dev/null 2>&1; then # this check will need to be refined if ever we support CHROOTDIR
+		chflags schg "${CHROOTDIR-}/usr/local/etc/cyrus/ssl/private"
+		zfs create -o mountpoint=/usr/local/etc/cyrus/ssl/private $POOL_BOOT_NAME-pvt/sys/host/imap-ssl
+		chmod go-rx "${CHROOTDIR-}/usr/local/etc/cyrus/ssl/private"
+		${CHROOTDIR:+chroot "$CHROOTDIR"} chown cyrus /usr/local/etc/cyrus/ssl/private
+	fi
 	cp "${CHROOTDIR-}/etc/ssl/certs/$HOST_NAME.crt" "${CHROOTDIR-}/usr/local/etc/cyrus/ssl/"
-	cp "${CHROOTDIR-}/etc/ssl/private/$HOST_NAME.key" "${CHROOTDIR-}/usr/local/etc/cyrus/ssl/"
-	chown cyrus "${CHROOTDIR-}/usr/local/etc/cyrus/ssl/$HOST_NAME.key"
+	cp "${CHROOTDIR-}/etc/ssl/private/$HOST_NAME.key" "${CHROOTDIR-}/usr/local/etc/cyrus/ssl/private/"
+	chown cyrus "${CHROOTDIR-}/usr/local/etc/cyrus/ssl/private/$HOST_NAME.key"
 	cat >> "${CHROOTDIR-}/usr/local/etc/imapd.conf" <<EOF
 tls_cert_file: /usr/local/etc/cyrus/ssl/$HOST_NAME.crt
-tls_key_file: /usr/local/etc/cyrus/ssl/$HOST_NAME.key
+tls_key_file: /usr/local/etc/cyrus/ssl/private/$HOST_NAME.key
 EOF
 	if [ -f "${CHROOTDIR-}/etc/ssl/certs/$HOST_NAME.ca.crt" ]; then
 		cp "${CHROOTDIR-}/etc/ssl/certs/$HOST_NAME.ca.crt" "${CHROOTDIR-}/usr/local/etc/cyrus/ssl/"
@@ -79,7 +89,7 @@ tls_ca_file: /usr/local/etc/cyrus/ssl/$HOST_NAME.ca.crt
 EOF
 	fi
 else
-	sed -i '' -Ee 's/^([[:blank:]]+imaps)[[:>:]]/#\1/;s/^([[:blank:]]+pop3s)[[:>:]]/#\1/' "${CHROOTDIR-}/usr/local/etc/cyrus.conf"
+	sed -i '' -Ee 's/^([[:blank:]]*imaps)[[:>:]]/#\1/;s/^([[:blank:]]*pop3s)[[:>:]]/#\1/' "${CHROOTDIR-}/usr/local/etc/cyrus.conf"
 fi
 ${CHROOTDIR:+chroot "$CHROOTDIR"} /usr/local/cyrus/bin/mkimap
 
