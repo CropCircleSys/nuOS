@@ -59,7 +59,7 @@ ${CHROOTDIR:+chroot "$CHROOTDIR"} su -m $USER_NAME -c "mkdir -p \"$user_home/$HO
 
 if [ -n "${OPT_SSL-}" ]; then
 	cp "${CHROOTDIR-}/etc/ssl/certs/$HOST_NAME.crt" "${CHROOTDIR-}/usr/local/etc/apache24/ssl/"
-	cp "${CHROOTDIR-}/etc/ssl/private/$HOST_NAME.key" "${CHROOTDIR-}/usr/local/etc/apache24/ssl/"
+	cp "${CHROOTDIR-}/etc/ssl/private/$HOST_NAME.key" "${CHROOTDIR-}/usr/local/etc/apache24/ssl/private/"
 	if [ -f "${CHROOTDIR-}/etc/ssl/certs/$HOST_NAME.ca.crt" ]; then
 		cp "${CHROOTDIR-}/etc/ssl/certs/$HOST_NAME.ca.crt" "${CHROOTDIR-}/usr/local/etc/apache24/ssl/"
 	else
@@ -74,7 +74,7 @@ if [ -n "${OPT_SSL-}" ]; then
 	CustomLog "/var/log/httpd-vhost/$HOST_NAME-access.log" common
 	SSLEngine on
 	SSLCertificateFile "/usr/local/etc/apache24/ssl/$HOST_NAME.crt"
-	SSLCertificateKeyFile "/usr/local/etc/apache24/ssl/$HOST_NAME.key"
+	SSLCertificateKeyFile "/usr/local/etc/apache24/ssl/private/$HOST_NAME.key"
 	${self_signed:+#}SSLCertificateChainFile "/usr/local/etc/apache24/ssl/$HOST_NAME.ca.crt"
 	BrowserMatch "MSIE [2-5]" nokeepalive ssl-unclean-shutdown downgrade-1.0 force-response-1.0
 	CustomLog "/var/log/httpd-vhost/$HOST_NAME-ssl_request.log" "%t %h %{SSL_PROTOCOL}x %{SSL_CIPHER}x \"%r\" %b"
@@ -83,7 +83,7 @@ if [ -n "${OPT_SSL-}" ]; then
 	ServerName www.$HOST_NAME:443
 	SSLEngine on
 	SSLCertificateFile "/usr/local/etc/apache24/ssl/$HOST_NAME.crt"
-	SSLCertificateKeyFile "/usr/local/etc/apache24/ssl/$HOST_NAME.key"
+	SSLCertificateKeyFile "/usr/local/etc/apache24/ssl/private/$HOST_NAME.key"
 	${self_signed:+#}SSLCertificateChainFile "/usr/local/etc/apache24/ssl/$HOST_NAME.ca.crt"
 	BrowserMatch "MSIE [2-5]" nokeepalive ssl-unclean-shutdown downgrade-1.0 force-response-1.0
 	Redirect permanent / https://$HOST_NAME/

@@ -59,11 +59,17 @@ sed -i '' -Ee 's/^#(Include[[:>:]].*[[:<:]]httpd-(mpm|vhosts|default).conf)$/\1/
 
 if [ -n "${OPT_SSL-}" ]; then
 	mkdir "${CHROOTDIR-}/usr/local/etc/$service/ssl"
+	(umask 77 && mkdir "${CHROOTDIR-}/usr/local/etc/$service/ssl/private")
+	if zfs list $POOL_BOOT_NAME/private > /dev/null 2>&1; then # this check will need to be refined if ever we support CHROOTDIR
+		chflags schg "${CHROOTDIR-}/usr/local/etc/$service/ssl/private"
+		zfs create -o mountpoint=/usr/local/etc/$service/ssl/private $POOL_BOOT_NAME-pvt/sys/host/http-ssl
+		chmod go-rx "${CHROOTDIR-}/usr/local/etc/$service/ssl/private"
+	fi
 	sed -i '' -Ee '/^<VirtualHost[[:>:]]/,/^<\/VirtualHost[[:>:]]/s/^/#/' "${CHROOTDIR-}/usr/local/etc/$service/extra/httpd-ssl.conf"
 	sed -i '' -Ee 's/^#(Include[[:>:]].*[[:<:]]httpd-ssl.conf)$/\1/;s/^#(LoadModule[[:>:]].*[[:<:]]mod_(ssl|socache_shmcb).so)$/\1/' "${CHROOTDIR-}/usr/local/etc/$service/httpd.conf"
 fi
 
 sister enable_svc ${CHROOTDIR:+-C "$CHROOTDIR"} $service
-echo 'apache24_http_accept_enable="YES"' >> "${CHROOTDIR-}/etc/rc.conf.d/$service"
+echo $service'_http_accept_enable="YES"' >> "${CHROOTDIR-}/etc/rc.conf.d/$service"
 
 echo "Configured http service."
