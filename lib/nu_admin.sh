@@ -76,7 +76,7 @@ admin_install () {
 			opt_zfs_create=y
 			shift
 		fi		
-		local acct=$1 pass=$2 name=${3-} cpny=${4-} keys=${5-} useradd_flags=${6-} groupadd_flags=${7-}
+		local acct=$1 pass="$2" name="${3-}" cpny="${4-}" keys="${5-}" useradd_flags="${6-}" groupadd_flags="${7-}"
 		if [ -n "$acct" ]; then
 			echo "WARNING: creating account '$acct' inside new system" >&2
 			if [ -n "$opt_zfs_create" ]; then
