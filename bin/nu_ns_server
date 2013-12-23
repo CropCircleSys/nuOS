@@ -54,10 +54,11 @@ for ip in $PUB_IPS; do
 	${CHROOTDIR:+chroot "$CHROOTDIR"} tinydns-conf tinydns dnslog /var/service/tinydns-$ip $ip
 	(
 		cd "${CHROOTDIR-}/var/service/tinydns-$ip/root"
-		for _ip in $PUB_IPS; do
-			./add-ns $HOST_NAME $_ip
+		rdns=`echo $ip | awk 'FS=OFS="."{print $4,$3,$2,$1,"in-addr.arpa"}'`
+		for ip_ in $PUB_IPS; do
+			./add-ns $HOST_NAME $ip_
+			./add-ns $rdns $ip_
 		done
-		./add-ns `echo $ip | awk 'FS=OFS="."{print $4,$3,$2,$1,"in-addr.arpa"}'` $ip
 		./add-mx $HOST_NAME $ip
 		./add-host $HOST_NAME $ip
 		./add-alias www.$HOST_NAME $ip
