@@ -65,8 +65,8 @@ require_tmp () {
 	local opt_dir= label; unset label
 	while getopts dl: OPT; do case $OPT in
 		d) opt_dir=y;;
-		l) label=$OPTARG; shift;;
-	esac; shift; done
+		l) label=$OPTARG;
+	esac; done; shift $(($OPTIND-1))
 	
 	[ $# = 1 ]
 	[ -n "$1" ]
@@ -84,7 +84,7 @@ retire_tmp () {
 	local opt_keep=
 	while getopts k OPT; do case $OPT in
 		k) opt_keep=y;;
-	esac; shift; done
+	esac; done; shift $(($OPTIND-1))
 	
 	[ $# = 1 ]
 	[ -n "$1" ]

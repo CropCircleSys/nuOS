@@ -33,7 +33,7 @@ prepare_make_conf () {
 	local opt_init=
 	while getopts dl: OPT; do case $OPT in
 		i) opt_init=y;;
-	esac; shift; done
+	esac; done; shift $(($OPTIND-1))
 	
 	local ret_file_var=$1; shift
 	local ret_cmd_var=$1; shift

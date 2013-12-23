@@ -46,10 +46,10 @@ admin_install () {
 		opt_zfs_create=y
 		shift
 	fi		
-	local trgt_path="$1"
+	local trgt_path=$1
 
 	key_install () {
-		local acct="$1" keys="$2"
+		local acct=$1 keys=$2
 		for key in $keys; do
 			key="${key%.pub}.pub"
 			key=`eval echo $key`
@@ -76,7 +76,7 @@ admin_install () {
 			opt_zfs_create=y
 			shift
 		fi		
-		local acct="$1" pass="$2" name="${3-}" cpny="${4-}" keys="${5-}" useradd_flags="${6-}" groupadd_flags="${7-}"
+		local acct=$1 pass=$2 name=${3-} cpny=${4-} keys=${5-} useradd_flags=${6-} groupadd_flags=${7-}
 		if [ -n "$acct" ]; then
 			echo "WARNING: creating account '$acct' inside new system" >&2
 			if [ -n "$opt_zfs_create" ]; then
@@ -96,7 +96,7 @@ EOF
 		fi
 	}
 
-	acct_install "$BD_ACCT" "${BD_PASS-}" "${BD_NAME-}" "${BD_CPNY-}" "${BD_KEYS-}" "-u 1000 -G wheel -d /var/bd -s csh" "-g 1000"
-	acct_install ${opt_zfs_create:+-z} "$ADMIN_ACCT" "${ADMIN_PASS-}" "${ADMIN_NAME-}" "${ADMIN_CPNY-}" "${ADMIN_KEYS-}" "-G wheel"
-	acct_install ${opt_zfs_create:+-z} "$USER_ACCT" "${USER_PASS-}" "${USER_NAME-}" "${USER_CPNY-}" "${USER_KEYS-}"
+	acct_install $BD_ACCT "${BD_PASS-}" "${BD_NAME-}" "${BD_CPNY-}" "${BD_KEYS-}" "-u 1000 -G wheel -d /var/bd -s csh" "-g 1000"
+	acct_install ${opt_zfs_create:+-z} $ADMIN_ACCT "${ADMIN_PASS-}" "${ADMIN_NAME-}" "${ADMIN_CPNY-}" "${ADMIN_KEYS-}" "-G wheel"
+	acct_install ${opt_zfs_create:+-z} $USER_ACCT "${USER_PASS-}" "${USER_NAME-}" "${USER_CPNY-}" "${USER_KEYS-}"
 }

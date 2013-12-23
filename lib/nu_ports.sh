@@ -44,7 +44,7 @@ pkg_name () {
 	local opt_installed=
 	while getopts i OPT; do case $OPT in
 		i) opt_installed=y;;
-	esac; shift; done
+	esac; done; shift $(($OPTIND-1))
 	
 	local port=$1; shift
 	
@@ -65,7 +65,7 @@ pkg_orgn () {
 	local opt_installed=
 	while getopts i OPT; do case $OPT in
 		i) opt_installed=y;;
-	esac; shift; done
+	esac; done; shift $(($OPTIND-1))
 	
 	local pkg=$1; shift
 	
@@ -117,7 +117,7 @@ pkg_deps () {
 		i) opt_installed=y;;
 		m) opt_missing=y;;
 		p) opt_ports=y;;
-	esac; shift; done
+	esac; done; shift $(($OPTIND-1))
 	
 	local ret_var=$1; shift
 	local pkg=$1; shift
