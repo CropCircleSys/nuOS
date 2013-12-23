@@ -109,6 +109,13 @@ EOF
 	fi
 fi
 
+sed -i '' -Ee '
+	/^#submission[[:>:]]/,/^#[[:graph:]]/{
+		s/^#(submission[[:>:]].*)$/\1/
+		s/^#([[:blank:]]+-o (syslog_name|smtpd_tls_security_level|smtpd_sasl_auth_enable|milter_macro_daemon_name)=.*)$/\1/
+	}
+' "${CHROOTDIR-}/usr/local/etc/postfix/master.cf"
+
 sister enable_svc ${CHROOTDIR:+-C "$CHROOTDIR"} postfix
 
 echo "Configured $HOST_NAME for smtp service."
