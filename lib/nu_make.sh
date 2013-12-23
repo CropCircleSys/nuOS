@@ -31,7 +31,7 @@ make_vars_init () {
 
 prepare_make_conf () {
 	local opt_init=
-	while getopts dl: OPT; do case $OPT in
+	while getopts i OPT; do case $OPT in
 		i) opt_init=y;;
 	esac; done; shift $(($OPTIND-1))
 	
