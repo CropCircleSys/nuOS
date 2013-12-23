@@ -12,19 +12,11 @@ set -e; set -u; set -C
 # Official updates and community support available at http://nuos.org .
 # Other licensing options and professional services available at http://ccsys.com .
 
-while getopts oy OPT; do
-	case $OPT in
-		o)
-			OPT_ORIGIN=y
-			;;
-		y)
-			OPT_YES=y
-			;;
-		*)
-			echo "usage: `basename $0` [-oy]" >&2
-			exit 1
-	esac
-done
+while getopts oy OPT; do case $OPT in
+	o) OPT_ORIGIN=y;;
+	y) OPT_YES=y;;
+esac; done; shift $(($OPTIND-1))
+[ $# = 0 ]
 
 pkg_origin () {
 	setvar $1 `pkg_info -q -o $2`

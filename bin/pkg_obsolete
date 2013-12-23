@@ -12,25 +12,13 @@ set -e; set -u; set -C
 # Official updates and community support available at http://nuos.org .
 # Other licensing options and professional services available at http://ccsys.com .
 
-while getopts doru OPT; do
-	case $OPT in
-		d)
-			OPT_DELETE=y
-			;;
-		o)
-			OPT_ORIGIN=y
-			;;
-		r)
-			OPT_RECURSE=y
-			;;
-		u)
-			OPT_UNINSTALL=y
-			;;
-		*)
-			echo "usage: `basename $0` [-doru]" >&2
-			exit 1
-	esac
-done
+while getopts doru OPT; do case $OPT in
+	d) OPT_DELETE=y;;
+	o) OPT_ORIGIN=y;;
+	r) OPT_RECURSE=y;;
+	u) OPT_UNINSTALL=y;;
+esac; done; shift $(($OPTIND-1))
+[ $# = 0 ]
 
 report () {
 	while [ -t = $1 ]; do
