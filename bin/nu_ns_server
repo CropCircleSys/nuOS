@@ -16,27 +16,16 @@ set -e; set -u; set -C
 
 NUOS_VER=0.0.9.2a23
 
-while getopts C:h:i:v OPT; do
-	case $OPT in
-		C)
-			CHROOTDIR="$OPTARG"
-			;;
-		h)
-			HOST_NAME="$OPTARG"
-			;;
-		i)
-			PUB_IPS="$OPTARG"
-			;;
-		v)
-			OPT_VERBOSE=y
-			;;
-		*)
-			echo "usage: `basename \"$0\"` [-v] [-C chroot-dir] [-h host-name] -i public-ips" >&2
-			exit 1
-	esac
-done
-
 . "$(dirname "$(realpath "$0")")/../lib/nu_system.sh"
+
+while getopts C:h:i:v OPT; do case $OPT in
+	C) CHROOTDIR=$OPTARG;;
+	h) HOST_NAME=$OPTARG;;
+	i) push PUB_IPS $OPTARG;;
+	v) OPT_VERBOSE=y;;
+esac; done; shift $(($OPTIND-1))
+[ $# = 0 ]
+
 . "$(dirname "$(realpath "$0")")/../lib/nu_common.sh"
 
 nuos_init

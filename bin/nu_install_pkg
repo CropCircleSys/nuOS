@@ -16,38 +16,15 @@ set -e; set -u; set -C
 
 NUOS_VER=0.0.9.2a23
 
-while getopts AC:MRvyY OPT && [ $OPT != '?' ]; do
-	case $OPT in
-		A)
-			OPT_ARG_SUBPROCESS=y
-			;;
-		C)
-			CHROOTDIR="$OPTARG"
-			;;
-		M)
-			OPT_NOMAKE=y
-			;;
-		R)
-			OPT_NORECURSE=y
-			;;
-		v)
-			OPT_VERBOSE=y
-			;;
-		y)
-			OPT_YES=y
-			;;
-		Y)
-			OPT_YES_SUBPROCESS=y
-			;;
-		*)
-			echo "usage: `basename \"$0\"` [-MRvy] [-C chroot_dir] port_origin ..." >&2
-			exit 1
-	esac
-done
-while [ $OPTIND -gt 1 ]; do
-	shift
-	OPTIND=$(($OPTIND - 1))
-done
+while getopts AC:MRvyY OPT; do case $OPT in
+	A) OPT_ARG_SUBPROCESS=y;;
+	C) CHROOTDIR=$OPTARG;;
+	M) OPT_NOMAKE=y;;
+	R) OPT_NORECURSE=y;;
+	v) OPT_VERBOSE=y;;
+	y) OPT_YES=y;;
+	Y) OPT_YES_SUBPROCESS=y;;
+esac; done; shift $(($OPTIND-1))
 
 . "$(dirname "$(realpath "$0")")/../lib/nu_system.sh"
 . "$(dirname "$(realpath "$0")")/../lib/nu_make.sh"
