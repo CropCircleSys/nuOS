@@ -25,7 +25,6 @@ while getopts Do:Orv OPT; do case $OPT in
 	O) OPT_NOOPTIONS=y;;
 	r) OPT_RUNONLY=y;;
 	v) OPT_VERBOSE=y;;
-	*) echo "usage: `basename $0` [-DOrv] [-o <type> <filename> ...]" >&2; exit 1
 esac; done; shift $(($OPTIND-1))
 
 . "$(dirname "$(realpath "$0")")/../lib/nu_system.sh"
