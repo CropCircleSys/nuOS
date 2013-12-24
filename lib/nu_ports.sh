@@ -39,7 +39,7 @@ require_ports_tree () {
 		mkdir /usr/ports/packages/All
 	fi
 	local pkg_meta="$(dirname "$(realpath "$0")")/../pkg"
-	local port_shars=`cd "$pkg_meta" && ls *.shar`
+	local port_shars="`cd "$pkg_meta" && ls *.shar`"
 	for port_shar in "$port_shars"; do
 		local port=`echo $port_shar | sed -e 's|_|/|;s/\.shar$//'`
 		if [ ! -e /usr/ports/$port ]; then
