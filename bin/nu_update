@@ -140,4 +140,4 @@ retire_tmp -k deps
 retire_tmp -k updt_prncpls
 retire_tmp -k updt_deps
 
-echo "Upgrade complete."
+echo "Upgrade planning complete. (See ${TMPDIR-/tmp} for output from pid $$.)"
