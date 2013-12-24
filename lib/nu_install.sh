@@ -108,11 +108,11 @@ EOF
 
 		baseos_init
 	fi
-	local make_conf cmd_to_retire_make_conf
+	local make_conf retire_make_conf_cmd
 	if [ ! -d /usr/obj/usr/src/bin ]; then
-		prepare_make_conf make_conf cmd_to_retire_make_conf
+		prepare_make_conf make_conf retire_make_conf_cmd
 		(cd /usr/src && make -j $MAKE_JOBS "__MAKE_CONF=$make_conf" buildworld)
-		$cmd_to_retire_make_conf "$make_conf"
+		$retire_make_conf_cmd make_conf
 	fi
 	if [ ! -d /usr/obj/usr/src/sys/$TRGT_KERN ]; then
 		local kern_conf=/usr/src/sys/$TRGT_ARCH/conf/$TRGT_KERN
@@ -125,9 +125,9 @@ options RACCT
 options RCTL
 EOF
 		fi
-		prepare_make_conf make_conf cmd_to_retire_make_conf
+		prepare_make_conf make_conf retire_make_conf_cmd
 		(cd /usr/src && make -j $MAKE_JOBS "__MAKE_CONF=$make_conf" KERNCONF=$TRGT_KERN buildkernel)
-		$cmd_to_retire_make_conf "$make_conf"
+		$retire_make_conf_cmd make_conf
 	fi
 }
 

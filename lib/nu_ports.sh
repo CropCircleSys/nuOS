@@ -57,7 +57,7 @@ pkg_name () {
 		local make_conf= retire_make_conf_cmd=
 		prepare_make_conf make_conf retire_make_conf_cmd
 		(cd /usr/ports/$port && make "__MAKE_CONF=$make_conf" -VPKGNAME)
-		$retire_make_conf_cmd "$make_conf"
+		$retire_make_conf_cmd make_conf
 	fi
 }
 
@@ -104,7 +104,7 @@ port_deps () {
 		eval local outfile=\"\$ret_${action}_tmp\"
 		(cd /usr/ports/$port && make "__MAKE_CONF=$make_conf" -DBATCH $action-depends-list | sed -e 's|^/usr/ports/||') >| "$outfile"
 	done
-	$retire_make_conf_cmd "$make_conf"
+	$retire_make_conf_cmd make_conf
 	
 	for new in def opt build run; do
 		eval [ \"\$ret_${new}_var\" = _ ] || eval setvar \$ret_${new}_var \"\$ret_${new}_tmp\"

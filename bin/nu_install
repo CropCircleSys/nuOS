@@ -342,9 +342,9 @@ allow.quotas;
 children.max = 256;
 EOF
 	
-	prepare_make_conf -i make_conf cmd_to_retire_make_conf
+	prepare_make_conf -i make_conf retire_make_conf_cmd
 	cat "$make_conf" > $POOL_MNT/etc/make.conf
-	$cmd_to_retire_make_conf "$make_conf"
+	$retire_make_conf_cmd make_conf
 	
 	cat >> $POOL_MNT/boot/loader.conf <<'EOF'
 init_script="/boot/init.sh"

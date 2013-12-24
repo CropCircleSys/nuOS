@@ -39,7 +39,7 @@ if [ -n "${OPT_YES-}" ]; then
 fi
 
 require_ports_tree
-prepare_make_conf make_conf cmd_to_retire_make_conf
+prepare_make_conf make_conf retire_make_conf_cmd
 
 metainfo_dir="$(dirname "$(realpath "$0")")/../pkg"
 if [ -z "${OPT_ARG_SUBPROCESS-}" -a -n "${CHROOTDIR-}" ]; then
@@ -105,4 +105,4 @@ if [ -n "${nullfs_mounted-}" ]; then
 	umount "$CHROOTDIR/usr/ports/packages"
 fi
 
-$cmd_to_retire_make_conf "$make_conf"
+$retire_make_conf_cmd make_conf
