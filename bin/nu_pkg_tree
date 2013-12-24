@@ -16,8 +16,9 @@ set -e; set -u; set -C
 
 NUOS_VER=0.0.9.2a23
 
-while getopts Do:Orv OPT; do case $OPT in
+while getopts Dko:Orv OPT; do case $OPT in
 	D) OPT_DEBUG=y;;
+	k) OPT_KEEP=y;;
 	o) case $OPTARG in
 		dot|xml|txt|tbl) out_type=$OPTARG;
 			eval setvar file_$out_type \"\$$OPTIND\"; shift $OPTIND;;
@@ -126,7 +127,7 @@ main () {
 	done
 }
 main ${@:-$HOSTOS_PKG_COLLECTION}
-retire_tmp -k work_dir
+retire_tmp ${OPT_KEEP:+-k} work_dir
 for type in dot xml txt tbl; do
 	if eval [ -n \"\${file_$type-}\" ]; then
 		eval cat \"\$tmp_$type\" '>|' \"\$file_$type\"
