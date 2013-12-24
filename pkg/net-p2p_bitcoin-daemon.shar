@@ -1,0 +1,26 @@
+# This is a shell archive.  Save it in a file, remove anything before
+# this line, and then unpack it by entering "sh file".  Note, it may
+# create directories; files and directories will be owned by you and
+# have default permissions.
+#
+# This archive contains:
+#
+#	bitcoin-daemon
+#	bitcoin-daemon/Makefile
+#
+echo c - bitcoin-daemon
+mkdir -p bitcoin-daemon > /dev/null 2>&1
+echo x - bitcoin-daemon/Makefile
+sed 's/^X//' >bitcoin-daemon/Makefile << '655a06fd7fd7fb40f7dddb1bcbb4373a'
+X# $FreeBSD$
+X
+XPKGNAMESUFFIX=	-daemon
+XCOMMENT=	Virtual Peer-to-Peer Currency Client
+XMASTERDIR=	${.CURDIR}/../bitcoin
+XDESCR=		${MASTERDIR}/pkg-descr
+XSLAVE_PORT=	yes
+XOPTIONS_EXCLUDE=	GUI QRCODES
+X.include "${MASTERDIR}/Makefile"
+655a06fd7fd7fb40f7dddb1bcbb4373a
+exit
+

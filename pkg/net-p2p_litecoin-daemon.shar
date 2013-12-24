@@ -1,0 +1,26 @@
+# This is a shell archive.  Save it in a file, remove anything before
+# this line, and then unpack it by entering "sh file".  Note, it may
+# create directories; files and directories will be owned by you and
+# have default permissions.
+#
+# This archive contains:
+#
+#	litecoin-daemon
+#	litecoin-daemon/Makefile
+#
+echo c - litecoin-daemon
+mkdir -p litecoin-daemon > /dev/null 2>&1
+echo x - litecoin-daemon/Makefile
+sed 's/^X//' >litecoin-daemon/Makefile << '74afc67e2082aaf1bf78b6a3b76e9236'
+X# $FreeBSD$
+X
+XPKGNAMESUFFIX=	-daemon
+XCOMMENT=	Virtual Peer-to-Peer Currency Software
+XMASTERDIR=	${.CURDIR}/../litecoin
+XDESCR=		${MASTERDIR}/pkg-descr
+XSLAVE_PORT=	yes
+XOPTIONS_EXCLUDE=	GUI QRCODES
+X.include "${MASTERDIR}/Makefile"
+74afc67e2082aaf1bf78b6a3b76e9236
+exit
+
