@@ -1,7 +1,7 @@
 #!/usr/bin/false
 set -e; set -u; set -C
 
-# nuOS 0.0.9.2a23 - pkg/databases_postgresql92-server.sh - LICENSE: MOZ_PUB
+# nuOS 0.0.9.2a24 - pkg/databases_postgresql92-server.sh - LICENSE: MOZ_PUB
 #
 # Copyright (c) 2008-2013 Chad Jacob Milios and Crop Circle Systems, Inc.
 # All rights reserved.
@@ -14,7 +14,7 @@ set -e; set -u; set -C
 # Official updates and community support available at http://nuos.org .
 # Other licensing options and professional services available at http://ccsys.com .
 
-[ $NUOS_VER = 0.0.9.2a23 ]
+[ $NUOS_VER = 0.0.9.2a24 ]
 
 case $pkg_step in
 	post-build|post-install)
