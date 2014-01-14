@@ -16,8 +16,9 @@ set -e; set -u; set -C
 
 NUOS_VER=0.0.9.2a24
 
-while getopts Dqv OPT; do case $OPT in
+while getopts DJ:qv OPT; do case $OPT in
 	D) OPT_DEBUG=y;;
+	J) JAIL_NAME=$OPTARG;;
 	q) OPT_QUICK=y;;
 	v) OPT_VERBOSE=y;;
 esac; done; shift $(($OPTIND-1))
@@ -33,6 +34,10 @@ nuos_init
 
 maybe_pause
 maybe_yell
+
+if [ -n "${JAIL_NAME-}" ]; then
+	CHROOTDIR="/var/jail/$JAIL_NAME"
+fi
 
 snaptime=t`date +%s`
 packages_dataset=`mount -p | awk '{if ($2=="/usr/ports/packages") print $1}'`
@@ -52,7 +57,7 @@ sed -nEe '/^\/usr\/ports\/([[:lower:]].*)\/$/{s//\1/;s/\/$//;p;}' "$portsnap_upd
 retire_tmp portsnap_update_out
 
 require_tmp my_current_ports
-pkg_info -qoa >| "$my_current_ports"
+${CHROOTDIR:+chroot "$CHROOTDIR"} pkg_info -qoa >| "$my_current_ports"
 
 require_tmp -d new_to_old
 require_tmp -d old_to_new
@@ -128,7 +133,7 @@ for port in `cat "$updated_ports"`; do
 		dependants=$deps
 	fi
 	echo $old >> "$principals"
-	pkg_info -qR $old | sed -e "/^\$/d;s/^/$old /" >> "$dependants"
+	${CHROOTDIR:+chroot "$CHROOTDIR"} pkg_info -qR $old | sed -e "/^\$/d;s/^/$old /" >> "$dependants"
 	echo $indicator `cat "$new_to_old/$port_"` $port $old $new | tee -a "$updt_tbl"
 done
 retire_tmp updated_ports
