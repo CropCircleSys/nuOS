@@ -47,7 +47,8 @@ prepare_make_conf () {
 		require_tmp tempfile
 		cat >| "$tempfile" <<EOF
 CPUTYPE?=$TRGT_OPTZ
-DEFAULT_VERSIONS= perl5=5.18 php=5.5
+DEFAULT_VERSIONS= perl5=5.18
+DEFAULT_PHP_VER=55
 APACHE_PORT=www/apache24
 WITH_BDB_VER=48
 WITH_PGSQL_VER=92
