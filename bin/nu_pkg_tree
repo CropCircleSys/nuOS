@@ -16,7 +16,7 @@ set -e; set -u; set -C
 
 NUOS_VER=0.0.9.2a25
 
-while getopts Dko:Orv OPT; do case $OPT in
+while getopts Dko:OSrv OPT; do case $OPT in
 	D) OPT_DEBUG=y;;
 	k) OPT_KEEP=y;;
 	o) case $OPTARG in
@@ -24,6 +24,7 @@ while getopts Dko:Orv OPT; do case $OPT in
 			eval setvar file_$out_type \"\$$OPTIND\"; shift $OPTIND;;
 		*) exit 22; esac;;
 	O) OPT_NOOPTIONS=y;;
+	S) OPT_NOSLAVE=y;;
 	r) OPT_RUNONLY=y;;
 	v) OPT_VERBOSE=y;;
 esac; done; shift $(($OPTIND-1))
@@ -91,6 +92,17 @@ main () {
 					done
 					retire_tmp build_deps
 					retire_tmp buildonly_deps
+					if [ -z "${OPT_NOSLAVE-}" ]; then
+						local slave=`cd /usr/ports/$arg && make -V SLAVE_PORT`
+						if [ -n "$slave" -a "$slave" != no ]; then
+							local master=$(realpath "`cd /usr/ports/$arg && make -V MASTERDIR`")
+							master=${master#/usr/ports/}
+							echo $master > "$work_dir/$arg_/master"
+							local master_=`echo $master | tr / _`
+							mkdir -p "$work_dir/$master_"
+							echo $arg >> "$work_dir/$master_/slaves"
+						fi
+					fi
 					if [ -z "${OPT_NOOPTIONS-}" ]; then
 						if [ -s "$def_opts" ]; then
 							cat "$def_opts" > "$work_dir/$arg_/options"
