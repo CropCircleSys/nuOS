@@ -48,6 +48,8 @@ if [ $packages_nuos_ver != $NUOS_VER ]; then
 	zfs clone -o mountpoint=/usr/ports/packages $packages_dataset@$snaptime $POOL_BOOT_NAME/os/$HOSTOS_TYPE/pkg/$NUOS_VER
 fi
 
+require_ports_tree -e
+
 portsnap fetch
 require_tmp portsnap_update_out
 portsnap update | tee -a "$portsnap_update_out"
