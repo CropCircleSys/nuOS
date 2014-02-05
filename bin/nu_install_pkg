@@ -71,11 +71,12 @@ for port in $*; do
 			fi
 			retire_tmp run_deps
 			destdir=
+			makeargs="$metainfo_dir/$uni.makeargs"
 			if [ -f "$script" ]; then
 				pkg_step=pre-build
 				. "$script"
 			fi
-			(cd /usr/ports/$port && make -DNOCLEANDEPENDS clean && make "__MAKE_CONF=$make_conf" -DBATCH install package && make -DNOCLEANDEPENDS clean)
+			(cd /usr/ports/$port && make -DNOCLEANDEPENDS clean && make "__MAKE_CONF=$make_conf" `cat "$makeargs" 2>/dev/null` -DBATCH install package && make -DNOCLEANDEPENDS clean)
 			if [ -f "$script" ]; then
 				pkg_step=post-build
 				. "$script"
