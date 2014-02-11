@@ -20,7 +20,7 @@ while getopts Dko:OSrv OPT; do case $OPT in
 	D) OPT_DEBUG=y;;
 	k) OPT_KEEP=y;;
 	o) type=$OPTARG; eval file=\"\$$OPTIND\"; case $type in
-		dot|xml|txt|tbl)
+		dot|xml|txt|tbl|dir)
 			setvar out_$type "$file";;
 		*) exit 22; esac; shift $OPTIND;;
 	O) OPT_NOOPTIONS=y;;
@@ -56,6 +56,9 @@ for type in dot xml txt tbl; do
 		require_tmp tmp_$type
 	fi
 done
+if [ -n "${out_dir-}" ]; then
+	[ ! -e "$out_dir" ] || ([ -d "$out_dir" ] && [ "`ls -a "$out_dir" | xargs`" = '. ..' ])
+fi
 require_tmp -d work_dir
 main () {
 	local depth=$((${depth--1}+1))
@@ -139,6 +142,9 @@ main () {
 	done
 }
 main ${@:-$HOSTOS_PKG_COLLECTION}
+if [ -n "${out_dir-}" ]; then
+	cp -a "$work_dir/" "$out_dir"
+fi
 retire_tmp ${OPT_KEEP:+-k} work_dir
 for type in dot xml txt tbl; do
 	if eval [ -n \"\${out_$type-}\" ]; then
