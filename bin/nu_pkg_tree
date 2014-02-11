@@ -19,10 +19,10 @@ NUOS_VER=0.0.9.2b2
 while getopts Dko:OSrv OPT; do case $OPT in
 	D) OPT_DEBUG=y;;
 	k) OPT_KEEP=y;;
-	o) case $OPTARG in
-		dot|xml|txt|tbl) out_type=$OPTARG;
-			eval setvar file_$out_type \"\$$OPTIND\"; shift $OPTIND;;
-		*) exit 22; esac;;
+	o) out_type=$OPTARG; eval out_file=\"\$$OPTIND\"; case $out_type in
+		dot|xml|txt|tbl)
+			setvar file_$out_type "$out_file";;
+		*) exit 22; esac; shift $OPTIND;;
 	O) OPT_NOOPTIONS=y;;
 	S) OPT_NOSLAVE=y;;
 	r) OPT_RUNONLY=y;;
