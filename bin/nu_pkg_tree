@@ -19,9 +19,9 @@ NUOS_VER=0.0.9.2b2
 while getopts Dko:OSrv OPT; do case $OPT in
 	D) OPT_DEBUG=y;;
 	k) OPT_KEEP=y;;
-	o) out_type=$OPTARG; eval out_file=\"\$$OPTIND\"; case $out_type in
+	o) type=$OPTARG; eval file=\"\$$OPTIND\"; case $type in
 		dot|xml|txt|tbl)
-			setvar file_$out_type "$out_file";;
+			setvar out_$type "$file";;
 		*) exit 22; esac; shift $OPTIND;;
 	O) OPT_NOOPTIONS=y;;
 	S) OPT_NOSLAVE=y;;
@@ -51,8 +51,8 @@ else
 	opt_args="def_opts my_opts"
 fi
 for type in dot xml txt tbl; do
-	if eval [ -n \"\${file_$type-}\" ]; then
-		eval [ ! -e \"\$file_$type\" -o ! -s \"\$file_$type\" ]
+	if eval [ -n \"\${out_$type-}\" ]; then
+		eval [ ! -e \"\$out_$type\" -o ! -s \"\$out_$type\" ]
 		require_tmp tmp_$type
 	fi
 done
@@ -134,15 +134,15 @@ main () {
 				*) exit 22
 			esac
 			echo $arg
-			[ -z "${file_txt-}" ] || echo "`printf %${depth}s | tr ' ' '\t'`$arg"  >> "$tmp_txt"
+			[ -z "${out_txt-}" ] || echo "`printf %${depth}s | tr ' ' '\t'`$arg"  >> "$tmp_txt"
 		fi
 	done
 }
 main ${@:-$HOSTOS_PKG_COLLECTION}
 retire_tmp ${OPT_KEEP:+-k} work_dir
 for type in dot xml txt tbl; do
-	if eval [ -n \"\${file_$type-}\" ]; then
-		eval cat \"\$tmp_$type\" '>|' \"\$file_$type\"
+	if eval [ -n \"\${out_$type-}\" ]; then
+		eval cat \"\$tmp_$type\" '>|' \"\$out_$type\"
 		retire_tmp tmp_$type
 	fi
 done
