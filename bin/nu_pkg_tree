@@ -60,6 +60,7 @@ if [ -n "${out_dir-}" ]; then
 	[ ! -e "$out_dir" ] || ([ -d "$out_dir" ] && [ "`ls -a "$out_dir" | xargs`" = '. ..' ])
 fi
 require_tmp -d work_dir
+cut -d '|' -f 2 /var/db/portsnap/tag > "$work_dir/tag"
 main () {
 	local depth=$((${depth--1}+1))
 	[ $depth -gt 0 ] || echo $@ > "$work_dir/root"
