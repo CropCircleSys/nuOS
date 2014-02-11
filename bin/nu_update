@@ -16,11 +16,12 @@ set -e; set -u; set -C
 
 NUOS_VER=0.0.9.2b2
 
-while getopts DJ:qSv OPT; do case $OPT in
+while getopts DJ:qsSv OPT; do case $OPT in
 	D) OPT_DEBUG=y;;
 	J) JAIL_NAME=$OPTARG;;
 	q) OPT_QUICK=y;;
-	S) OPT_ONLY_SNAP=y;;
+	s) OPT_ONLY_SNAP=y;;
+	S) OPT_NO_SNAP=y;;
 	v) OPT_VERBOSE=y;;
 esac; done; shift $(($OPTIND-1))
 [ $# = 0 ]
@@ -40,13 +41,19 @@ if [ -n "${JAIL_NAME-}" ]; then
 	CHROOTDIR="/var/jail/$JAIL_NAME"
 fi
 
-snaptime=t`date +%s`
-packages_dataset=`mount -p | awk '{if ($2=="/usr/ports/packages") print $1}'`
-packages_nuos_ver=${packages_dataset##*/}
-zfs snapshot -r $POOL_BOOT_NAME/os/$BASEOS_TYPE/ports@$snaptime $packages_dataset@$snaptime
-if [ $packages_nuos_ver != $NUOS_VER ]; then
-	zfs set canmount=off $packages_dataset
-	zfs clone -o mountpoint=/usr/ports/packages $packages_dataset@$snaptime $POOL_BOOT_NAME/os/$HOSTOS_TYPE/pkg/$NUOS_VER
+if [ -n "${OPT_NO_SNAP-}" ]; then
+	require_tmp previous_moved_tbl
+	cat /usr/ports/MOVED >| "$previous_moved_tbl"
+else
+	packages_dataset=`mount -p | awk '{if ($2=="/usr/ports/packages") print $1}'`
+	packages_nuos_ver=${packages_dataset##*/}
+	snaptime=t`date +%s`
+	zfs snapshot -r $POOL_BOOT_NAME/os/$BASEOS_TYPE/ports@$snaptime $packages_dataset@$snaptime
+	if [ $packages_nuos_ver != $NUOS_VER ]; then
+		zfs set canmount=off $packages_dataset
+		zfs clone -o mountpoint=/usr/ports/packages $packages_dataset@$snaptime $POOL_BOOT_NAME/os/$HOSTOS_TYPE/pkg/$NUOS_VER
+	fi
+	previous_moved_tbl=/usr/ports/.zfs/snapshot/$snaptime/MOVED
 fi
 [ -z "${OPT_ONLY_SNAP-}" ] || exit
 
@@ -72,7 +79,10 @@ for port in `cat "$my_current_ports"`; do
 done
 
 require_tmp old_moved
-grep -v '^#' /usr/ports/.zfs/snapshot/$snaptime/MOVED | cut -d '|' -f 1-3 >| $old_moved
+grep -v '^#' "$previous_moved_tbl" | cut -d '|' -f 1-3 >| $old_moved
+if [ -n "${OPT_NO_SNAP-}" ]; then
+	retire_tmp previous_moved_tbl
+fi
 require_tmp new_moved
 grep -v '^#' /usr/ports/MOVED | cut -d '|' -f 1-3 >| $new_moved
 require_tmp moved_ports
