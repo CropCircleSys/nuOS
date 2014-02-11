@@ -152,7 +152,8 @@ main () {
 }
 main ${@:-$HOSTOS_PKG_COLLECTION}
 if [ -n "${out_dir-}" ]; then
-	cp -a "$work_dir/" "$out_dir"
+	mkdir -p "$out_dir"
+	cp -a "$work_dir"/* "$out_dir/"
 fi
 retire_tmp ${OPT_KEEP:+-k} work_dir
 for type in dot xml txt tbl; do
