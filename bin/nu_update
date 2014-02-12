@@ -20,7 +20,7 @@ while getopts dDJ:o:qsSuUv OPT; do case $OPT in
 	d) OPT_DEPS=y;;
 	D) OPT_DEBUG=y;;
 	J) JAIL_NAME=$OPTARG;;
-	o) OUTPUT_FILE=OPTARG;;
+	o) OUTPUT_FILE=$OPTARG;;
 	q) OPT_QUICK=y;;
 	s) OPT_ONLY_SNAP=y;;
 	S) OPT_NO_SNAP=y;;
