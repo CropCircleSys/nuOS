@@ -16,15 +16,21 @@ set -e; set -u; set -C
 
 NUOS_VER=0.0.9.2b2
 
-while getopts DJ:qsSv OPT; do case $OPT in
+while getopts dDJ:o:qsSuUv OPT; do case $OPT in
+	d) OPT_DEPS=y;;
 	D) OPT_DEBUG=y;;
 	J) JAIL_NAME=$OPTARG;;
+	o) OUTPUT_FILE=OPTARG;;
 	q) OPT_QUICK=y;;
 	s) OPT_ONLY_SNAP=y;;
 	S) OPT_NO_SNAP=y;;
+	u) OPT_UPDATES=y;;
+	U) OPT_DEP_UPDATES=y;;
 	v) OPT_VERBOSE=y;;
 esac; done; shift $(($OPTIND-1))
 [ $# = 0 ]
+
+[ -n "${OPT_ONLY_SNAP-}" ] || [ ! -e "$OUTPUT_FILE" -o ! -s "$OUTPUT_FILE" ] 
 
 . "$(dirname "$(realpath "$0")")/../lib/nu_system.sh"
 . "$(dirname "$(realpath "$0")")/../lib/nu_make.sh"
@@ -40,6 +46,12 @@ maybe_yell
 if [ -n "${JAIL_NAME-}" ]; then
 	CHROOTDIR="/var/jail/$JAIL_NAME"
 fi
+
+[ -f /usr/ports/.portsnap.INDEX ]
+[ -f /var/db/portsnap/INDEX ]
+[ ! /usr/ports/.portsnap.INDEX -ot /var/db/portsnap/INDEX ]
+
+[ `cut -d '|' -f 2 /var/db/portsnap/tag` = `cat "${CHROOTDIR-}/var/db/nuos/pkg/tag"` ]
 
 if [ -n "${OPT_NO_SNAP-}" ]; then
 	require_tmp previous_moved_tbl
@@ -67,12 +79,12 @@ require_tmp all_updated_ports
 sed -nEe '/^\/usr\/ports\/([[:lower:]].*)\/$/{s//\1/;s/\/$//;p;}' "$portsnap_update_out" >| "$all_updated_ports"
 retire_tmp portsnap_update_out
 
-require_tmp my_current_ports
-${CHROOTDIR:+chroot "$CHROOTDIR"} pkg_info -qoa >| "$my_current_ports"
+require_tmp interested_ports
+ls "${CHROOTDIR-}/var/db/nuos/pkg" | grep _ | sed -e 's|_|/|' >| "$interested_ports"
 
 require_tmp -d new_to_old
 require_tmp -d old_to_new
-for port in `cat "$my_current_ports"`; do
+for port in `cat "$interested_ports"`; do
 	port_=`echo $port | tr / _`
 	echo $port > "$new_to_old/$port_"
 	echo $port > "$old_to_new/$port_"
@@ -97,17 +109,17 @@ while IFS='|' read old new date; do
 		if [ -n "$new" ]; then
 			echo $new >| "$old_to_new/`cat "$new_to_old/$old_" | tr / _`"
 			new_=`echo $new | tr / _`
-			mv -n "$new_to_old/$old_" "$new_to_old/$new_" 2> /dev/null && true
+			mv -n "$new_to_old/$old_" "$new_to_old/$new_"
 		else
 			: >| "$old_to_new/`cat "$new_to_old/$port_" | tr / _`"
-			mv -n "$new_to_old/$old_" "$deleted_ports_dir/" 2> /dev/null && true
+			mv -n "$new_to_old/$old_" "$deleted_ports_dir/"
 		fi
 	fi
 done < "$moved_ports"
 retire_tmp moved_ports
 
 require_tmp my_ports
-for port in `cat "$my_current_ports"`; do
+for port in `cat "$interested_ports"`; do
 	port_=`echo $port | tr / _`
 	if [ -e "$deleted_ports_dir/$port_" ]; then
 		require_tmp -l deleted_ports my_deleted_ports
@@ -118,7 +130,7 @@ for port in `cat "$my_current_ports"`; do
 		fi 
 	fi
 done
-retire_tmp my_current_ports
+retire_tmp interested_ports
 retire_tmp deleted_ports_dir
 retire_tmp -k my_deleted_ports
 
@@ -129,11 +141,14 @@ retire_tmp all_updated_ports
 require_tmp -l updated_ports_table updt_tbl
 require_tmp -l upgraded_principals prncpls
 require_tmp -l dependants_of_upgrades deps
+require_tmp -l slaves_of_upgrades slvs
 require_tmp -l updated_principals updt_prncpls
 require_tmp -l dependants_of_updates updt_deps
+require_tmp -l slaves_of_updates updt_slvs
 for port in `cat "$updated_ports"`; do
 	port_=`echo $port | tr / _`
-	old=$(pkg_name -i `cat "$new_to_old/$port_"`)
+	metainfo_dir="${CHROOTDIR-}/var/db/nuos/pkg/`cat "$new_to_old/$port_" | tr / _`"
+	old=`cat "$metainfo_dir/name"`
 	[ -n "$old" ]
 	new=`pkg_name $port`
 	[ -n "$new" ]
@@ -141,22 +156,45 @@ for port in `cat "$updated_ports"`; do
 		indicator==
 		principals=$updt_prncpls
 		dependants=$updt_deps
+		slaves=$updt_slvs
 	else
 		indicator=+
 		principals=$prncpls
 		dependants=$deps
+		slaves=$slvs
 	fi
 	echo $old >> "$principals"
-	${CHROOTDIR:+chroot "$CHROOTDIR"} pkg_info -qR $old | sed -e "/^\$/d;s/^/$old /" >> "$dependants"
+	${CHROOTDIR:+chroot "$CHROOTDIR"} pkg_info -qR $old 2> /dev/null | sed -e "/^\$/d;s/^/$old /" >> "$dependants"
+	if [ -e "$metainfo_dir/slaves" ]; then
+		for slave_port in `cat "$metainfo_dir/slaves"`; do
+			slave=$(cat "${CHROOTDIR-}/var/db/nuos/pkg/`echo $slave_port | tr / _`/name")
+			echo $old $slave >> "$slaves"
+		done
+	fi
 	echo $indicator `cat "$new_to_old/$port_"` $port $old $new | tee -a "$updt_tbl"
 done
 retire_tmp updated_ports
 retire_tmp new_to_old
 retire_tmp old_to_new
-retire_tmp -k updt_tbl
-retire_tmp -k prncpls
-retire_tmp -k deps
-retire_tmp -k updt_prncpls
-retire_tmp -k updt_deps
+retire_tmp updt_tbl
 
-echo "Upgrade planning complete. (See ${TMPDIR-/tmp} for output from pid $$.)"
+require_tmp obsolete_pkgs
+
+cat "$prncpls" >> "$obsolete_pkgs"
+cat "$slvs" | cut -w -f 2 >> "$obsolete_pkgs"
+[ -z "${OPT_DEPS-}" ] || cat "$deps" | cut -w -f 2 >> "$obsolete_pkgs"
+[ -z "${OPT_UPDATES-}" ] || cat "$updt_prncpls" >> "$obsolete_pkgs"
+[ -z "${OPT_UPDATES-}" ] || cat "$updt_slvs" | cut -w -f 2 >> "$obsolete_pkgs"
+[ -z "${OPT_DEP_UPDATES-}" ] || cat "$updt_deps" | cut -w -f 2 >> "$obsolete_pkgs"
+
+retire_tmp prncpls
+retire_tmp deps
+retire_tmp slvs
+retire_tmp updt_prncpls
+retire_tmp updt_deps
+retire_tmp updt_slvs
+
+sort -u "$obsolete_pkgs" >| "$OUTPUT_FILE"
+retire_tmp obsolete_pkgs
+
+echo "Upgrade planning complete."
