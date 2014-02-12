@@ -22,8 +22,8 @@ case $pkg_step in
 		;&
 	post-build)
 		mkdir -p "${destdir-}/usr/local/etc/roundcube"
-		ln -s ../../../etc/roundcube/main.inc.php "${destdir-}/usr/local/www/roundcube/config/"
-		ln -s ../../../etc/roundcube/db.inc.php "${destdir-}/usr/local/www/roundcube/config/"
+		ln -s ../../../etc/roundcube/main.inc.php "${destdir-}/usr/local/www/roundcube/config/" || ([ -L "${destdir-}/usr/local/www/roundcube/config/main.inc.php" ] && ln -s -f ../../../etc/roundcube/main.inc.php "${destdir-}/usr/local/www/roundcube/config/")
+		ln -s ../../../etc/roundcube/db.inc.php "${destdir-}/usr/local/www/roundcube/config/" || ([ -L "${destdir-}/usr/local/www/roundcube/config/db.inc.php" ] && ln -s -f ../../../etc/roundcube/db.inc.php "${destdir-}/usr/local/www/roundcube/config/")
 		mkdir -p "${destdir-}/var/roundcube"
 		mv "${destdir-}/usr/local/www/roundcube/temp" "${destdir-}/var/roundcube/" || (mv "${destdir-}/usr/local/www/roundcube/temp/.htaccess" "${destdir-}/var/roundcube/temp/" && rmdir "${destdir-}/usr/local/www/roundcube/temp")
 		ln -s ../../../../var/roundcube/temp "${destdir-}/usr/local/www/roundcube/"
@@ -31,5 +31,18 @@ case $pkg_step in
 		ln -s ../../../../var/log/roundcube "${destdir-}/usr/local/www/roundcube/logs"
 		mkdir -p "${destdir-}/var/db/roundcube"
 		chown www:www "${destdir-}/var/db/roundcube"
+		;;
+	pre-delete)
+		[ -L "${destdir-}/usr/local/www/roundcube/config/main.inc.php" ]
+		rm "${destdir-}/usr/local/www/roundcube/config/main.inc.php"
+		[ -L "${destdir-}/usr/local/www/roundcube/config/db.inc.php" ]
+		rm "${destdir-}/usr/local/www/roundcube/config/db.inc.php"
+		[ -L "${destdir-}/usr/local/www/roundcube/temp" ]
+		rm "${destdir-}/usr/local/www/roundcube/temp"
+		tar -cnpf - -C "${destdir-}/var/roundcube/" temp temp/.htaccess | tar -xpf - -C "${destdir-}/usr/local/www/roundcube/"
+		rm -r "${destdir-}/var/roundcube/temp/"
+		[ -L "${destdir-}/usr/local/www/roundcube/logs" ]
+		rm "${destdir-}/usr/local/www/roundcube/logs"
+		tar -cnpf - -C "${destdir-}/var/log/" roundcube roundcube/.htaccess | tar -xpf - -s '|^roundcube/|logs/|' -C "${destdir-}/usr/local/www/roundcube/"
 		;;
 esac
