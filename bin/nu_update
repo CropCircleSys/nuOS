@@ -197,4 +197,6 @@ retire_tmp updt_slvs
 sort -u "$obsolete_pkgs" >| "$OUTPUT_FILE"
 retire_tmp obsolete_pkgs
 
-echo "Upgrade planning complete."
+new_tag=`cut -d '|' -f 2 /var/db/portsnap/tag`
+
+echo "Upgrade planning complete. Ports tree is now tagged $new_tag (`env TZ=UTC date -j -f %s $new_tag`)."
