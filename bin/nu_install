@@ -516,7 +516,7 @@ EOF
 # EOF
 
 	require_tmp pkg_tree
-	sister nu_pkg_tree -N -O -S -r -o txt "$pkg_tree" $PKG_COLLECTION
+	sister nu_pkg_tree -o dir $POOL_MNT/var/db/nuos/pkg -o txt "$pkg_tree" $PKG_COLLECTION
 	for tree_node in `cat "$pkg_tree"`; do
 		case $tree_node in
 			[^/]*/*)
