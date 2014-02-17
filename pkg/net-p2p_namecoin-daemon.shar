@@ -19,7 +19,7 @@ XCOMMENT=	A decentralized, open DNS system and general purpose key/value store.
 XMASTERDIR=	${.CURDIR}/../namecoin
 XDESCR=		${MASTERDIR}/pkg-descr
 XSLAVE_PORT=	yes
-XOPTIONS_EXCLUDE=	DBUS QRCODES X11
+XOPTIONS_EXCLUDE=	X11 DBUS QRCODES
 X.include "${MASTERDIR}/Makefile"
 133b970f294840a0aacb3b455ea21902
 exit
