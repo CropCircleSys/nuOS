@@ -53,6 +53,19 @@ require_ports_tree () {
 			(cd /usr/ports/$category && sh "$pkg_meta"/$port_shar)
 		fi
 	done
+	local port_diffs="`cd "$pkg_meta" && ls *.diff`"
+	for port_diff in $port_diffs; do
+		local port=`echo $port_diff | sed -e 's|_|/|;s/\.diff$//'`
+		local category=${port%/*}
+		if [ -e "$pkg_meta"/$port_diff.test ]; then
+			if (. "$pkg_meta"/$port_diff.test); then
+				patch -C -F 0 -E -t -N -d /usr/ports/$port -i "$pkg_meta"/$port_diff
+				patch -F 0 -E -t -N -d /usr/ports/$port -i "$pkg_meta"/$port_diff
+			fi
+		elif patch -C -F 0 -E -t -N -d /usr/ports/$port -i "$pkg_meta"/$port_diff; then
+			patch -F 0 -E -t -N -d /usr/ports/$port -i "$pkg_meta"/$port_diff
+		fi
+	done
 }
 
 pkg_name () {

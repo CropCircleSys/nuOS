@@ -33,6 +33,7 @@ export LC_CTYPE=C
 readmes="`find -E . -type f -depth 1 -regex './[[:upper:]]+'`"
 libs="lib/*.sh pkg/*.sh"
 bins="bin/* util/*"
+diffs="pkg/*.diff"
 
 nuos_ver_escd="$(echo $NUOS_VER | sed -e 's/\./\\./g')"
 
@@ -51,6 +52,8 @@ sed -i '' -Ee "s/[[:<:]]nuOS $nuos_ver_escd[[:>:]]${del_spc-}/nuOS $new_ver${add
 sed -i '' -Ee "s/#([[:blank:]]*)nuOS $nuos_ver_escd[[:>:]]/#\\1nuOS $new_ver/" $libs $bins
 sed -i '' -Ee "s/[[:<:]]NUOS_VER=$nuos_ver_escd[[:>:]]/NUOS_VER=$new_ver/" $bins
 sed -i '' -Ee "s/[[:<:]]nuos_lib_ver=$nuos_ver_escd[[:>:]]/nuos_lib_ver=$new_ver/;s/\\\$NUOS_VER([[:blank:]]+)=([[:blank:]]+)$nuos_ver_escd[[:>:]]/\$NUOS_VER\\1=\\2$new_ver/" $libs
+
+sed -i '' -Ee "s/#([[:blank:]]*current as of nuOS) $nuos_ver_escd[[:>:]]/#\\1 $new_ver/" $diffs
 
 grep -n -r -E "$nuos_ver_escd\>" * && echo 'WARNING: old version string still present in codebase, see above' >&2
 
