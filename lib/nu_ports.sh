@@ -81,7 +81,6 @@ pkg_name () {
 	if [ -n "$opt_installed" ]; then
 		${CHROOTDIR:+chroot "$CHROOTDIR"} pkg_info -qO $port
 	else
-		require_ports_tree
 		local make_conf= retire_make_conf_cmd=
 		prepare_make_conf make_conf retire_make_conf_cmd
 		(cd /usr/ports/$port && make "__MAKE_CONF=$make_conf" -VPKGNAME)
@@ -102,7 +101,6 @@ pkg_orgn () {
 	if [ -n "$opt_installed" ]; then
 		${CHROOTDIR:+chroot "$CHROOTDIR"} pkg_info -qo $pkg
 	else
-		require_ports_tree
 		(cd /usr/ports && make search name=$pkg | sed -nEe "/^Port:[[:blank:]]*$pkg\$/{N;s|^.*\nPath:[[:blank:]]*/usr/ports/(.*)\$|\1|;p;}")
 	fi
 }
@@ -118,8 +116,6 @@ port_deps () {
 	local port=$1; shift
 	
 	[ $# = 0 ]
-	
-	require_ports_tree
 	
 	local port_dir=/usr/ports/$port
 	[ -d $port_dir ]

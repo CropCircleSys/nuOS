@@ -41,6 +41,8 @@ collection_vars_init
 
 maybe_yell
 
+require_ports_tree
+
 if [ -n "${OPT_RUNONLY-}" ]; then
 	recurse=run
 else
