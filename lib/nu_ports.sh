@@ -69,8 +69,9 @@ require_ports_tree () {
 }
 
 pkg_name () {
-	local opt_installed=
-	while getopts i OPT; do case $OPT in
+	local opt_db= opt_installed=
+	while getopts di OPT; do case $OPT in
+		d) opt_db=y;;
 		i) opt_installed=y;;
 	esac; done; shift $(($OPTIND-1))
 	
@@ -78,7 +79,9 @@ pkg_name () {
 	
 	[ $# = 0 ]
 	
-	if [ -n "$opt_installed" ]; then
+	if [ -n "$opt_db" ]; then
+		cat "${CHROOTDIR-}/var/db/nuos/pkg/`echo $port | tr / _`/name"
+	elif [ -n "$opt_installed" ]; then
 		${CHROOTDIR:+chroot "$CHROOTDIR"} pkg_info -qO $port
 	else
 		local make_conf= retire_make_conf_cmd=

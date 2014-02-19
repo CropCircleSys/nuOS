@@ -71,6 +71,11 @@ fi
 
 require_ports_tree -e
 
+old_tag=`cat ${CHROOTDIR-}/var/db/nuos/pkg/tag`
+[ -d "${CHROOTDIR-}/var/db/nuos/pkg" -a ! -L "${CHROOTDIR-}/var/db/nuos/pkg" ]
+mv "${CHROOTDIR-}/var/db/nuos/pkg" "${CHROOTDIR-}/var/db/nuos/pkg.$old_tag"
+ln -s pkg.$old_tag "${CHROOTDIR-}/var/db/nuos/pkg"
+
 portsnap fetch
 require_tmp portsnap_update_out
 portsnap update | tee -a "$portsnap_update_out"
@@ -123,7 +128,7 @@ for port in `cat "$interested_ports"`; do
 	port_=`echo $port | tr / _`
 	if [ -e "$deleted_ports_dir/$port_" ]; then
 		require_tmp -l deleted_ports my_deleted_ports
-		echo $port `pkg_name -i $port` >> "$my_deleted_ports"
+		echo $port `pkg_name -d $port` >> "$my_deleted_ports"
 	else
 		if [ -s "$old_to_new/$port_" ]; then
 			cat "$old_to_new/$port_" >> "$my_ports"
@@ -147,7 +152,9 @@ require_tmp -l dependants_of_updates updt_deps
 require_tmp -l slaves_of_updates updt_slvs
 for port in `cat "$updated_ports"`; do
 	port_=`echo $port | tr / _`
-	metainfo_dir="${CHROOTDIR-}/var/db/nuos/pkg/`cat "$new_to_old/$port_" | tr / _`"
+	old_port=`cat "$new_to_old/$port_"`
+	old_port_=`echo $old_port | tr / _`
+	metainfo_dir="${CHROOTDIR-}/var/db/nuos/pkg/$old_port_"
 	old=`cat "$metainfo_dir/name"`
 	[ -n "$old" ]
 	new=`pkg_name $port`
@@ -164,14 +171,17 @@ for port in `cat "$updated_ports"`; do
 		slaves=$slvs
 	fi
 	echo $old >> "$principals"
-	${CHROOTDIR:+chroot "$CHROOTDIR"} pkg_info -qR $old 2> /dev/null | sed -e "/^\$/d;s/^/$old /" >> "$dependants"
+	for dep_port in `cat "$metainfo_dir/dependants/all"`; do
+		dep=$(cat "${CHROOTDIR-}/var/db/nuos/pkg/`echo $dep_port | tr / _`/name")
+		echo $old $dep >> "$dependants"
+	done
 	if [ -e "$metainfo_dir/slaves" ]; then
 		for slave_port in `cat "$metainfo_dir/slaves"`; do
 			slave=$(cat "${CHROOTDIR-}/var/db/nuos/pkg/`echo $slave_port | tr / _`/name")
 			echo $old $slave >> "$slaves"
 		done
 	fi
-	echo $indicator `cat "$new_to_old/$port_"` $port $old $new | tee -a "$updt_tbl"
+	echo $indicator $old_port $port $old $new | tee -a "$updt_tbl"
 done
 retire_tmp updated_ports
 retire_tmp new_to_old

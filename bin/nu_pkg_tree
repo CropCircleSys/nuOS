@@ -60,7 +60,10 @@ for type in dot xml txt tbl; do
 	fi
 done
 if [ -n "${out_dir-}" ]; then
-	[ ! -e "$out_dir" ] || ([ -d "$out_dir" ] && [ "`ls -a "$out_dir" | xargs`" = '. ..' ])
+	while [ "$out_dir" != "${out_dir%/}" ]; do
+		out_dir=${out_dir%/}
+	done
+	[ ! -e "$out_dir" -o -L "$out_dir" ] || ([ -d "$out_dir" ] && [ "`ls -a "$out_dir" | xargs`" = '. ..' ])
 fi
 require_tmp -d work_dir
 cut -d '|' -f 2 /var/db/portsnap/tag > "$work_dir/tag"
@@ -154,6 +157,9 @@ main () {
 }
 main ${@:-$HOSTOS_PKG_COLLECTION}
 if [ -n "${out_dir-}" ]; then
+	if [ -L "$out_dir" ]; then
+		rm "$out_dir"
+	fi
 	mkdir -p "$out_dir"
 	cp -a "$work_dir"/* "$out_dir/"
 fi
