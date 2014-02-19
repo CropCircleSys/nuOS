@@ -60,10 +60,10 @@ require_ports_tree () {
 		if [ -e "$pkg_meta"/$port_diff.test ]; then
 			if (. "$pkg_meta"/$port_diff.test); then
 				patch -C -F 0 -E -t -N -d /usr/ports/$port -i "$pkg_meta"/$port_diff > /dev/null 2>&1
-				patch -F 0 -E -t -N -d /usr/ports/$port -i "$pkg_meta"/$port_diff
+				patch -b '' -F 0 -E -t -N -d /usr/ports/$port -i "$pkg_meta"/$port_diff
 			fi
 		elif patch -C -F 0 -E -t -N -d /usr/ports/$port -i "$pkg_meta"/$port_diff > /dev/null 2>&1; then
-			patch -F 0 -E -t -N -d /usr/ports/$port -i "$pkg_meta"/$port_diff
+			patch -b '' -F 0 -E -t -N -d /usr/ports/$port -i "$pkg_meta"/$port_diff
 		fi
 	done
 }
