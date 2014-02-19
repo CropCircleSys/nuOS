@@ -53,6 +53,7 @@ APACHE_PORT=www/apache24
 WITH_BDB_VER=48
 WITH_PGSQL_VER=92
 WITH_MYSQL_VER=56
+WITH_NEW_XORG=yes
 EOF
 		setvar $ret_file_var "$tempfile"
 		setvar $ret_cmd_var retire_tmp
