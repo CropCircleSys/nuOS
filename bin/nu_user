@@ -50,13 +50,24 @@ maybe_yell
 
 if [ -z "${OPT_NO_PASSWD-}" ]; then
 	read -p 'user password:' -r password
-	read -p 'repeat password:' -r password_repeat
-	[ "$password" = "$password_repeat" ] || (echo "password entered incorrectly" >&2 && exit 85)
+	if [ -t 0 ]; then
+		read -p 'repeat password:' -r password_repeat
+		[ "$password" = "$password_repeat" ] || (echo "password entered incorrectly" >&2 && exit 85)
+	fi
 fi
 dataset="$POOL_NAME`dirname "$USER_PATH"`"
-if zfs list "$dataset"; then
+if zfs list $dataset; then
 	echo "Creating dataset $dataset/$USER_NAME for user home."
 	zfs create $dataset/$USER_NAME
+	mkdir "${CHROOTDIR-}$USER_PATH/private"
+	chmod go-rx "${CHROOTDIR-}$USER_PATH/private"
+	if zfs list $POOL_NAME-pvt > /dev/null 2>&1; then
+		echo "Creating dataset $POOL_NAME-pvt$USER_PATH for user private data."
+		chflags schg "${CHROOTDIR-}$USER_PATH/private"
+		zfs create -o mountpoint=none -o canmount=off $POOL_NAME-pvt/home 2> /dev/null || true
+		zfs create -o mountpoint=$USER_PATH/private $POOL_NAME-pvt$USER_PATH
+		chmod go-rx "${CHROOTDIR-}$USER_PATH/private"
+	fi
 else
 	echo "No immediate parent dataset, not creating user home dataset."
 fi
