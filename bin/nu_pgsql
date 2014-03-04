@@ -54,7 +54,7 @@ EOF
 		${CHROOTDIR:+chroot "$CHROOTDIR"} chown pgsql $pghome/data/ssl
 		(umask 77 && mkdir "${CHROOTDIR-}$pghome/data/ssl/private")
 		${CHROOTDIR:+chroot "$CHROOTDIR"} chown pgsql $pghome/data/ssl/private
-		if zfs list $POOL_BOOT_NAME/private > /dev/null 2>&1; then # this check will need to be refined if ever we support CHROOTDIR
+		if zfs list $POOL_BOOT_NAME-pvt > /dev/null 2>&1; then # this check will need to be refined if ever we support CHROOTDIR
 			chflags schg "${CHROOTDIR-}$pghome/data/ssl/private"
 			zfs create -o mountpoint=$pghome/data/ssl/private $POOL_BOOT_NAME-pvt/sys/host/pgsql-ssl
 			chmod go-rx "${CHROOTDIR-}$pghome/data/ssl/private"
