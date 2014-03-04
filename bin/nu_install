@@ -364,7 +364,7 @@ done
 zfs mount $root_ds/etc
 EOF
 	
-	
+	mkdir $POOL_MNT/etc/nuos
 	if [ -z "${OPT_NOBRAND-}" ]; then
 		
 		baseos_type_lc=`echo "$BASEOS_TYPE" | tr '[:upper:]' '[:lower:]'`
@@ -470,7 +470,7 @@ EOF
 		conf=usr/nuos/conf
 		
 	else
-		conf=etc/nuos.conf
+		conf=etc/nuos/conf
 		echo HOSTOS_NOBRAND=y > $POOL_MNT/$conf
 	fi
 	
@@ -727,6 +727,8 @@ zfs clone $POOL_NAME/sys/rescue/var/db@sys $host_ds/var/db
 
 zfs snapshot -r $host_ds@blank
 
+zfs create -o mountpoint=none -o canmount=off $POOL_NAME/svc
+
 export NEW_HOST
 sister nu_jail -C $POOL_MNT -p $POOL_NAME -t clone -w -j base-lab -o $BASEOS_TYPE/$BASEOS_VER -s bare -i 127.0.0.2 -a '' -u '' -b '' -q
 sister nu_jail -C $POOL_MNT -p $POOL_NAME -t clone -w -j nuos-lab -s blank -i 127.0.0.3 -a '' -u '' -b '' -q
@@ -748,7 +750,7 @@ cat >> $POOL_MNT/etc/rc.conf.local <<EOF
 hostname="$NEW_HOST"
 EOF
 
-cat >> $POOL_MNT/etc/nuos.conf <<EOF
+cat >> $POOL_MNT/etc/nuos/conf <<EOF
 POOL_BOOT_NAME=$POOL_NAME
 EOF
 
