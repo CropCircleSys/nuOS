@@ -16,9 +16,10 @@ set -e; set -u; set -C
 
 NUOS_VER=0.0.9.2b2
 
-while getopts C:h:sv OPT; do case $OPT in
+while getopts C:h:p:sv OPT; do case $OPT in
 	C) CHROOTDIR=$OPTARG;;
 	h) HOST_NAME=$OPTARG;;
+	p) POOL_NAME=$OPTARG;;
 	s) OPT_SSL=y;;
 	v) OPT_VERBOSE=y;;
 esac; done; shift $(($OPTIND-1))
@@ -32,6 +33,7 @@ esac; done; shift $(($OPTIND-1))
 nuos_init
 
 echo 'host name       -h HOST_NAME      ' ${HOST_NAME:=$HOST}
+echo 'pool name       -p POOL_NAME      ' ${POOL_NAME:=$POOL_BOOT_NAME}
 echo -n 'ssl             -s OPT_SSL         ' && [ -n "${OPT_SSL-}" ] && echo set || echo null
 echo
 
@@ -77,9 +79,9 @@ EOF
 if [ -n "${OPT_SSL-}" ]; then
 	mkdir "${CHROOTDIR-}/usr/local/etc/postfix/ssl"
 	(umask 77 && mkdir "${CHROOTDIR-}/usr/local/etc/postfix/ssl/private")
-	if zfs list $POOL_BOOT_NAME/private > /dev/null 2>&1; then # this check will need to be refined if ever we support CHROOTDIR
+	if zfs list $POOL_NAME-pvt > /dev/null 2>&1; then # this check will need to be refined if ever we support CHROOTDIR
 		chflags schg "${CHROOTDIR-}/usr/local/etc/postfix/ssl/private"
-		zfs create -o mountpoint=/usr/local/etc/postfix/ssl/private $POOL_BOOT_NAME-pvt/sys/host/smtp-ssl
+		zfs create -o mountpoint=/usr/local/etc/postfix/ssl/private $POOL_NAME-pvt/sys/host/smtp-ssl
 		chmod go-rx "${CHROOTDIR-}/usr/local/etc/postfix/ssl/private"
 	fi
 	cp "${CHROOTDIR-}/etc/ssl/certs/$HOST_NAME.crt" "${CHROOTDIR-}/usr/local/etc/postfix/ssl/"
@@ -103,6 +105,26 @@ sed -i '' -Ee '
 		s/^#([[:blank:]]+-o (syslog_name|smtpd_tls_security_level|smtpd_sasl_auth_enable|milter_macro_daemon_name)=.*)$/\1/
 	}
 ' "${CHROOTDIR-}/usr/local/etc/postfix/master.cf"
+
+zfs create -o mountpoint=none -o canmount=off $POOL_NAME/svc/smtp
+zfs create -o mountpoint=none -o canmount=off $POOL_NAME/svc/smtp/postfix
+
+eval `stat -f "mode=%OMp%03OLp uid=%Du gid=%Dg flags=%Of" "${CHROOTDIR-}/var/db/postfix"`
+zfs create -o mountpoint=/var/db/postfix $POOL_NAME/svc/smtp/postfix/db
+chown $uid:$gid "${CHROOTDIR-}/var/db/postfix"
+chmod $mode "${CHROOTDIR-}/var/db/postfix"
+chflags $flags "${CHROOTDIR-}/var/db/postfix"
+
+eval `stat -f "mode=%OMp%03OLp uid=%Du gid=%Dg flags=%Of" "${CHROOTDIR-}/var/spool/postfix"`
+mv "${CHROOTDIR-}/var/spool/postfix" "${CHROOTDIR-}/var/spool/postfix.orig"
+zfs create -o mountpoint=/var/spool/postfix $POOL_NAME/svc/smtp/postfix/spool
+chown $uid:$gid "${CHROOTDIR-}/var/spool/postfix"
+chmod $mode "${CHROOTDIR-}/var/spool/postfix"
+
+mv "${CHROOTDIR-}/var/spool/postfix.orig/"* "${CHROOTDIR-}/var/spool/postfix/"
+mv "${CHROOTDIR-}/var/spool/postfix.orig/".* "${CHROOTDIR-}/var/spool/postfix/" 2> /dev/null || true
+rmdir "${CHROOTDIR-}/var/spool/postfix.orig"
+chflags $flags "${CHROOTDIR-}/var/spool/postfix"
 
 sister enable_svc ${CHROOTDIR:+-C "$CHROOTDIR"} postfix
 
