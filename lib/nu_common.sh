@@ -20,12 +20,11 @@ nuos_lib_ver=0.0.9.2b2
 nuos_lib_common_loaded=y
 
 nuos_init () {
-	if [ -r "${CHROOTDIR-}/usr/nuos/conf" ]; then
-		. "${CHROOTDIR-}/usr/nuos/conf"
-	fi
-	if [ -r "${CHROOTDIR-}/etc/nuos.conf" ]; then
-		. "${CHROOTDIR-}/etc/nuos.conf"
-	fi
+	for conf_file in /usr/nuos/conf /etc/nuos.conf /etc/nuos/conf; do
+		if [ -r "${CHROOTDIR-}$conf_file" ]; then
+			. "${CHROOTDIR-}$conf_file"
+		fi
+	done
 	
 	: ${NUOS_SUPPORTED:=UNSUPPORTED}
 	: ${HOSTOS_TYPE:=$BASEOS_TYPE}
