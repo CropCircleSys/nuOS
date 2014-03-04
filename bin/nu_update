@@ -171,7 +171,7 @@ for port in `cat "$updated_ports"`; do
 		slaves=$slvs
 	fi
 	echo $old >> "$principals"
-	for dep_port in `cat "$metainfo_dir/dependants/all"`; do
+	for dep_port in `cat "$metainfo_dir/dependants/all" 2> /dev/null`; do
 		dep=$(cat "${CHROOTDIR-}/var/db/nuos/pkg/`echo $dep_port | tr / _`/name")
 		echo $old $dep >> "$dependants"
 	done
