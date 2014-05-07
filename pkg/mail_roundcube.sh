@@ -17,32 +17,29 @@ set -e; set -u; set -C
 [ $NUOS_VER = 0.0.9.2b2 ]
 
 case $pkg_step in
-	post-install)
-		${destdir:+chroot "$destdir"} chown www:www /usr/local/www/roundcube/temp /usr/local/www/roundcube/logs
-		;&
-	post-build)
+	post-build|post-install)
 		mkdir -p "${destdir-}/usr/local/etc/roundcube"
-		ln -s ../../../etc/roundcube/main.inc.php "${destdir-}/usr/local/www/roundcube/config/" || ([ -L "${destdir-}/usr/local/www/roundcube/config/main.inc.php" ] && ln -s -f ../../../etc/roundcube/main.inc.php "${destdir-}/usr/local/www/roundcube/config/")
-		ln -s ../../../etc/roundcube/db.inc.php "${destdir-}/usr/local/www/roundcube/config/" || ([ -L "${destdir-}/usr/local/www/roundcube/config/db.inc.php" ] && ln -s -f ../../../etc/roundcube/db.inc.php "${destdir-}/usr/local/www/roundcube/config/")
-		mkdir -p "${destdir-}/var/roundcube"
-		mv "${destdir-}/usr/local/www/roundcube/temp" "${destdir-}/var/roundcube/" || (mv "${destdir-}/usr/local/www/roundcube/temp/.htaccess" "${destdir-}/var/roundcube/temp/" && rmdir "${destdir-}/usr/local/www/roundcube/temp")
+		ln -s ../../../etc/roundcube/config.inc.php "${destdir-}/usr/local/www/roundcube/config/" || ([ -L "${destdir-}/usr/local/www/roundcube/config/config.inc.php" ] && ln -s -f ../../../etc/roundcube/config.inc.php "${destdir-}/usr/local/www/roundcube/config/")
+		mkdir -p "${destdir-}/var/roundcube/temp"
+		chown www:www "${destdir-}/var/roundcube/temp"
+		rm -rv "${destdir-}/usr/local/www/roundcube/temp"
 		ln -s ../../../../var/roundcube/temp "${destdir-}/usr/local/www/roundcube/"
-		[ ! -e "${destdir-}/var/log/roundcube" ] && mv "${destdir-}/usr/local/www/roundcube/logs" "${destdir-}/var/log/roundcube" || (mv "${destdir-}/usr/local/www/roundcube/logs/.htaccess" "${destdir-}/var/log/roundcube/" && rmdir "${destdir-}/usr/local/www/roundcube/logs")
+		mkdir -p "${destdir-}/var/log/roundcube"
+		chown www:www "${destdir-}/var/log/roundcube"
+		rm -rv "${destdir-}/usr/local/www/roundcube/logs"
 		ln -s ../../../../var/log/roundcube "${destdir-}/usr/local/www/roundcube/logs"
 		mkdir -p "${destdir-}/var/db/roundcube"
 		chown www:www "${destdir-}/var/db/roundcube"
 		;;
 	pre-delete)
-		[ -L "${destdir-}/usr/local/www/roundcube/config/main.inc.php" ]
-		rm "${destdir-}/usr/local/www/roundcube/config/main.inc.php"
-		[ -L "${destdir-}/usr/local/www/roundcube/config/db.inc.php" ]
-		rm "${destdir-}/usr/local/www/roundcube/config/db.inc.php"
+		[ -L "${destdir-}/usr/local/www/roundcube/config/config.inc.php" ]
+		rm "${destdir-}/usr/local/www/roundcube/config/config.inc.php"
 		[ -L "${destdir-}/usr/local/www/roundcube/temp" ]
 		rm "${destdir-}/usr/local/www/roundcube/temp"
-		tar -cnpf - -C "${destdir-}/var/roundcube/" temp temp/.htaccess | tar -xpf - -C "${destdir-}/usr/local/www/roundcube/"
+		tar -cnpf - -C "${destdir-}/var/roundcube/" temp | tar -xpf - -C "${destdir-}/usr/local/www/roundcube/"
 		rm -r "${destdir-}/var/roundcube/temp/"
 		[ -L "${destdir-}/usr/local/www/roundcube/logs" ]
 		rm "${destdir-}/usr/local/www/roundcube/logs"
-		tar -cnpf - -C "${destdir-}/var/log/" roundcube roundcube/.htaccess | tar -xpf - -s '|^roundcube/|logs/|' -C "${destdir-}/usr/local/www/roundcube/"
+		tar -cnpf - -C "${destdir-}/var/log/" roundcube | tar -xpf - -s '|^roundcube/|logs/|' -C "${destdir-}/usr/local/www/roundcube/"
 		;;
 esac
