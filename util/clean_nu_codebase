@@ -17,4 +17,6 @@ NUOS_CODE_ROOT="$(realpath "$(dirname "$(realpath "$0")")/../")"
 
 [ "$NUOS_CODE_ROOT" != /usr/nuos -a "$NUOS_CODE_ROOT" != /usr -a "$NUOS_CODE_ROOT" != / ]
 
-find . -name '.*' -not -name . -print0 | xargs -0 rm -rf
+[ "`pwd`" = "$NUOS_CODE_ROOT" ]
+
+find . -name '.*' -not -name . -print0 | xargs -0 rm -rvf
