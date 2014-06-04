@@ -204,9 +204,16 @@ retire_tmp updt_prncpls
 retire_tmp updt_deps
 retire_tmp updt_slvs
 
-sort -u "$obsolete_pkgs" >| "$OUTPUT_FILE"
-retire_tmp obsolete_pkgs
-
 new_tag=`cut -d '|' -f 2 /var/db/portsnap/tag`
 
-echo "Upgrade planning complete. Ports tree is now tagged $new_tag (`env TZ=UTC date -j -f %s $new_tag`)."
+if [ -s "$obsolete_pkgs" ]; then
+	sort -u "$obsolete_pkgs" >| "$OUTPUT_FILE"
+	changed=y
+else
+	rm "${CHROOTDIR-}/var/db/nuos/pkg"
+	mv "${CHROOTDIR-}/var/db/nuos/pkg.$old_tag" "${CHROOTDIR-}/var/db/nuos/pkg"
+	echo $new_tag >| "${CHROOTDIR-}/var/db/nuos/pkg/tag"
+fi
+retire_tmp obsolete_pkgs
+
+echo "Ports tree is now tagged $new_tag (`env TZ=UTC date -j -f %s $new_tag`).${changed:+ Be sure to run nu_pkg_tree to regenerate the package metadatabase.}"
