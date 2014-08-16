@@ -1,7 +1,7 @@
 #!/usr/bin/false
 set -e; set -u; set -C
 
-# nuOS 0.0.9.2b2 - lib/nu_make.sh - LICENSE: BSD_SMPL
+# nuOS 0.0.9.3b0 - lib/nu_make.sh - LICENSE: BSD_SMPL
 #
 # Copyright (c) 2008-2014 Chad Jacob Milios and Crop Circle Systems, Inc.
 # All rights reserved.
@@ -14,7 +14,7 @@ set -e; set -u; set -C
 # Official updates and community support available at http://nuos.org .
 # Other licensing options and professional services available at http://ccsys.com .
 
-nuos_lib_ver=0.0.9.2b2
+nuos_lib_ver=0.0.9.3b0
 [ $nuos_lib_ver = "$NUOS_VER" ]
 [ -n "${nuos_lib_system_loaded-}" ]
 [ -z "${nuos_lib_make_loaded-}" ]
@@ -48,12 +48,13 @@ prepare_make_conf () {
 		cat >| "$tempfile" <<EOF
 CPUTYPE?=$TRGT_OPTZ
 NO_WARNING_PKG_INSTALL_EOL=yes
-DEFAULT_VERSIONS= perl5=5.18 php=55
+DEFAULT_VERSIONS= perl5=5.20 php=55
 APACHE_PORT=www/apache24
 WITH_BDB_VER=48
 WITH_PGSQL_VER=93
 WITH_MYSQL_VER=56
 WITH_NEW_XORG=yes
+QT4_OPTIONS=CUPS
 EOF
 		setvar $ret_file_var "$tempfile"
 		setvar $ret_cmd_var retire_tmp

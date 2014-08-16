@@ -1,7 +1,7 @@
 #!/usr/bin/false
 set -e; set -u; set -C
 
-# nuOS 0.0.9.2b2 - lib/nu_ports.sh - LICENSE: BSD_SMPL
+# nuOS 0.0.9.3b0 - lib/nu_ports.sh - LICENSE: BSD_SMPL
 #
 # Copyright (c) 2008-2014 Chad Jacob Milios and Crop Circle Systems, Inc.
 # All rights reserved.
@@ -14,7 +14,7 @@ set -e; set -u; set -C
 # Official updates and community support available at http://nuos.org .
 # Other licensing options and professional services available at http://ccsys.com .
 
-nuos_lib_ver=0.0.9.2b2
+nuos_lib_ver=0.0.9.3b0
 [ $nuos_lib_ver = "$NUOS_VER" ]
 [ -n "${nuos_lib_system_loaded-}" ]
 [ -n "${nuos_lib_make_loaded-}" ]
@@ -53,7 +53,7 @@ require_ports_tree () {
 			(cd /usr/ports/$category && sh "$pkg_meta"/$port_shar)
 		fi
 	done
-	local port_diffs="`cd "$pkg_meta" && ls *.diff`"
+	local port_diffs="`cd "$pkg_meta" && ls *.diff 2> /dev/null`"
 	for port_diff in $port_diffs; do
 		local port=`echo $port_diff | sed -e 's|_|/|;s/\.diff$//'`
 		local category=${port%/*}

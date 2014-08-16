@@ -1,7 +1,7 @@
 #!/usr/bin/false
 set -e; set -u; set -C
 
-# nuOS 0.0.9.2b2 - lib/nu_install.sh - LICENSE: BSD_SMPL
+# nuOS 0.0.9.3b0 - lib/nu_install.sh - LICENSE: BSD_SMPL
 #
 # Copyright (c) 2008-2014 Chad Jacob Milios and Crop Circle Systems, Inc.
 # All rights reserved.
@@ -14,7 +14,7 @@ set -e; set -u; set -C
 # Official updates and community support available at http://nuos.org .
 # Other licensing options and professional services available at http://ccsys.com .
 
-nuos_lib_ver=0.0.9.2b2
+nuos_lib_ver=0.0.9.3b0
 [ $nuos_lib_ver = "$NUOS_VER" ]
 [ -n "${nuos_lib_system_loaded-}" ]
 [ -n "${nuos_lib_make_loaded-}" ]
@@ -40,6 +40,7 @@ install_vars_init () {
 	echo 'pool type       -t POOL_TYPE      ' ${POOL_TYPE=raidz}
 	echo 'pool options    -o POOL_OPTS      ' ${POOL_OPTS="-O atime=off -O compression=lz4"}
 	echo 'pkg collection  -c PKG_COLLECTION ' ${PKG_COLLECTION:=$HOSTOS_PKG_COLLECTION}
+	echo 'port db dir        PORT_DBDIR     ' ${PORT_DBDIR:="$(realpath "$(dirname "$(realpath "$0")")/../port_opts")"}
 	echo 'swap size       -s SWAP_SIZE      ' ${SWAP_SIZE:=512M}
 	echo 'new host name   -h NEW_HOST       ' ${NEW_HOST:=$POOL_NAME.`hostname | sed -e 's/^[^\.]*\.//'`}
 	echo 'make jobs          MAKE_JOBS      ' ${MAKE_JOBS:=$((2+`sysctl -n kern.smp.cpus`))}
@@ -51,11 +52,13 @@ install_vars_init () {
 		choose_random SVN_SERVER svn0.us-west.FreeBSD.org svn0.us-east.FreeBSD.org
 	fi
 	echo 'subversion server  SVN_SERVER     ' $SVN_SERVER
-	echo 'subversion path    SVN_PATH       ' ${SVN_PATH:=base/releng/9.2}
+	echo 'subversion path    SVN_PATH       ' ${SVN_PATH:=base/releng/9.3}
 	echo -n 'copy ports         COPY_PORTS      ' && [ -n "${COPY_PORTS-}" ] && echo set || echo null
 	echo -n 'copy all pkgs      COPY_DEV_PKGS   ' && [ -n "${COPY_DEV_PKGS-}" ] && echo set || echo null
 	echo -n 'copy src           COPY_SRC        ' && [ -n "${COPY_SRC-}" ] && echo set || echo null
 	echo -n 'copy svn repo      COPY_SVN        ' && [ -n "${COPY_SRC-}" ] && ([ -n "${COPY_SVN-}" ] && echo set || echo null) || echo n/a
+
+	export PORT_DBDIR
 }
 
 require_subversion () {
