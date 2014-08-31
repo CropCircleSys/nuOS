@@ -67,6 +67,7 @@ zfs create -p -o mountpoint=none -o canmount=off $POOL_NAME/jail
 mkdir -p `dirname "${CHROOTDIR-}$JAIL_PATH"`
 zfs clone -o mountpoint=$JAIL_PATH $POOL_NAME/os/$JAIL_OS@$JAIL_SNAP $JAIL_DATA
 zfs clone $POOL_NAME/os/$JAIL_OS/etc@$JAIL_SNAP $JAIL_DATA/etc
+zfs clone -o mountpoint=$JAIL_PATH/usr/local/etc $POOL_NAME/os/$JAIL_OS/etc/local@$JAIL_SNAP $JAIL_DATA/etc/local
 zfs clone $POOL_NAME/os/$JAIL_OS/var@$JAIL_SNAP $JAIL_DATA/var
 zfs clone $POOL_NAME/os/$JAIL_OS/var/db@$JAIL_SNAP $JAIL_DATA/var/db
 
@@ -134,13 +135,6 @@ cat >> "${CHROOTDIR-}/etc/jail.conf" <<EOF
 }
 EOF
 
-# removing this for FreeBSD 9.2
-# if [ $JAIL_TYPE = vnet ]; then
-# 	for rc_script in bridge dhclient ip6addrctl ipfilter ipfs ipfw ipmon ipnat ipsec mroute6d mrouted natd pf pflog pfsync resolv route6d routed; do
-# 		sed -i '' -E -e '/^[[:blank:]]*#*[[:blank:]]*KEYWORD:/s/nojail/jail_enabled/' "${CHROOTDIR-}$JAIL_PATH/etc/rc.d/$rc_script"
-# 	done
-# 	# TODO: investigate rc.d/{defaultroute,netif,netoptions,netwait,routing} and maybe others
-# fi
 if [ $JAIL_TYPE = clone ]; then
 	cat >> "${CHROOTDIR-}$JAIL_PATH/etc/rc.conf.local" <<EOF
 syslogd_flags="-ss"

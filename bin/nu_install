@@ -110,6 +110,7 @@ if [ -n "${OPT_FORCE_BUILD-}" \
 	zfs create -o mountpoint=/ -o canmount=noauto $POOL_NAME/os/$BASEOS_TYPE/$BASEOS_VER
 	zfs mount $POOL_NAME/os/$BASEOS_TYPE/$BASEOS_VER
 	zfs create $POOL_NAME/os/$BASEOS_TYPE/$BASEOS_VER/etc
+	zfs create -o mountpoint=/usr/local/etc $POOL_NAME/os/$BASEOS_TYPE/$BASEOS_VER/etc/local
 	zfs create $POOL_NAME/os/$BASEOS_TYPE/$BASEOS_VER/var
 	zfs create $POOL_NAME/os/$BASEOS_TYPE/$BASEOS_VER/var/db
 	
@@ -128,8 +129,7 @@ EOF
 	
 	zfs snapshot -r $POOL_NAME/os/$BASEOS_TYPE/$BASEOS_VER@blank
 
-	(cd $POOL_MNT && mkdir -p compat/linux/proc compat/linux/sys etc/local usr/ports/packages)
-	ln -s ../../etc/local $POOL_MNT/usr/local/etc
+	(cd $POOL_MNT && mkdir -p compat/linux/proc compat/linux/sys usr/ports/packages)
 	
 	cat >> $POOL_MNT/etc/fstab <<'EOF'
 tmp /tmp tmpfs rw 0 0
@@ -139,12 +139,15 @@ EOF
 
 	zfs snapshot -r $POOL_NAME/os/$BASEOS_TYPE/$BASEOS_VER@bare
 	
+	zfs set mountpoint=none $POOL_NAME/os/$BASEOS_TYPE/$BASEOS_VER/etc/local
+	zfs set canmount=off $POOL_NAME/os/$BASEOS_TYPE/$BASEOS_VER/etc/local
 	zfs set mountpoint=none $POOL_NAME/os/$BASEOS_TYPE/$BASEOS_VER
 	zfs set canmount=off $POOL_NAME/os/$BASEOS_TYPE/$BASEOS_VER
 	
 	zfs create -o mountpoint=none -o canmount=off $POOL_NAME/os/nuOS
 	zfs clone -o mountpoint=/ -o canmount=noauto $POOL_NAME/os/$BASEOS_TYPE/$BASEOS_VER@bare $POOL_NAME/os/nuOS/$NUOS_VER
 	zfs clone $POOL_NAME/os/$BASEOS_TYPE/$BASEOS_VER/etc@bare $POOL_NAME/os/nuOS/$NUOS_VER/etc
+	zfs clone -o mountpoint=/usr/local/etc $POOL_NAME/os/$BASEOS_TYPE/$BASEOS_VER/etc/local@bare $POOL_NAME/os/nuOS/$NUOS_VER/etc/local
 	zfs clone $POOL_NAME/os/$BASEOS_TYPE/$BASEOS_VER/var@bare $POOL_NAME/os/nuOS/$NUOS_VER/var
 	zfs clone $POOL_NAME/os/$BASEOS_TYPE/$BASEOS_VER/var/db@bare $POOL_NAME/os/nuOS/$NUOS_VER/var/db
 	
@@ -643,12 +646,15 @@ if [ -n "${COPY_DEV_PKGS-}" ]; then
 fi
 zfs unmount $POOL_NAME/os/nuOS/pkg/$NUOS_VER
 
+zfs set mountpoint=none $POOL_NAME/os/nuOS/$NUOS_VER/etc/local
+zfs set canmount=off $POOL_NAME/os/nuOS/$NUOS_VER/etc/local
 zfs set mountpoint=none $POOL_NAME/os/nuOS/$NUOS_VER
 zfs set canmount=off $POOL_NAME/os/nuOS/$NUOS_VER
 
 zfs create -o mountpoint=none -o canmount=off $POOL_NAME/sys
 zfs clone -o mountpoint=/ -o canmount=noauto $POOL_NAME/os/nuOS/$NUOS_VER@base $POOL_NAME/sys/rescue
 zfs clone $POOL_NAME/os/nuOS/$NUOS_VER/etc@base $POOL_NAME/sys/rescue/etc
+zfs clone -o mountpoint=/usr/local/etc $POOL_NAME/os/nuOS/$NUOS_VER/etc/local@base $POOL_NAME/sys/rescue/etc/local
 zfs clone $POOL_NAME/os/nuOS/$NUOS_VER/var@base $POOL_NAME/sys/rescue/var
 zfs clone $POOL_NAME/os/nuOS/$NUOS_VER/var/db@base $POOL_NAME/sys/rescue/var/db
 zfs create -o mountpoint=none -o canmount=off -o logbias=throughput -o sync=disabled $POOL_NAME/entropy
@@ -711,8 +717,10 @@ EOF
 zfs set canmount=noauto $POOL_NAME/entropy/rescue
 zfs unmount $POOL_NAME/entropy/rescue
 zfs set canmount=noauto $POOL_NAME/sys/rescue/etc
+zfs set canmount=noauto $POOL_NAME/sys/rescue/etc/local
 zfs set canmount=noauto $POOL_NAME/sys/rescue/var
 zfs set canmount=noauto $POOL_NAME/sys/rescue/var/db
+zfs unmount $POOL_NAME/sys/rescue/etc/local
 zfs unmount $POOL_NAME/sys/rescue
 zfs set mountpoint=legacy $POOL_NAME/sys/rescue/var
 zfs set mountpoint=legacy $POOL_NAME/sys/rescue/var/db
@@ -722,6 +730,7 @@ host_ds=$POOL_NAME/sys/host
 
 zfs clone -o mountpoint=/ -o canmount=noauto $POOL_NAME/sys/rescue@sys $host_ds
 zfs clone $POOL_NAME/sys/rescue/etc@sys $host_ds/etc
+zfs clone -o mountpoint=/usr/local/etc $POOL_NAME/sys/rescue/etc/local@sys $host_ds/etc/local
 zfs clone $POOL_NAME/sys/rescue/var@sys $host_ds/var
 zfs clone $POOL_NAME/sys/rescue/var/db@sys $host_ds/var/db
 
