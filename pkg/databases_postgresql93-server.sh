@@ -1,7 +1,7 @@
 #!/usr/bin/false
 set -e; set -u; set -C
 
-# nuOS 0.0.9.3b0 - pkg/databases_postgresql92-server.sh - LICENSE: MOZ_PUB
+# nuOS 0.0.9.3b0 - pkg/databases_postgresql93-server.sh - LICENSE: MOZ_PUB
 #
 # Copyright (c) 2008-2014 Chad Jacob Milios and Crop Circle Systems, Inc.
 # All rights reserved.
