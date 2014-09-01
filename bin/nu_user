@@ -16,10 +16,11 @@ set -e; set -u; set -C
 
 NUOS_VER=0.0.9.3b0
 
-while getopts aC:h:m:n:p:Psu:v OPT; do case $OPT in
+while getopts aC:h:im:n:p:Psu:v OPT; do case $OPT in
 	a) OPT_SASL=y;;
 	C) CHROOTDIR=$OPTARG;;
 	h) HOST_NAME=$OPTARG;;
+	i) OPT_IMPORT=y;;
 	m) USER_PATH=$OPTARG;;
 	n) USER_FULL_NAME=$OPTARG;;
 	p) POOL_NAME=$OPTARG;;
@@ -35,16 +36,35 @@ esac; done; shift $(($OPTIND-1))
 
 nuos_init
 
-echo 'creating user   -u USER_NAME      ' ${USER_NAME:=}
-echo 'user full name  -n USER_FULL_NAME ' ${USER_FULL_NAME:=User $USER_NAME}
-echo 'pool name       -p POOL_NAME      ' ${POOL_NAME:=$POOL_BOOT_NAME}
-echo 'user path       -m USER_PATH      ' ${USER_PATH:=/home/$USER_NAME}
-echo -n 'samba access    -s OPT_SAMBA       ' && [ -n "${OPT_SAMBA-}" ] && echo set || echo null
-echo -n 'passwordless    -P OPT_NO_PASSWD   ' && [ -n "${OPT_NO_PASSWD-}" ] && echo set || echo null
-echo -n 'sasl account    -a OPT_SASL        ' && [ -n "${OPT_SASL-}" ] && echo set || echo null
-echo -n 'sasl domain     -h HOST_NAME       ' && [ -n "${OPT_SASL-}" ] && echo ${HOST_NAME:=$HOST} || echo n/a
+if [ -n "${OPT_IMPORT-}" ]; then
+	[ -z "${OPT_NO_PASSWD-}" -a -z "${USER_PATH-}" -a -z "${USER_FULL_NAME-}" -a -z "${USER_NAME-}" ]
+else
+	echo 'creating user   -u USER_NAME      ' ${USER_NAME:=}
+	echo 'user full name  -n USER_FULL_NAME ' ${USER_FULL_NAME:=User $USER_NAME}
+	echo 'pool name       -p POOL_NAME      ' ${POOL_NAME:=$POOL_BOOT_NAME}
+	echo 'user path       -m USER_PATH      ' ${USER_PATH:=/home/$USER_NAME}
+	echo -n 'samba access    -s OPT_SAMBA       ' && [ -n "${OPT_SAMBA-}" ] && echo set || echo null
+	echo -n 'passwordless    -P OPT_NO_PASSWD   ' && [ -n "${OPT_NO_PASSWD-}" ] && echo set || echo null
+	echo -n 'sasl account    -a OPT_SASL        ' && [ -n "${OPT_SASL-}" ] && echo set || echo null
+	echo -n 'sasl domain     -h HOST_NAME       ' && [ -n "${OPT_SASL-}" ] && echo ${HOST_NAME:=$HOST} || echo n/a
+fi
 
 maybe_yell
+
+if [ -n "${OPT_IMPORT-}" ]; then
+	while read user passwd name; do
+		[ -n "$user" -a -n "$passwd" ]
+		sh $0 ${OPT_SASL:+-a} ${OPT_SAMBA:+-s} ${OPT_VERBOSE:+-v} ${HOST_NAME:+-h "$HOST_NAME"} ${POOL_NAME:+-p "$POOL_NAME"} ${CHROOTDIR:+-C "$CHROOTDIR"} -n "${name:-User $user}" -u $user <<EOF
+$passwd
+EOF
+		subproc_exit_status=$?
+		if [ $subproc_exit_status -gt 0 ]; then
+			exit $subproc_exit_status
+		fi
+	done
+	exit 0
+fi
+
 
 [ -n "$USER_NAME" ]
 
@@ -78,6 +98,12 @@ if [ -z "${OPT_NO_PASSWD-}" ]; then
 $password
 EOF
 	if [ -n "${OPT_SAMBA-}" ]; then
+		if [ ! -f "${CHROOTDIR-}/usr/local/etc/smb.conf" ]; then
+			cp -p "${CHROOTDIR-}/usr/local/etc/smb.conf.sample" "${CHROOTDIR-}/usr/local/etc/smb.conf"
+		fi
+		if [ ! -d "${CHROOTDIR-}/usr/local/etc/samba" ]; then
+			mkdir "${CHROOTDIR-}/usr/local/etc/samba"
+		fi
 		${CHROOTDIR:+chroot "$CHROOTDIR"} smbpasswd -s -a $USER_NAME <<EOF
 $password
 $password
