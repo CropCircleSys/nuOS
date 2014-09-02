@@ -41,9 +41,31 @@ maybe_yell
 
 pghome=`${CHROOTDIR:+chroot "$CHROOTDIR"} pw usershow pgsql | cut -d : -f 9`
 [ ! -e "${CHROOTDIR-}$pghome/data" ]
+which expect
 
 sister enable_svc ${CHROOTDIR:+-C "$CHROOTDIR"} postgresql
-${CHROOTDIR:+chroot "$CHROOTDIR"} service postgresql initdb
+echo 'postgresql_initdb_flags="--encoding=utf-8 --lc-collate=C -A md5 -W"' >> "${CHROOTDIR-}/etc/rc.conf.d/postgresql"
+
+rand_token=`sister nu_randpw`
+${CHROOTDIR:+chroot "$CHROOTDIR"} expect -n -c '
+	set timeout -1
+	expect_user "*\n"
+	set pw $expect_out(0,string)
+	spawn service postgresql initdb
+	expect "superuser password: "
+	send -- "$pw\r"
+	expect "again: "
+	send -- "$pw\r"
+	expect "Success."
+	expect eof
+' <<EOF
+$rand_token
+EOF
+[ -f "${CHROOTDIR-}$pghome/data/PG_VERSION" ]
+(umask 77 && cat > "${CHROOTDIR-}$pghome/.pgpass") <<EOF
+localhost:*:*:pgsql:$rand_token
+EOF
+chown pgsql:pgsql "${CHROOTDIR-}$pghome/.pgpass"
 
 if [ -n "${OPT_NETWORK-}" ]; then
 	cat >> "${CHROOTDIR-}$pghome/data/postgresql.conf" <<'EOF'
