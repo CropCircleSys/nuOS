@@ -42,9 +42,27 @@ grep -Ev '^#|^$' /etc/nuos/backup >| "$backlist"
 sed -e "s|^|$POOL_BOOT_NAME/|;s|\$|@$snaptime|" "$backlist" | xargs zfs snapshot -r
 
 while read ds; do
-	cmd="zfs send -R ${send_add_args-} $POOL_BOOT_NAME/$ds@$snaptime"
+	ds=$POOL_BOOT_NAME/$ds
+	if [ -z "${FROM_SNAP-}" ]; then
+		for sub_ds in `zfs get -Hp -r -t filesystem -o value name $ds`; do
+			found_root_ds=
+			check_ds=$sub_ds
+			require_tmp add_snaps
+			while [ -z "$found_root_ds" ]; do
+				origin=`zfs get -Hp -o value origin $check_ds`
+				if [ "$origin" = - ]; then
+					found_root_ds=y
+				else
+					echo $origin >> "$add_snaps"
+					check_ds=${origin%@*}
+				fi
+			done
+			tail -r < "$add_snaps" | xargs -n1 zfs send
+			retire_tmp add_snaps
+		done
+	fi
+	cmd="zfs send -R ${send_add_args-} $ds@$snaptime"
 	$cmd
 done < "$backlist"
-
 
 retire_tmp backlist
