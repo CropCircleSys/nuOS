@@ -477,6 +477,13 @@ EOF
 		echo HOSTOS_NOBRAND=y > $POOL_MNT/$conf
 	fi
 	
+	cat > $POOL_MNT/etc/nuos/backup <<'EOF'
+sys/host/etc
+sys/host/var
+svc
+home
+EOF
+
 	cat >> $POOL_MNT/$conf <<EOF
 HOSTOS_TYPE=nuOS
 HOSTOS_VER=$NUOS_VER

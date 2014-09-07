@@ -1,0 +1,50 @@
+#!/bin/sh
+set -e; set -u; set -C
+
+# nuOS 0.0.9.3b0 - bin/nu_backup - LICENSE: BSD_SMPL
+#
+# Copyright (c) 2008-2014 Chad Jacob Milios and Crop Circle Systems, Inc.
+# All rights reserved.
+#
+# This Source Code Form is subject to the terms of the Simplified BSD License.
+# If a copy of the Simplified BSD License was not distributed alongside this file, you can
+# obtain one at http://www.freebsd.org/copyright/freebsd-license.html . This software
+# project is not affiliated with the FreeBSD Project.
+#
+# Official updates and community support available at http://nuos.org .
+# Other licensing options and professional services available at http://ccsys.com .
+
+NUOS_VER=0.0.9.3b0
+
+while getopts f:v OPT; do case $OPT in
+	f) FROM_SNAP=$OPTARG;;
+	v) OPT_VERBOSE=y;;
+esac; done; shift $(($OPTIND-1))
+[ $# = 0 ]
+
+. "$(dirname "$(realpath "$0")")/../lib/nu_system.sh"
+. "$(dirname "$(realpath "$0")")/../lib/nu_common.sh"
+
+nuos_init -q
+
+maybe_yell
+
+if [ -n "${FROM_SNAP-}" ]; then
+	send_add_args="-I @$FROM_SNAP"
+fi
+
+snaptime=t`date +%s`
+
+require_tmp backlist
+
+grep -Ev '^#|^$' /etc/nuos/backup >| "$backlist"
+
+sed -e "s|^|$POOL_BOOT_NAME/|;s|\$|@$snaptime|" "$backlist" | xargs zfs snapshot -r
+
+while read ds; do
+	cmd="zfs send -R ${send_add_args-} $POOL_BOOT_NAME/$ds@$snaptime"
+	$cmd
+done < "$backlist"
+
+
+retire_tmp backlist
