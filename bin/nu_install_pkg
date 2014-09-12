@@ -61,7 +61,7 @@ for port in $*; do
 	else
 		script="$metainfo_dir/$uni.sh"
 		pkg=`pkg_name $port`
-		pkg_file=/usr/ports/packages/All/$pkg.tbz
+		pkg_file=/usr/ports/packages/All/$pkg.txz
 		if [ ! -f $pkg_file ]; then
 			[ -z "${OPT_NOMAKE-}" ]
 			port_deps def_opts my_opts build_deps run_deps $port
@@ -71,8 +71,6 @@ for port in $*; do
 			retire_tmp build_deps
 			if [ -z "${OPT_NORECURSE-}" ]; then
 				sister nu_install_pkg ${OPT_YES_SUBPROCESS:+-y} `cat "$all_deps"`
-
-
 			fi
 			retire_tmp all_deps
 			if [ -n "${CHROOTDIR-}" -a -z "${OPT_NORECURSE-}" ]; then
@@ -85,13 +83,15 @@ for port in $*; do
 				pkg_step=pre-build
 				. "$script"
 			fi
-			(cd /usr/ports/$port && make -DNOCLEANDEPENDS clean && make "__MAKE_CONF=$make_conf" `cat "$makeargs" 2>/dev/null` -DBATCH -DNO_DEPENDS install package && make -DNOCLEANDEPENDS clean)
+			(cd /usr/ports/$port && make -DNOCLEANDEPENDS clean && make "__MAKE_CONF=$make_conf" `cat "$makeargs" 2>/dev/null` -DBATCH -DNO_DEPENDS package install && make -DNOCLEANDEPENDS clean)
 			if [ -f "$script" ]; then
 				pkg_step=post-build
 				. "$script"
 			fi
 		fi
-		if [ ! -d "${CHROOTDIR-}/var/db/pkg/$pkg" ]; then
+		if pkg ${CHROOTDIR:+-c $CHROOTDIR} info -e $pkg < /dev/null; then
+			echo found dependency $pkg
+		else
 			if [ -z "${OPT_NORECURSE-}" ]; then
 				pkg_deps -m -p needed_deps $pkg
 				sister nu_install_pkg ${CHROOTDIR:+-C $CHROOTDIR} ${OPT_YES_SUBPROCESS:+-y} `cat "$needed_deps"`
@@ -102,13 +102,13 @@ for port in $*; do
 				pkg_step=pre-install
 				. "$script"
 			fi
-			(cd / && pkg_add ${CHROOTDIR:+-C $CHROOTDIR} -F -i $pkg_file)
+			pkg ${CHROOTDIR:+-c $CHROOTDIR} info -e $pkg || pkg ${CHROOTDIR:+-c $CHROOTDIR} add -M $pkg_file
 			if [ -f "$script" ]; then
 				pkg_step=post-install
 				. "$script"
 			fi
 		fi
-		[ -d "${CHROOTDIR-}/var/db/pkg/$pkg" ]
+		pkg ${CHROOTDIR:+-c $CHROOTDIR} info -e $pkg
 	fi
 done
 if [ -n "${nullfs_mounted-}" ]; then

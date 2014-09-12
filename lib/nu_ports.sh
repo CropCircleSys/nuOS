@@ -166,7 +166,7 @@ pkg_deps () {
 			cat "$pkg_list" | xargs -L1 ${CHROOTDIR:+chroot "$CHROOTDIR"} pkg_info -qo >| "$ret_tmp"
 		fi
 	else
-		local pkg_file=/usr/ports/packages/All/$pkg.tbz
+		local pkg_file=/usr/ports/packages/All/$pkg.txz
 		[ -f $pkg_file ]
 		local field_no=
 		if [ -n "$opt_ports" ]; then
