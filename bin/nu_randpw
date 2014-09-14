@@ -22,4 +22,13 @@ esac; done; shift $(($OPTIND-1))
 
 [ $RAND_BYTES -le 56 ]
 
-head -c $RAND_BYTES /dev/random | b64encode - | sed -nEe '/^begin-base64 /{n;s/=+$//;p;q;}'
+head -c $RAND_BYTES /dev/random |
+	b64encode - |
+	sed -nEe '
+		/^begin-base64 /{
+			n
+			s/=?=$//
+			y|+/|-_|
+			p
+			q
+		}'
