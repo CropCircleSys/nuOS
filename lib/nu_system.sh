@@ -51,6 +51,19 @@ maybe_yell () {
 	fi
 }
 
+incr () {
+	local var=$1; shift
+	local start=$1; shift
+	local end=${1-9223372036854775806}
+	if eval [ -z "\"\${$var-}\"" ]; then
+		setvar $var $start
+	elif eval [ \$$var -ge $end ]; then
+		return 1
+	else
+		eval setvar $var "\$((1+\$$var))"
+	fi
+}
+
 push () {
 	local var=$1; shift
 	eval setvar $var \"\${$var:+\$$var }$*\"

@@ -1,0 +1,102 @@
+#!/bin/sh
+set -e; set -u; set -C
+
+# nuOS 0.0.9.3b0 - bin/nu_vm - LICENSE: MOZ_PUB
+#
+# Copyright (c) 2008-2014 Chad Jacob Milios and Crop Circle Systems, Inc.
+# All rights reserved.
+#
+# This Source Code Form is subject to the terms of the Mozilla Public License, v2.0.
+# If a copy of the MPL was not distributed alongside this file, you can obtain one at
+# http://mozilla.org/MPL/2.0/ . This software project is not affiliated with the Mozilla
+# Foundation.
+#
+# Official updates and community support available at http://nuos.org .
+# Other licensing options and professional services available at http://ccsys.com .
+
+NUOS_VER=0.0.9.3b0
+
+. "$(dirname "$(realpath "$0")")/../lib/nu_system.sh"
+
+while getopts c:C:d:D:fh:ij:lLo:sSv OPT; do case $OPT in
+	c) NUM_CPUS=$OPTARG;;
+	C) CHROOTDIR=$OPTARG;;
+	d) push VM_HDDS $OPTARG;;
+	D) push VM_HDDS_NEW $OPTARG;;
+	f) OPT_FORCE=y;;
+	h) HOST_NAME=$OPTARG;;
+	i) OPT_INIT=y;;
+	j) VM_NAME=$OPTARG;;
+	o) OS_TYPE=$OPTARG;;
+	l) OPT_LIST_RUNNING=y;;
+	L) OPT_LIST_ALL=y;;
+	s) OPT_START=y;;
+	S) OPT_STOP=y;;
+	v) OPT_VERBOSE=y;;
+esac; done; shift $(($OPTIND-1))
+[ $# = 0 ]
+
+[ -z "${CHROOTDIR-}" ] || exit 43 # CHROOTDIR is not supported, though we want to some day
+
+. "$(dirname "$(realpath "$0")")/../lib/nu_common.sh"
+
+MAX_VM_DISKS=24
+
+if [ -n "${OPT_LIST_RUNNING-}" ]; then
+	VBoxManage list runningvms | cut -w -f 1 | xargs
+	exit 0
+fi
+if [ -n "${OPT_LIST_ALL-}" ]; then
+	VBoxManage list vms | cut -w -f 1 | xargs
+	exit 0
+fi
+
+nuos_init
+
+if [ -n "${OPT_INIT-}" ]; then
+	kldload vboxdrv
+	service vboxnet onestart
+	cat >> "${CHROOTDIR-}/boot/loader.conf.local" <<'EOF'
+vboxdrv_load="YES"
+EOF
+	sister enable_svc ${CHROOTDIR:+-C "$CHROOTDIR"} vboxnet
+	echo "Configured vm service."
+	exit 0
+fi
+: ${VM_NAME:=box}
+
+if [ -n "${OPT_START-}" ]; then
+	[ -z "${OPT_STOP-}" ]
+	VBoxManage startvm "$VM_NAME" --type headless
+	exit 0
+elif [ -n "${OPT_STOP-}" ]; then
+	if [ -n "${OPT_FORCE-}" ]; then
+		VBoxManage controlvm "$VM_NAME" poweroff
+	else
+		VBoxManage controlvm "$VM_NAME" acpipowerbutton
+	fi
+	exit 0
+fi
+
+echo 'creating vm     -j VM_NAME        ' $VM_NAME
+#echo 'host name       -h HOST_NAME      ' ${HOST_NAME:=$VM_NAME.$HOST}
+echo 'num cpus        -c VM_CPUS        ' ${VM_CPUS:=`sysctl -n kern.smp.cpus`}
+echo 'mem megabytes   -m VM_MEM_MB      ' ${VM_MEM_MB:=1024}
+echo 'os type         -o OS_TYPE        ' ${OS_TYPE:=FreeBSD_64}
+echo -n 'connect hdds    -d VM_HDDS         ' && [ -n "${VM_HDDS-}" ] && echo $VM_HDDS || echo null
+echo -n 'new hdds        -D VM_HDDS_NEW     ' && [ -n "${VM_HDDS_NEW-}" ] && echo $VM_HDDS_NEW || echo null
+#echo 'host name       -h HOST_NAME      ' ${HOST_NAME:=$HOST}
+echo
+
+maybe_yell
+
+[ "$USER" != root ]
+
+VBoxManage createvm --name "$VM_NAME" --ostype "$OS_TYPE" --register
+VBoxManage modifyvm "$VM_NAME" --hwvirtex on --chipset ich9 --ioapic on --hpet on --cpus "$VM_CPUS" --memory "$VM_MEM_MB" --mouse usb --keyboard usb
+VBoxManage storagectl "$VM_NAME" --name sata0 --add sata --controller IntelAhci --portcount $MAX_VM_DISKS
+for disk in $VM_HDDS; do
+	incr disk_i 0 $MAX_VM_DISKS
+	VBoxManage internalcommands createrawvmdk -filename ~/"VirtualBox VMs/$VM_NAME/sata0_port$disk_i.vmdk" -rawdisk /dev/$disk
+	VBoxManage storageattach "$VM_NAME" --storagectl sata0 --type hdd --nonrotational on --port $disk_i --device 0 --medium ~/"VirtualBox VMs/$VM_NAME/sata0_port$disk_i.vmdk"
+done
