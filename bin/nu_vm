@@ -93,7 +93,7 @@ maybe_yell
 [ "$USER" != root ]
 
 VBoxManage createvm --name "$VM_NAME" --ostype "$OS_TYPE" --register
-VBoxManage modifyvm "$VM_NAME" --hwvirtex on --chipset ich9 --ioapic on --hpet on --cpus "$VM_CPUS" --memory "$VM_MEM_MB" --mouse usb --keyboard usb
+VBoxManage modifyvm "$VM_NAME" --rtcuseutc on --hwvirtex on --chipset ich9 --ioapic on --hpet on --cpus "$VM_CPUS" --memory "$VM_MEM_MB" --mouse usb --keyboard usb
 VBoxManage storagectl "$VM_NAME" --name sata0 --add sata --controller IntelAhci --portcount $MAX_VM_DISKS
 for disk in $VM_HDDS; do
 	incr disk_i 0 $MAX_VM_DISKS
