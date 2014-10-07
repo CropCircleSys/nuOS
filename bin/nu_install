@@ -555,6 +555,9 @@ zfs create -o mountpoint=none -o canmount=off $POOL_NAME/os/$BASEOS_TYPE/src
 zfs create -o mountpoint=none -o canmount=off $POOL_NAME/os/$BASEOS_TYPE/src/obj
 zfs create -o mountpoint=/usr/src $POOL_NAME/os/$BASEOS_TYPE/src/$BASEOS_VER
 zfs create -o mountpoint=/usr/obj $POOL_NAME/os/$BASEOS_TYPE/src/obj/$BASEOS_VER
+if [ -z "${COPY_SVN-}" ]; then
+	exclude_svn=y
+fi
 if [ -n "${COPY_SRC-}" ]; then
 	if [ -z "${OPT_FORCE_BUILD-}" -a -n "${POOL_BOOT_NAME-}" ] \
 		&& zfs list $POOL_BOOT_NAME/os/$BASEOS_TYPE/src/$BASEOS_VER@dist \
@@ -566,9 +569,6 @@ if [ -n "${COPY_SRC-}" ]; then
 			zfs destroy $POOL_NAME/os/$BASEOS_TYPE/src/$BASEOS_VER@dist
 		fi
 	else
-		if [ -z "${COPY_SVN-}" ]; then
-			exclude_svn=y
-		fi
 		tar -cpf - -C /usr ${exclude_svn:+--exclude src/.svn} src | tar -xpvf - -C $POOL_MNT/usr
 		if [ -z "${OPT_DONT_PRESERVE_DIST_SNAP-}" ]; then
 			zfs snapshot $POOL_NAME/os/$BASEOS_TYPE/src/$BASEOS_VER@dist
@@ -608,8 +608,10 @@ if [ -n "${COPY_PORTS-}" ]; then
 		zfs destroy $POOL_BOOT_NAME/os/$BASEOS_TYPE/ports/snap-db@$snaptime
 		zfs destroy $POOL_NAME/os/$BASEOS_TYPE/ports/snap-db@$snaptime
 	else
-		require_portsnap_files
-		tar -cpf - -C /var/db portsnap | tar -xpvf - -C $POOL_MNT/var/db
+		if [ ! -d /usr/ports/.svn ]; then
+			require_portsnap_files
+			tar -cpf - -C /var/db portsnap | tar -xpvf - -C $POOL_MNT/var/db
+		fi
 	fi
 	if [ -z "${OPT_DONT_PRESERVE_DIST_SNAP-}" ]; then
 		zfs snapshot $POOL_NAME/os/$BASEOS_TYPE/ports/snap-db@dist
@@ -622,7 +624,11 @@ if [ -n "${COPY_PORTS-}" ]; then
 		zfs destroy $POOL_BOOT_NAME/os/$BASEOS_TYPE/ports/src/head@$snaptime
 		zfs destroy $POOL_NAME/os/$BASEOS_TYPE/ports/src/head@$snaptime
 	else
-		portsnap -d $POOL_MNT/var/db/portsnap -f $POOL_MNT/etc/portsnap.conf -p $POOL_MNT/usr/ports extract
+		if [ -d /usr/ports/.svn ]; then
+			tar -cpf - -C /usr ${exclude_svn:+--exclude ports/.svn} --exclude ports/'*'/'*'/work --exclude ports/local --exclude ports/distfiles --exclude ports/packages ports | tar -xpvf - -C $POOL_MNT/usr
+		else
+			portsnap -d $POOL_MNT/var/db/portsnap -f $POOL_MNT/etc/portsnap.conf -p $POOL_MNT/usr/ports extract
+		fi
 		if [ -d /usr/ports/local ]; then
 			tar -cpf - -C /usr/ports local | tar -xpvf - -C $POOL_MNT/usr/ports
 		fi
@@ -735,7 +741,7 @@ zfs snapshot -r $POOL_NAME/sys/rescue@boot
 
 host_ds=$POOL_NAME/sys/host
 
-zfs clone -o mountpoint=/ -o canmount=noauto $POOL_NAME/sys/rescue@sys $host_ds
+zfs clone -o mountpoint=/ $POOL_NAME/sys/rescue@sys $host_ds
 zfs clone $POOL_NAME/sys/rescue/etc@sys $host_ds/etc
 zfs clone -o mountpoint=/usr/local/etc $POOL_NAME/sys/rescue/etc/local@sys $host_ds/etc/local
 zfs clone $POOL_NAME/sys/rescue/var@sys $host_ds/var
