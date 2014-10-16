@@ -44,7 +44,7 @@ sed -e "s|^|$POOL_BOOT_NAME/|;s|\$|@$snaptime|" "$backlist" | xargs zfs snapshot
 while read ds; do
 	ds=$POOL_BOOT_NAME/$ds
 	if [ -z "${FROM_SNAP-}" ]; then
-		for sub_ds in `zfs get -Hp -r -t filesystem -o value name $ds`; do
+		for sub_ds in `zfs get -Hp -r -t filesystem,volume -o value name $ds`; do
 			found_root_ds=
 			check_ds=$sub_ds
 			require_tmp add_snaps

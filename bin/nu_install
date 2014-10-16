@@ -803,6 +803,9 @@ nuos_pvt_init_enable="YES"
 nuos_zpool_enable="YES"
 nuos_zpool_list="$POOL_NAME-pvt"
 EOF
+	cat >> $POOL_MNT/etc/nuos/backup <<'EOF'
+private
+EOF
 fi
 
 sed -i '' -e "s/\.my\.domain\$/.`echo $NEW_HOST | sed -e 's/^[^\.]*\.//'` $NEW_HOST `echo $NEW_HOST | sed -e 's/\..*//'`/" $POOL_MNT/etc/hosts
