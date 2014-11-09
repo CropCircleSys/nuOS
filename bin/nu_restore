@@ -1,0 +1,128 @@
+#!/bin/sh
+set -e; set -u; set -C
+
+# nuOS 0.0.9.3b0 - bin/nu_restore - LICENSE: BSD_SMPL
+#
+# Copyright (c) 2008-2014 Chad Jacob Milios and Crop Circle Systems, Inc.
+# All rights reserved.
+#
+# This Source Code Form is subject to the terms of the Simplified BSD License.
+# If a copy of the Simplified BSD License was not distributed alongside this file, you can
+# obtain one at http://www.freebsd.org/copyright/freebsd-license.html . This software
+# project is not affiliated with the FreeBSD Project.
+#
+# Official updates and community support available at http://nuos.org .
+# Other licensing options and professional services available at http://ccsys.com .
+
+NUOS_VER=0.0.9.3b0
+
+while getopts t:v OPT; do case $OPT in
+	t) TARGET_DS=$OPTARG;;
+	v) OPT_VERBOSE=y;;
+esac; done; shift $(($OPTIND-1))
+[ $# = 0 ]
+
+. "$(dirname "$(realpath "$0")")/../lib/nu_system.sh"
+. "$(dirname "$(realpath "$0")")/../lib/nu_common.sh"
+
+nuos_init -q
+
+maybe_yell
+
+ds_info () {
+	local ds=$1
+	mntd=`zfs get -H -p -o value mounted $ds`
+	mntd_src=`zfs get -H -p -o source mounted $ds`
+	mnt_pt=`zfs get -H -p -o value mountpoint $ds`
+	mnt_src=`zfs get -H -p -o source mountpoint $ds`
+	can_mnt=`zfs get -H -p -o value canmount $ds`
+	can_src=`zfs get -H -p -o source canmount $ds`
+	echo "_nu_recv_zfs_ds_mount	$mntd	$mnt_pt	$can_mnt"
+	echo "_nu_recv_zfs_ds_source	$mntd_src	$mnt_src	$can_src"
+	echo
+}
+
+child_pids () {
+	sh -m -c "ps -o pid= -o pgid= | xargs -L1 | grep ' $$\$' | grep -E -v \"^$$ |^\$\$ \" | xargs -L1 | cut -w -f 1"
+}
+
+clean_exit () {
+	kill `child_pids` 2> /dev/null || true
+	exit
+}
+
+require_tmp restore_log
+require_tmp -d pipes
+(umask 77 && mkfifo "$pipes/recv_out")
+trap clean_exit HUP INT QUIT TERM EXIT
+(
+	(
+		while true; do
+			cat -u "$pipes/recv_out"
+		done
+	) | sed -l -E -e '
+		s/^(found) (clone origin) (.*)$/_nu_recv_zfs_ds_\1	\2	\3/
+		s/^(would receive|receiving) (full stream|incremental stream) of (.*) into (.*)$/_nu_recv_zfs_ds_start	\1	\2	\3	\4/
+		s/^(received) (.*) stream in (.*) \((.*)\)$/_nu_recv_zfs_ds_end	\1	\2	\3	\4/
+	' | while IFS='	' read event f1 f2 f3 f4; do
+		echo "$event	$f1	$f2	$f3	$f4" >> "$restore_log"
+		case $event in
+			_nu_recv_zfs_ds_found)
+				what=$f1
+				parent=$f2
+				;;
+			_nu_recv_zfs_ds_start)
+				ds=${f4%%@*}
+				snap=${f4##*@}
+				echo ${parent:+$parent ->} $ds@$snap
+				;;
+			_nu_recv_zfs_ds_end)
+				status=$f1
+				size=$f2
+				elapsed=$f3
+				[ "$status" = received ]
+				ds_info $ds >> "$restore_log"
+				echo "	$size $elapsed"
+				unset ds snap what parent status size elapsed
+				;;
+		esac
+	done
+) &
+bg_pipe_pid=$!
+
+require_tmp err_report
+while {
+	(
+		require_tmp err_out
+		{
+			zfs receive -d -u -v $TARGET_DS > "$pipes/recv_out" 2>| "$err_out" &
+		} < /dev/stdin
+		wait $!
+		child_exit=$?
+		if [ $child_exit -gt 0 ]; then
+			if [ "$(cat "$err_out")" = 'cannot receive: failed to read from stream' ]; then
+				exit 1
+			else
+				cat "$err_out" >> "$err_report"
+				exit $child_exit
+			fi
+		fi
+		retire_tmp err_out
+	)
+	child_exit=$?
+	[ $child_exit = 0 ]
+}; do
+done
+
+retire_tmp pipes
+if [ -f "$err_report" -a ! -s "$err_report" ]; then
+	sleep 1
+	echo
+	echo "Restoration onto $TARGET_DS completed with no errors."
+else
+	cat "$err_report" >&2
+	exit $child_exit
+fi
+retire_tmp err_report
+
+#retire_tmp restore_log
