@@ -16,16 +16,19 @@ set -e; set -u; set -C
 
 NUOS_VER=0.0.9.3b0
 
-while getopts f:v OPT; do case $OPT in
+while getopts f:vp: OPT; do case $OPT in
 	f) FROM_SNAP=$OPTARG;;
 	v) OPT_VERBOSE=y;;
+	p) POOL_NAME=$OPTARG;;
 esac; done; shift $(($OPTIND-1))
-[ $# = 0 ]
+[ $# -ge 1 -o -f /etc/nuos/backup ]
 
 . "$(dirname "$(realpath "$0")")/../lib/nu_system.sh"
 . "$(dirname "$(realpath "$0")")/../lib/nu_common.sh"
 
 nuos_init -q
+
+: ${POOL_NAME:=$POOL_BOOT_NAME}
 
 maybe_yell
 
@@ -37,12 +40,16 @@ snaptime=t`date +%s`
 
 require_tmp backlist
 
-grep -Ev '^#|^$' /etc/nuos/backup >| "$backlist"
+if [ $# -ge 1 ]; then
+	echo $@ | xargs -n 1 >| "$backlist"
+else
+	grep -Ev '^#|^$' < /etc/nuos/backup >| "$backlist"
+fi
 
-sed -e "s|^|$POOL_BOOT_NAME/|;s|\$|@$snaptime|" "$backlist" | xargs zfs snapshot -r
+sed -e "s|^|$POOL_NAME/|;s|\$|@$snaptime|" < "$backlist" | xargs zfs snapshot -r
 
 while read ds; do
-	ds=$POOL_BOOT_NAME/$ds
+	ds=$POOL_NAME/$ds
 	if [ -z "${FROM_SNAP-}" ]; then
 		for sub_ds in `zfs get -Hp -r -t filesystem,volume -o value name $ds`; do
 			found_root_ds=
@@ -57,7 +64,7 @@ while read ds; do
 					check_ds=${origin%@*}
 				fi
 			done
-			tail -r < "$add_snaps" | xargs -n1 zfs send
+			tail -r < "$add_snaps" | xargs -n 1 zfs send
 			retire_tmp add_snaps
 		done
 	fi
