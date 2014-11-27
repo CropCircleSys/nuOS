@@ -168,10 +168,11 @@ accf_http_load="YES"
 kern.maxfiles="32768"
 kern.ipc.shmmni="1024"
 kern.ipc.shmseg="1024"
-vfs.zfs.l2arc_write_max="83886080"
-vfs.zfs.l2arc_write_boost="83886080"
+vfs.zfs.l2arc_write_max="419430400"
+vfs.zfs.l2arc_write_boost="419430400"
 vfs.zfs.l2arc_headroom="8"
 vfs.zfs.l2arc_norw="0"
+kern.vty="vt"
 EOF
 	
 	cat >> $POOL_MNT/etc/rc.conf <<'EOF'

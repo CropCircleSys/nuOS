@@ -88,7 +88,6 @@ trap clean_exit HUP INT QUIT TERM EXIT
 		esac
 	done
 ) &
-bg_pipe_pid=$!
 
 require_tmp err_report
 while {

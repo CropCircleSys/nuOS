@@ -16,15 +16,15 @@ set -e; set -u; set -C
 
 NUOS_VER=0.0.9.3b0
 
-while getopts C:h:sv OPT; do case $OPT in
+while getopts C:h:psSv OPT; do case $OPT in
 	C) CHROOTDIR=$OPTARG;;
 	h) HOST_NAME=$OPTARG;;
+	p) OPT_PGSQL=y;;
 	s) OPT_SSL=y;;
+	S) OPT_SSL_BE=y;;
 	v) OPT_VERBOSE=y;;
 esac; done; shift $(($OPTIND-1))
 [ $# = 0 ]
-
-exit 43 # this utility not yet implemented
 
 . "$(dirname "$(realpath "$0")")/../lib/nu_system.sh"
 . "$(dirname "$(realpath "$0")")/../lib/nu_common.sh"
@@ -32,11 +32,41 @@ exit 43 # this utility not yet implemented
 nuos_init
 
 echo 'host name       -h HOST_NAME      ' ${HOST_NAME:=$HOST}
-echo -n 'ssl             -s OPT_SSL         ' && [ -n "${OPT_SSL-}" ] && echo set || echo null
+echo -n 'use postgresql  -p OPT_PGSQL       ' && [ -n "${OPT_PGSQL-}" ] && echo set || echo null
+echo -n 'ssl on frontend -s OPT_SSL         ' && [ -n "${OPT_SSL-}" ] && echo set || echo null
+echo -n 'ssl on backend  -S OPT_SSL_BE      ' && [ -n "${OPT_SSL_BE-}" ] && echo set || echo null
 echo
 
 maybe_yell
 
-#sister enable_svc ${CHROOTDIR:+-C "$CHROOTDIR"} apache24
+[ ! -e "${CHROOTDIR-}/usr/local/etc/roundcube/config.inc.php" ]
+(umask 27 && : > "${CHROOTDIR-}/usr/local/etc/roundcube/config.inc.php")
+chgrp www "${CHROOTDIR-}/usr/local/etc/roundcube/config.inc.php"
+
+if [ -n "${OPT_PGSQL-}" ]; then
+	pghome=`${CHROOTDIR:+chroot "$CHROOTDIR"} pw usershow pgsql | cut -d : -f 9`
+	rand_token=`sister nu_randpw`
+	(umask 77 && cat >> "${CHROOTDIR-}$pghome/.pgpass") <<EOF
+localhost:*:*:roundcube:$rand_token
+EOF
+	chroot -u pgsql -G pgsql "${CHROOTDIR:-/}" psql -w -d postgres <<EOF
+CREATE ROLE roundcube PASSWORD '$rand_token' NOSUPERUSER NOCREATEDB NOCREATEROLE INHERIT LOGIN;
+CREATE DATABASE roundcubemail OWNER roundcube ENCODING 'UNICODE';
+EOF
+	chroot -u pgsql -G pgsql "${CHROOTDIR:-/}" psql -w -U roundcube -f /usr/local/www/roundcube/SQL/postgres.initial.sql -d roundcubemail
+	db_conn=pgsql://roundcube:$rand_token@localhost/roundcubemail
+else
+	db_conn=foo
+fi
+
+rand_token=`sister nu_randpw -b 18`
+
+require_tmp sed_replacements
+sed -Ee "
+	/^<\\?php[[:>:]]/a\\
+\$config['enable_installer'] = 0;
+	s|(\\\$config['db_dsnw'] = ').*(';)|\1$db_conn\2|w $sed_replacements
+	s|(\\\$config['smtp_server'] = ').*(';)|\1localhost\2|w $sed_replacements
+" "${CHROOTDIR-}/usr/local/www/roundcube/config/config.inc.php.sample" >> "${CHROOTDIR-}/usr/local/etc/roundcube/config.inc.php"
 
 echo "Configured hosted webmail service."

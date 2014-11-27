@@ -61,6 +61,7 @@ for port in $*; do
 	else
 		script="$metainfo_dir/$uni.sh"
 		pkg=`pkg_name $port`
+		envvars="$metainfo_dir/$uni.envvars"
 		pkg_file=/usr/ports/packages/All/$pkg.txz
 		if [ ! -f $pkg_file ]; then
 			[ -z "${OPT_NOMAKE-}" ]
@@ -69,9 +70,7 @@ for port in $*; do
 			retire_tmp my_opts
 			sets_union all_deps "$build_deps" "$run_deps"
 			retire_tmp build_deps
-			if [ -z "${OPT_NORECURSE-}" ]; then
-				sister nu_install_pkg ${OPT_YES_SUBPROCESS:+-y} `cat "$all_deps"`
-			fi
+			sister nu_install_pkg ${OPT_YES_SUBPROCESS:+-y} `cat "$all_deps"`
 			retire_tmp all_deps
 			if [ -n "${CHROOTDIR-}" -a -z "${OPT_NORECURSE-}" ]; then
 				sister nu_install_pkg -C $CHROOTDIR ${OPT_YES_SUBPROCESS:+-y} `cat "$run_deps"`
@@ -83,18 +82,24 @@ for port in $*; do
 				pkg_step=pre-build
 				. "$script"
 			fi
-			(cd /usr/ports/$port && make -DNOCLEANDEPENDS clean && make "__MAKE_CONF=$make_conf" `cat "$makeargs" 2>/dev/null` -DBATCH -DNO_DEPENDS package install && make -DNOCLEANDEPENDS clean)
+			(cd /usr/ports/$port && make -DNOCLEANDEPENDS clean && env `cat "$envvars" 2>/dev/null` make "__MAKE_CONF=$make_conf" `cat "$makeargs" 2>/dev/null` -DBATCH -DNO_DEPENDS package install && make -DNOCLEANDEPENDS clean)
 			if [ -f "$script" ]; then
 				pkg_step=post-build
 				. "$script"
 			fi
 		fi
-		if pkg ${CHROOTDIR:+-c $CHROOTDIR} info -e $pkg < /dev/null; then
+		if pkg info -e $pkg < /dev/null && ( [ -z "${CHROOTDIR-}" ] || pkg ${CHROOTDIR:+-c $CHROOTDIR} info -e $pkg < /dev/null ); then
 			echo found dependency $pkg
 		else
 			if [ -z "${OPT_NORECURSE-}" ]; then
+				echo TESTING $pkg
 				pkg_deps -m -p needed_deps $pkg
-				sister nu_install_pkg ${CHROOTDIR:+-C $CHROOTDIR} ${OPT_YES_SUBPROCESS:+-y} `cat "$needed_deps"`
+				cat "$needed_deps"
+				read
+				sister nu_install_pkg -C '' ${OPT_YES_SUBPROCESS:+-y} `cat "$needed_deps"`
+				if [ -n "${CHROOTDIR-}" ]; then
+					sister nu_install_pkg -C $CHROOTDIR ${OPT_YES_SUBPROCESS:+-y} `cat "$needed_deps"`
+				fi
 				retire_tmp needed_deps
 			fi
 			destdir="${CHROOTDIR-}"
@@ -102,7 +107,7 @@ for port in $*; do
 				pkg_step=pre-install
 				. "$script"
 			fi
-			pkg ${CHROOTDIR:+-c $CHROOTDIR} info -e $pkg || pkg ${CHROOTDIR:+-c $CHROOTDIR} add -M $pkg_file
+			env `cat "$envvars" 2>/dev/null` pkg ${CHROOTDIR:+-c $CHROOTDIR} info -e $pkg || env `cat "$envvars" 2>/dev/null` pkg ${CHROOTDIR:+-c $CHROOTDIR} add -M $pkg_file
 			if [ -f "$script" ]; then
 				pkg_step=post-install
 				. "$script"
