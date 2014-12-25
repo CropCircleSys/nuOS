@@ -153,44 +153,7 @@ pkg_deps () {
 	local ret_tmp=
 	require_tmp -l $ret_var ret_tmp
 	
-	if [ -n "$opt_installed" ]; then
-		[ -z "$opt_missing" ]
-		local pkg_list=
-		if [ -n "$opt_ports" ]; then
-			require_tmp pkg_list
-		else
-			pkg_list=$ret_tmp
-		fi
-		${CHROOTDIR:+chroot "$CHROOTDIR"} pkg_info -qr $pkg | sed -ne '/^@pkgdep /{s///;p;}' >| "$pkg_list"
-		if [ -n "$opt_port" ]; then
-			cat "$pkg_list" | xargs -L1 ${CHROOTDIR:+chroot "$CHROOTDIR"} pkg_info -qo >| "$ret_tmp"
-		fi
-	else
-		local pkg_file=/usr/ports/packages/All/$pkg.txz
-		[ -f $pkg_file ]
-		local field_no=
-		if [ -n "$opt_ports" ]; then
-			field_no=2
-		else
-			field_no=1
-		fi
-		if [ -n "$opt_missing" ]; then
-			local pkg_add_output=
-			require_tmp pkg_add_output
-			if ! pkg_add ${CHROOTDIR:+-C $CHROOTDIR} -nv $pkg_file >| "$pkg_add_output"; then
-				sed -nEe "/^Package '.*' depends on '.*' with '.*' origin./{
-					N
-					s/and was not found.\$/missing/
-					s/ - already installed.\$/installed/
-					s/^Package '[^']*' depends on '([^']*)' with '([^']*)' origin.\n(.*)\$/\1 \2 \3/
-					p
-				}" "$pkg_add_output" | grep -E '\<missing$' | cut -w -f $field_no >| "$ret_tmp"
-			fi
-			retire_tmp pkg_add_output
-		else
-			pkg_info -qv "${CHROOTDIR-}$pkg_file" | sed -nEe '/^@pkgdep /{N;s/^@pkgdep ([[:graph:]]+)\n@comment DEPORIGIN:([[:graph:]]+)$/\1 \2/;p;}' | cut -w -f $field_no >| "$ret_tmp"
-		fi
-	fi
+	exit 78
 	
 	setvar $ret_var "$ret_tmp"
 }

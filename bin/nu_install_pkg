@@ -92,10 +92,8 @@ for port in $*; do
 			echo found dependency $pkg
 		else
 			if [ -z "${OPT_NORECURSE-}" ]; then
-				echo TESTING $pkg
 				pkg_deps -m -p needed_deps $pkg
 				cat "$needed_deps"
-				read
 				sister nu_install_pkg -C '' ${OPT_YES_SUBPROCESS:+-y} `cat "$needed_deps"`
 				if [ -n "${CHROOTDIR-}" ]; then
 					sister nu_install_pkg -C $CHROOTDIR ${OPT_YES_SUBPROCESS:+-y} `cat "$needed_deps"`
