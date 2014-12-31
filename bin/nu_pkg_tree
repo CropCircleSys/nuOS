@@ -68,6 +68,7 @@ if [ -n "${out_dir-}" ]; then
 fi
 require_tmp -d work_dir
 cut -d '|' -f 2 /var/db/portsnap/tag > "$work_dir/tag"
+metainfo_dir="$(dirname "$(realpath "$0")")/../pkg"
 main () {
 	local depth=$((${depth--1}+1))
 	[ $depth -gt 0 ] || echo $@ > "$work_dir/root"
@@ -80,6 +81,10 @@ main () {
 	for arg in $@; do
 		local arg_=`echo $arg | tr / _`
 		local dep_type=
+		if [ -f "$metainfo_dir/$arg_.substitute" ]; then
+			arg=`cat "$metainfo_dir/$arg_.substitute"`
+			arg_=`echo $arg | tr / _`
+		fi
 		if [ ! -d "$work_dir/$arg_/dependencies" ]; then
 			mkdir -p "$work_dir/$arg_/dependencies"
 			case $arg in
