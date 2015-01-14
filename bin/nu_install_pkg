@@ -65,17 +65,19 @@ for port in $*; do
 		pkg_file=/usr/ports/packages/All/$pkg.txz
 		if [ ! -f $pkg_file ]; then
 			[ -z "${OPT_NOMAKE-}" ]
-			port_deps def_opts my_opts build_deps run_deps $port
-			retire_tmp def_opts
-			retire_tmp my_opts
-			sets_union all_deps "$build_deps" "$run_deps"
-			retire_tmp build_deps
-			sister nu_install_pkg ${OPT_YES_SUBPROCESS:+-y} `cat "$all_deps"`
-			retire_tmp all_deps
-			if [ -n "${CHROOTDIR-}" -a -z "${OPT_NORECURSE-}" ]; then
-				sister nu_install_pkg -C $CHROOTDIR ${OPT_YES_SUBPROCESS:+-y} `cat "$run_deps"`
+			if [ -z "${OPT_NORECURSE-}" ]; then
+				port_deps def_opts my_opts build_deps run_deps $port
+				retire_tmp def_opts
+				retire_tmp my_opts
+				sets_union all_deps "$build_deps" "$run_deps"
+				retire_tmp build_deps
+				sister nu_install_pkg ${OPT_YES_SUBPROCESS:+-y} `cat "$all_deps"`
+				retire_tmp all_deps
+				if [ -n "${CHROOTDIR-}" ]; then
+					sister nu_install_pkg -C $CHROOTDIR ${OPT_YES_SUBPROCESS:+-y} `cat "$run_deps"`
+				fi
+				retire_tmp run_deps
 			fi
-			retire_tmp run_deps
 			destdir=
 			makeargs="$metainfo_dir/$uni.makeargs"
 			if [ -f "$script" ]; then
