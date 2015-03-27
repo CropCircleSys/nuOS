@@ -48,7 +48,7 @@ prepare_make_conf () {
 		cat >| "$tempfile" <<EOF
 CPUTYPE?=$TRGT_OPTZ
 NO_WARNING_PKG_INSTALL_EOL=yes
-DEFAULT_VERSIONS= perl5=5.20 php=56 pgsql=9.3
+DEFAULT_VERSIONS= perl5=5.20 php=56 pgsql=9.4
 WITH_MYSQL_VER=56
 QT4_OPTIONS=CUPS
 EOF
