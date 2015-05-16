@@ -1,16 +1,17 @@
-diff -ru namecoin.bak/Makefile namecoin/Makefile
---- namecoin.bak/Makefile	2014-09-10 18:15:20.073479874 +0000
-+++ namecoin/Makefile	2014-09-10 18:11:22.573575890 +0000
+diff -ru namecoin.orig/Makefile namecoin/Makefile
+--- namecoin.orig/Makefile	2015-05-07 17:26:05.000000000 +0000
++++ namecoin/Makefile	2015-05-15 02:27:07.318885104 +0000
 @@ -2,14 +2,16 @@
- # $FreeBSD: head/net-p2p/namecoin/Makefile 369969 2014-10-04 15:12:44Z sunpoet $
+ # $FreeBSD: head/net-p2p/namecoin/Makefile 385640 2015-05-07 17:26:05Z mat $
  
  PORTNAME=	namecoin
 -PORTVERSION=	Q.3.72
+-DISTVERSIONPREFIX=	v
 -PORTREVISION=	3
 +PORTVERSION=	0.3.75
 +PORTEPOCH=	1
++DISTVERSIONPREFIX=	nc
  CATEGORIES=	net-p2p dns
- MASTER_SITES=	GH
  
  MAINTAINER=	milios@ccsys.com
  COMMENT=	Decentralized, open DNS system and general purpose key/value store
@@ -20,22 +21,18 @@ diff -ru namecoin.bak/Makefile namecoin/Makefile
  LIB_DEPENDS=	libboost_date_time.so:${PORTSDIR}/devel/boost-libs
  
  OPTIONS_DEFINE=	X11 UPNP QRCODES DBUS
-@@ -19,10 +21,10 @@
+@@ -19,8 +21,8 @@
  QRCODES_DESC=	Build with QR code display
  
  USE_GITHUB=	yes
 -GH_ACCOUNT=	namecoinq
 -GH_PROJECT=	namecoinq
--GH_COMMIT=	cdf052b
--GH_TAGNAME=	v${PORTVERSION}
 +GH_ACCOUNT=	namecoin
 +GH_PROJECT=	namecoin
-+GH_COMMIT=	9ac4894
-+GH_TAGNAME=	nc${PORTVERSION}
  
  USES=		gmake compiler:c++11-lib
  USE_OPENSSL=	yes
-@@ -64,6 +66,7 @@
+@@ -62,6 +64,7 @@
  
  .if ${PORT_OPTIONS:MUPNP}
  LIB_DEPENDS+=	libminiupnpc.so:${PORTSDIR}/net/miniupnpc
@@ -43,11 +40,11 @@ diff -ru namecoin.bak/Makefile namecoin/Makefile
  QMAKE_USE_UPNP=	1
  .else
  QMAKE_USE_UPNP=	-
-diff -ru namecoin.bak/distinfo namecoin/distinfo
---- namecoin.bak/distinfo	2014-02-12 18:44:49.000000000 +0000
-+++ namecoin/distinfo	2014-09-09 16:50:53.427484453 +0000
+diff -ru namecoin.orig/distinfo namecoin/distinfo
+--- namecoin.orig/distinfo	2015-05-07 17:26:05.000000000 +0000
++++ namecoin/distinfo	2015-05-15 02:27:55.917892500 +0000
 @@ -1,2 +1,2 @@
--SHA256 (namecoin-Q.3.72.tar.gz) = 426b6c10b999ed11f436b2d8a56715a4355d30af41e13a1fd6e6ee5dd8348775
--SIZE (namecoin-Q.3.72.tar.gz) = 1453900
-+SHA256 (namecoin-0.3.75.tar.gz) = f69490e1e289350e7a1dcd956dd2637cf88ad093bfbb091b1fd9f96b6079bf3b
-+SIZE (namecoin-0.3.75.tar.gz) = 1464470
+-SHA256 (namecoinq-namecoinq-vQ.3.72_GH0.tar.gz) = 74d088f96735b3397b9a71bc10bbbe1211cd2594baf593c4b9062457c1d4b869
+-SIZE (namecoinq-namecoinq-vQ.3.72_GH0.tar.gz) = 1453901
++SHA256 (namecoin-namecoin-nc0.3.75_GH0.tar.gz) = 6ca938951f408828a3b3d2c3ec3078956aa8a060405eb8f0632f4bfd824d7f98
++SIZE (namecoin-namecoin-nc0.3.75_GH0.tar.gz) = 1464385
