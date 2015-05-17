@@ -64,6 +64,11 @@ require_ports_tree () {
 			fi
 		elif patch -C -F 0 -E -t -N -d /usr/ports/$port -i "$pkg_meta"/$port_diff > /dev/null 2>&1; then
 			patch -F 0 -E -t -N -d /usr/ports/$port -i "$pkg_meta"/$port_diff
+		else
+			echo
+			echo '***' WARNING: Patch $port_diff did not apply cleanly. ASSUMING ports tree already contains up-to-date changes. '***'
+			echo Sleeping 30 seconds...
+			sleep 30
 		fi
 	done
 }
