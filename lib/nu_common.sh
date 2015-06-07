@@ -38,3 +38,16 @@ nuos_init () {
 		echo "host pkg collec'n                 " $HOSTOS_PKG_COLLECTION
 	fi
 }
+
+nuos_ssl_init () {
+	if [ -x /usr/local/bin/openssl ]; then
+		SSL_CMD=/usr/local/bin/openssl
+		SSL_SUITE=openssl-port
+		if [ ! -e /usr/local/openssl/openssl.cnf ]; then
+			cp /usr/local/openssl/openssl.cnf.sample /usr/local/openssl/openssl.cnf
+		fi
+	else
+		SSL_CMD=/usr/bin/openssl
+		SSL_SUITE=openssl-freebsd-base
+	fi
+}

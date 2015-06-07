@@ -16,12 +16,12 @@ set -e; set -u; set -C
 
 NUOS_VER=0.0.9.3b0
 
-while getopts a:Ab:c:C:h:l:m:n:p:sSv OPT; do case $OPT in
+while getopts a:b:c:C:e:h:l:m:n:p:sSv OPT; do case $OPT in
 	a) AUTH_FILE=$OPTARG;;
-	A) OPT_CREATE_CA=y;;
 	b) KEY_BITS=$OPTARG;;
 	c) CERT_FILE=$OPTARG;;
 	C) CHROOTDIR=$OPTARG;;
+	e) EXPIRE_DAYS=$OPTARG;;
 	h) SSL_HOST=$OPTARG;;
 	l) CITY=$OPTARG;;
 	m) EMAIL=$OPTARG;;
@@ -41,6 +41,7 @@ nuos_init
 echo 'creating ssl    -h SSL_HOST       ' ${SSL_HOST:=$HOST}
 if [ -z "${CERT_FILE-}" ]; then
 	echo 'key bits        -b KEY_BITS       ' ${KEY_BITS:=2048}
+	echo -n 'valid lifetime  -e EXPIRE_DAYS     ' && [ -n "${OPT_SELF_SIGNED-}" ] && echo ${EXPIRE_DAYS:=365} || echo n/a
 	echo 'country code    -n COUNTRY        ' $COUNTRY
 	country_len=${#COUNTRY}
 	[ $country_len -eq 2 ] || (echo "COUNTRY must be 2 chars (standard: ISO 3166-1 alpha-2)" >&2 && exit 85)
@@ -61,6 +62,8 @@ echo
 
 maybe_yell
 
+nuos_ssl_init
+
 if [ -z "${CERT_FILE-}" ]; then
 	
 	if [ ! -d "${CHROOTDIR-}/etc/ssl/private" ]; then
@@ -80,9 +83,9 @@ if [ -z "${CERT_FILE-}" ]; then
 		cat >| "$key_password_file" <<EOF
 $key_password
 EOF
-		(umask 77 && openssl genrsa -des3 -passout "file:$key_password_file" -out "${CHROOTDIR-}/etc/ssl/private/$SSL_HOST.key" $KEY_BITS)
+		(umask 77 && $SSL_CMD genrsa -des3 -passout "file:$key_password_file" -out "${CHROOTDIR-}/etc/ssl/private/$SSL_HOST.key" $KEY_BITS)
 	else
-		(umask 77 && openssl genrsa -out "${CHROOTDIR-}/etc/ssl/private/$SSL_HOST.key" $KEY_BITS)
+		(umask 77 && $SSL_CMD genrsa -out "${CHROOTDIR-}/etc/ssl/private/$SSL_HOST.key" $KEY_BITS)
 	fi
 	
 	require_tmp tempfile
@@ -98,7 +101,7 @@ EOF
 	
 	if [ -n "${OPT_SELF_SIGNED-}" ]; then
 		[ ! -e "${CHROOTDIR-}/etc/ssl/certs/$SSL_HOST.crt" ] || exit 17
-		command="openssl req -new -x509 -nodes -sha1 -key ${CHROOTDIR-}/etc/ssl/private/$SSL_HOST.key -out ${CHROOTDIR-}/etc/ssl/certs/$SSL_HOST.crt"
+		command="$SSL_CMD req -new -x509 -nodes -sha1 -days $EXPIRE_DAYS -key ${CHROOTDIR-}/etc/ssl/private/$SSL_HOST.key -out ${CHROOTDIR-}/etc/ssl/certs/$SSL_HOST.crt"
 		message="Generated key $SSL_HOST.key and certificate $SSL_HOST.crt in /etc/ssl/."
 	else
 		if [ ! -d "${CHROOTDIR-}/etc/ssl/csrs" ]; then
@@ -106,7 +109,7 @@ EOF
 		fi
 		[ ! -e "${CHROOTDIR-}/etc/ssl/csrs/$SSL_HOST.csr" ] || exit 17
 		(echo && echo) >> "$tempfile"
-		command="openssl req -new -key ${CHROOTDIR-}/etc/ssl/private/$SSL_HOST.key -out ${CHROOTDIR-}/etc/ssl/csrs/$SSL_HOST.csr"
+		command="$SSL_CMD req -new -key ${CHROOTDIR-}/etc/ssl/private/$SSL_HOST.key -out ${CHROOTDIR-}/etc/ssl/csrs/$SSL_HOST.csr"
 		message="Generated key $SSL_HOST.key and certificate signing request $SSL_HOST.csr in /etc/ssl/."
 	fi
 	
@@ -125,11 +128,11 @@ else
 	[ -e "${CHROOTDIR-}/etc/ssl/private/$SSL_HOST.key" ] || exit 2
 	[ ! -e "${CHROOTDIR-}/etc/ssl/certs/$SSL_HOST.crt" ] || exit 17
 	[ ! -e "${CHROOTDIR-}/etc/ssl/certs/$SSL_HOST.ca.crt" ] || exit 17
-	[ $SSL_HOST = `openssl x509 -noout -subject -nameopt sep_multiline -in $CERT_FILE | sed -e '/^    CN=/!d;s/^    CN=//'` ] || exit 85
+	[ $SSL_HOST = `$SSL_CMD x509 -noout -subject -nameopt sep_multiline -in $CERT_FILE | sed -e '/^    CN=/!d;s/^    CN=//'` ] || exit 85
 	cat $CERT_FILE > "${CHROOTDIR-}/etc/ssl/certs/$SSL_HOST.crt"
 	echo "Inserted certificate $CERT_FILE as $SSL_HOST.crt in /etc/ssl/certs/."
 	if [ -n "${AUTH_FILE-}" ]; then
-		openssl x509 -noout -in $AUTH_FILE
+		$SSL_CMD x509 -noout -in $AUTH_FILE
 		cat $AUTH_FILE > "${CHROOTDIR-}/etc/ssl/certs/$SSL_HOST.ca.crt"
 		echo "Inserted authority certificate chain $AUTH_FILE as $SSL_HOST.ca.crt in /etc/ssl/certs/."
 	fi
