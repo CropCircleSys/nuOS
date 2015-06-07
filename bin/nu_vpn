@@ -37,6 +37,7 @@ esac; done; shift $(($OPTIND-1))
 . "$(dirname "$(realpath "$0")")/../lib/nu_common.sh"
 
 nuos_init
+nuos_ssl_init
 
 : ${PRIVATE_NET:=172.31.0.0}
 case $PRIVATE_NET in
@@ -47,8 +48,10 @@ case $PRIVATE_NET in
 esac
 
 : ${HOST_NAME:=$HOST}
-echo 'cert authority  -a CERT_AUTH      ' ${CERT_AUTH:=ca.$HOST_NAME}
-echo 'key bits        -b KEY_BITS       ' ${KEY_BITS:=2048}
+: ${CERT_AUTH:=`$SSL_CMD x509 -noout -issuer -nameopt sep_multiline -in "${CHROOTDIR-}/etc/ssl/certs/$HOST_NAME.int.crt" | sed -e '/^    CN=/!d;s/^    CN=//'`}
+: ${KEY_BITS:=`$SSL_CMD x509 -noout -text -nameopt sep_multiline -certopt no_version,no_serial,no_signame,no_validity,no_subject,no_issuer,no_sigdump,no_aux,no_extensions -in "${CHROOTDIR-}/etc/ssl/certs/$HOST_NAME.int.crt" | sed -Ee '/^[[:blank:]]*Public-Key: \(([[:digit:]]+) bit\)$/!d;s//\1/'`}
+echo 'cert authority  -a CERT_AUTH      ' $CERT_AUTH
+echo 'key bits        -b KEY_BITS       ' $KEY_BITS
 echo 'stream cipher   -c CIPHER         ' ${CIPHER:=AES-$(($KEY_BITS/16))-CFB}
 echo 'host name       -h HOST_NAME      ' $HOST_NAME
 echo 'identifier      -i IDENTIFIER     ' ${IDENTIFIER-}
@@ -64,8 +67,6 @@ case $PRIVATE_MASK in
 	0x*)
 		PRIVATE_MASK=$(($PRIVATE_MASK / 0x1000000)).$(($PRIVATE_MASK % 0x1000000 / 0x10000)).$(($PRIVATE_MASK % 0x10000 / 0x100)).$(($PRIVATE_MASK % 0x100))
 esac
-
-nuos_ssl_init
 
 if [ ! -d "${CHROOTDIR-}/usr/local/etc/openvpn" ]; then
 	mkdir "${CHROOTDIR-}/usr/local/etc/openvpn"
