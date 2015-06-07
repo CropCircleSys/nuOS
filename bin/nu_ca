@@ -1,0 +1,49 @@
+#!/bin/sh
+set -e; set -u; set -C
+
+# nuOS 0.0.9.3b0 - bin/nu_ca - LICENSE: MOZ_PUB
+#
+# Copyright (c) 2008-2014 Chad Jacob Milios and Crop Circle Systems, Inc.
+# All rights reserved.
+#
+# This Source Code Form is subject to the terms of the Mozilla Public License, v2.0.
+# If a copy of the MPL was not distributed alongside this file, you can obtain one at
+# http://mozilla.org/MPL/2.0/ . This software project is not affiliated with the Mozilla
+# Foundation.
+#
+# Official updates and community support available at http://nuos.org .
+# Other licensing options and professional services available at http://ccsys.com .
+
+NUOS_VER=0.0.9.3b0
+
+while getopts a:C:e:h:v OPT; do case $OPT in
+	a) CERT_AUTH=$OPTARG;;
+	C) CHROOTDIR=$OPTARG;;
+	e) EXPIRE_DAYS=$OPTARG;;
+	h) HOST_NAME=$OPTARG;;
+	v) OPT_VERBOSE=y;;
+esac; done; shift $(($OPTIND-1))
+[ $# = 0 ]
+
+. "$(dirname "$(realpath "$0")")/../lib/nu_system.sh"
+. "$(dirname "$(realpath "$0")")/../lib/nu_common.sh"
+
+nuos_init
+
+: ${HOST_NAME:=$HOST}
+echo 'cert authority  -a CERT_AUTH      ' ${CERT_AUTH:=ca.$HOST_NAME}
+echo 'valid lifetime  -e EXPIRE_DAYS    ' ${EXPIRE_DAYS:=365}
+echo 'host name       -h HOST_NAME      ' $HOST_NAME
+echo
+
+maybe_yell
+
+nuos_ssl_init
+
+if [ ! -d "${CHROOTDIR-}/etc/ssl/serials" ]; then
+	mkdir "${CHROOTDIR-}/etc/ssl/serials"
+fi
+
+$SSL_CMD x509 -req -CA "${CHROOTDIR-}/etc/ssl/certs/$CERT_AUTH.crt" -CAkey "${CHROOTDIR-}/etc/ssl/private/$CERT_AUTH.key" -CAcreateserial -CAserial "${CHROOTDIR-}/etc/ssl/serials/$CERT_AUTH.srl" -days $EXPIRE_DAYS -in "${CHROOTDIR-}/etc/ssl/csrs/$HOST_NAME.csr" -out "${CHROOTDIR-}/etc/ssl/certs/$HOST_NAME.int.crt"
+
+echo "Created certificate $HOST_NAME.int.crt signed by authority $CERT_AUTH, saved into /etc/ssl/certs/."

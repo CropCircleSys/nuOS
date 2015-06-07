@@ -16,27 +16,97 @@ set -e; set -u; set -C
 
 NUOS_VER=0.0.9.3b0
 
-while getopts C:h:sv OPT; do case $OPT in
+while getopts a:b:c:C:h:i:m:n:p:qv OPT; do case $OPT in
+	a) CERT_AUTH=$OPTARG;;
+	b) KEY_BITS=$OPTARG;;
+	c) CIPHER=$OPTARG;;
 	C) CHROOTDIR=$OPTARG;;
 	h) HOST_NAME=$OPTARG;;
-	s) OPT_SSL=y;;
+	i) IDENTIFIER=$OPTARG;;
+	m) PRIVATE_MASK=$OPTARG;;
+	n) PRIVATE_NET=$OPTARG;;
+	p) POOL_NAME=$OPTARG;;
+	q) OPT_QUICK=y;;
 	v) OPT_VERBOSE=y;;
 esac; done; shift $(($OPTIND-1))
 [ $# = 0 ]
 
-exit 43 # this utility not yet implemented
+[ -z "${CHROOTDIR-}" ] || exit 43 # CHROOTDIR is unsupported, though we want to some day so most of the code is still written with support
 
 . "$(dirname "$(realpath "$0")")/../lib/nu_system.sh"
 . "$(dirname "$(realpath "$0")")/../lib/nu_common.sh"
 
 nuos_init
 
-echo 'host name       -h HOST_NAME      ' ${HOST_NAME:=$HOST}
-echo -n 'ssl             -s OPT_SSL         ' && [ -n "${OPT_SSL-}" ] && echo set || echo null
+: ${PRIVATE_NET:=172.31.0.0}
+case $PRIVATE_NET in
+	*/*)
+		mask_bits=${PRIVATE_NET##*/}
+		PRIVATE_MASK=0x`echo "obase=16; 2^32 - 2^(32-$mask_bits)" | bc | tr A-f a-f`
+		PRIVATE_NET=${PRIVATE_NET%/*}
+esac
+
+: ${HOST_NAME:=$HOST}
+echo 'cert authority  -a CERT_AUTH      ' ${CERT_AUTH:=ca.$HOST_NAME}
+echo 'key bits        -b KEY_BITS       ' ${KEY_BITS:=2048}
+echo 'stream cipher   -c CIPHER         ' ${CIPHER:=AES-$(($KEY_BITS/16))-CFB}
+echo 'host name       -h HOST_NAME      ' $HOST_NAME
+echo 'identifier      -i IDENTIFIER     ' ${IDENTIFIER-}
+echo 'private netmask -m PRIVATE_MASK   ' ${PRIVATE_MASK:=0xffff0000}
+echo 'private net     -n PRIVATE_NET    ' $PRIVATE_NET
+echo 'pool name       -p POOL_NAME      ' ${POOL_NAME:=$POOL_BOOT_NAME}
 echo
 
+maybe_pause
 maybe_yell
 
-sister enable_svc ${CHROOTDIR:+-C "$CHROOTDIR"} openvpn
+case $PRIVATE_MASK in
+	0x*)
+		PRIVATE_MASK=$(($PRIVATE_MASK / 0x1000000)).$(($PRIVATE_MASK % 0x1000000 / 0x10000)).$(($PRIVATE_MASK % 0x10000 / 0x100)).$(($PRIVATE_MASK % 0x100))
+esac
+
+nuos_ssl_init
+
+if [ ! -d "${CHROOTDIR-}/usr/local/etc/openvpn" ]; then
+	mkdir "${CHROOTDIR-}/usr/local/etc/openvpn"
+	(umask 77 && mkdir "${CHROOTDIR-}/usr/local/etc/openvpn/private")
+	if zfs list $POOL_NAME-pvt > /dev/null 2>&1; then # this check may need to be refined in order to support CHROOTDIR
+		chflags schg "${CHROOTDIR-}/usr/local/etc/openvpn/private"
+		zfs create -o mountpoint=/usr/local/etc/openvpn/private $POOL_NAME-pvt/sys/host/vpn-ssl
+		chmod go-rx "${CHROOTDIR-}/usr/local/etc/openvpn/private"
+	fi
+fi
+
+cp "${CHROOTDIR-}/etc/ssl/certs/$CERT_AUTH.crt" "${CHROOTDIR-}/usr/local/etc/openvpn/${IDENTIFIER:+${IDENTIFIER}_}ca.crt"
+cp "${CHROOTDIR-}/etc/ssl/certs/$HOST_NAME.int.crt" "${CHROOTDIR-}/usr/local/etc/openvpn/${IDENTIFIER:+${IDENTIFIER}_}server.crt"
+cp "${CHROOTDIR-}/etc/ssl/private/$HOST_NAME.key" "${CHROOTDIR-}/usr/local/etc/openvpn/private/${IDENTIFIER:+${IDENTIFIER}_}server.key"
+openvpn --genkey --secret "${CHROOTDIR-}/usr/local/etc/openvpn/private/${IDENTIFIER:+${IDENTIFIER}_}ta.key"
+$SSL_CMD dhparam -out "${CHROOTDIR-}/usr/local/etc/openvpn/${IDENTIFIER:+${IDENTIFIER}_}dh$KEY_BITS.pem" $KEY_BITS
+
+cat > "${CHROOTDIR-}/usr/local/etc/openvpn/openvpn${IDENTIFIER:+_$IDENTIFIER}.conf" <<EOF
+dev tun
+topology subnet
+server $PRIVATE_NET $PRIVATE_MASK
+ca ${IDENTIFIER:+${IDENTIFIER}_}ca.crt
+cert ${IDENTIFIER:+${IDENTIFIER}_}server.crt
+key private/${IDENTIFIER:+${IDENTIFIER}_}server.key
+dh ${IDENTIFIER:+${IDENTIFIER}_}dh$KEY_BITS.pem
+tls-auth private/${IDENTIFIER:+${IDENTIFIER}_}ta.key 0
+cipher $CIPHER
+comp-lzo
+user nobody
+group nobody
+persist-key
+persist-tun
+status ${IDENTIFIER:+${IDENTIFIER}_}openvpn-status.log
+ifconfig-pool-persist ${IDENTIFIER:+${IDENTIFIER}_}ipp.txt
+keepalive 15 90
+EOF
+
+if [ ! -e "${CHROOTDIR-}/usr/local/etc/rc.d/openvpn${IDENTIFIER:+_$IDENTIFIER}" ]; then
+	ln -s "${CHROOTDIR-}/usr/local/etc/rc.d/openvpn" "${CHROOTDIR-}/usr/local/etc/rc.d/openvpn${IDENTIFIER:+_$IDENTIFIER}"
+fi
+
+sister enable_svc ${CHROOTDIR:+-C "$CHROOTDIR"} openvpn${IDENTIFIER:+_$IDENTIFIER}
 
 echo "Configured vpn service."
