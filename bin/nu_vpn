@@ -48,7 +48,7 @@ case $PRIVATE_NET in
 esac
 
 : ${HOST_NAME:=$HOST}
-: ${CERT_AUTH:=`$SSL_CMD x509 -noout -issuer -nameopt sep_multiline -in "${CHROOTDIR-}/etc/ssl/certs/$HOST_NAME.int.crt" | sed -e '/^    CN=/!d;s/^    CN=//'`}
+: ${CERT_AUTH:=`$SSL_CMD x509 -noout -issuer -nameopt sep_multiline -in "${CHROOTDIR-}/etc/ssl/certs/$HOST_NAME.int.crt" | sed -Ee '/^[[:blank:]]*CN=/!d;s/^[[:blank:]]*CN=//'`}
 : ${KEY_BITS:=`$SSL_CMD x509 -noout -text -nameopt sep_multiline -certopt no_version,no_serial,no_signame,no_validity,no_subject,no_issuer,no_sigdump,no_aux,no_extensions -in "${CHROOTDIR-}/etc/ssl/certs/$HOST_NAME.int.crt" | sed -Ee '/^[[:blank:]]*Public-Key: \(([[:digit:]]+) bit\)$/!d;s//\1/'`}
 echo 'cert authority  -a CERT_AUTH      ' $CERT_AUTH
 echo 'key bits        -b KEY_BITS       ' $KEY_BITS

@@ -20,7 +20,7 @@ while getopts C:h:i:s:v OPT; do case $OPT in
 	C) CHROOTDIR=$OPTARG;;
 	h) HOST_NAME=$OPTARG;;
 	i) IDENTIFIER=$OPTARG;;
-	s) SERVER_NAME=$OPTARG;;
+	s) SERVER_HOST=$OPTARG;;
 	v) OPT_VERBOSE=y;;
 esac; done; shift $(($OPTIND-1))
 [ $# = 0 ]
@@ -33,7 +33,7 @@ nuos_ssl_init
 
 maybe_yell
 
-: ${SERVER_NAME:=`$SSL_CMD x509 -noout -subject -nameopt sep_multiline -in "${CHROOTDIR-}/usr/local/etc/openvpn/${IDENTIFIER:+${IDENTIFIER}_}server.crt" | sed -e '/^    CN=/!d;s/^    CN=//'`}
+: ${SERVER_HOST:=`$SSL_CMD x509 -noout -subject -nameopt sep_multiline -in "${CHROOTDIR-}/usr/local/etc/openvpn/${IDENTIFIER:+${IDENTIFIER}_}server.crt" | sed -Ee '/^[[:blank:]]*CN=/!d;s/^[[:blank:]]*CN=//'`}
 : ${HOST_NAME:=$HOST}
 
 [ -r "${CHROOTDIR-}/usr/local/etc/openvpn/${IDENTIFIER:+${IDENTIFIER}_}ca.crt" ]
@@ -46,7 +46,7 @@ cat <<EOF
 `grep '^dev ' "${CHROOTDIR-}/usr/local/etc/openvpn/openvpn${IDENTIFIER:+_$IDENTIFIER}.conf"`
 `grep '^topology ' "${CHROOTDIR-}/usr/local/etc/openvpn/openvpn${IDENTIFIER:+_$IDENTIFIER}.conf"`
 client
-remote $SERVER_NAME
+remote $SERVER_HOST
 `grep '^cipher ' "${CHROOTDIR-}/usr/local/etc/openvpn/openvpn${IDENTIFIER:+_$IDENTIFIER}.conf"`
 `grep ^comp- "${CHROOTDIR-}/usr/local/etc/openvpn/openvpn${IDENTIFIER:+_$IDENTIFIER}.conf"`
 user nobody
