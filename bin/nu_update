@@ -44,14 +44,21 @@ maybe_pause
 maybe_yell
 
 if [ -n "${JAIL_NAME-}" ]; then
-	CHROOTDIR="/var/jail/$JAIL_NAME"
+	CHROOTDIR=`jls -h -j $JAIL_NAME path | sed -e 1d`
+	[ -n "$CHROOTDIR" ] || (echo "Error: Cannot find jail $JAIL_NAME running." && exit 1)
 fi
 
-[ -f /usr/ports/.portsnap.INDEX ]
-[ -f /var/db/portsnap/INDEX ]
-[ ! /usr/ports/.portsnap.INDEX -ot /var/db/portsnap/INDEX ]
+old_tag=`cat "${CHROOTDIR-}/var/db/nuos/pkg/tag"`
 
-[ `cut -d '|' -f 2 /var/db/portsnap/tag` = `cat "${CHROOTDIR-}/var/db/nuos/pkg/tag"` ]
+if [ -d /usr/ports/.svn ]; then
+	ports_svn=y;
+else
+	[ -f /usr/ports/.portsnap.INDEX ]
+	[ -f /var/db/portsnap/INDEX ]
+	[ ! /usr/ports/.portsnap.INDEX -ot /var/db/portsnap/INDEX ]
+	[ `cut -d '|' -f 2 /var/db/portsnap/tag` = $old_tag ]
+fi
+
 
 if [ -n "${OPT_NO_SNAP-}" ]; then
 	require_tmp previous_moved_tbl
@@ -71,18 +78,23 @@ fi
 
 require_ports_tree -e
 
-old_tag=`cat ${CHROOTDIR-}/var/db/nuos/pkg/tag`
 [ -d "${CHROOTDIR-}/var/db/nuos/pkg" -a ! -L "${CHROOTDIR-}/var/db/nuos/pkg" ]
 mv "${CHROOTDIR-}/var/db/nuos/pkg" "${CHROOTDIR-}/var/db/nuos/pkg.$old_tag"
 ln -s pkg.$old_tag "${CHROOTDIR-}/var/db/nuos/pkg"
 
-portsnap fetch
-require_tmp portsnap_update_out
-portsnap update | tee -a "$portsnap_update_out"
-
 require_tmp all_updated_ports
-sed -nEe '/^\/usr\/ports\/([[:lower:]].*)\/$/{s//\1/;s/\/$//;p;}' "$portsnap_update_out" >| "$all_updated_ports"
-retire_tmp portsnap_update_out
+if [ -n "${ports_svn-}" ]; then
+	require_tmp svn_update_out
+	svn update /usr/ports | tee -a "$svn_update_out"
+	sed -nEe '/^[ADUG]    /{s///;s|^/usr/ports/||;/^[[:lower:]]/{p;};}' "$svn_update_out" | cut -d / -f 1-2 | sort -u >| "$all_updated_ports"
+	retire_tmp svn_update_out
+else
+	portsnap fetch
+	require_tmp portsnap_update_out
+	portsnap update | tee -a "$portsnap_update_out"
+	sed -nEe '/^\/usr\/ports\/([[:lower:]].*)\/$/{s//\1/;s/\/$//;p;}' "$portsnap_update_out" >| "$all_updated_ports"
+	retire_tmp portsnap_update_out
+fi
 
 require_tmp interested_ports
 ls "${CHROOTDIR-}/var/db/nuos/pkg" | grep _ | sed -e 's|_|/|' >| "$interested_ports"
@@ -204,7 +216,16 @@ retire_tmp updt_prncpls
 retire_tmp updt_deps
 retire_tmp updt_slvs
 
-new_tag=`cut -d '|' -f 2 /var/db/portsnap/tag`
+if [ -n "${ports_svn-}" ]; then
+	require_tmp svn_info
+	env TZ=UTC svn info /usr/ports >> "$svn_info"
+	new_tag=r`grep ^Revision: "$svn_info" | cut -w -f 2`
+	last_modified=$(date -j -f "%F %T" "$(sed -e '/^Last Changed Date: /!d;s///;s/ +0000 (.*$//' "$svn_info")")
+	retire_tmp svn_info
+else
+	new_tag=`cut -d '|' -f 2 /var/db/portsnap/tag`
+	last_modified=`env TZ=UTC date -j -f %s $new_tag`
+fi
 
 if [ -s "$obsolete_pkgs" ]; then
 	sort -u "$obsolete_pkgs" >| "$OUTPUT_FILE"
@@ -216,4 +237,4 @@ else
 fi
 retire_tmp obsolete_pkgs
 
-echo "Ports tree is now tagged $new_tag (`env TZ=UTC date -j -f %s $new_tag`).${changed:+ Be sure to run nu_pkg_tree to regenerate the package metadatabase.}"
+echo "Ports tree is now tagged $new_tag ($last_modified).${changed:+ Be sure to run nu_pkg_tree to regenerate the package metadatabase.}"
