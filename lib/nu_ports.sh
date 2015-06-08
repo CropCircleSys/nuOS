@@ -28,13 +28,13 @@ require_portsnap_files () {
 }
 
 require_ports_tree () {
-	local opt_must_exist=
+	local opt_must_already_exist=
 	while getopts e OPT; do case $OPT in
-		e) opt_must_exist=y;;
+		e) opt_must_already_exist=y;;
 	esac; done; shift $(($OPTIND-1))
 	
 	if [ ! -f /usr/ports/Mk/bsd.port.mk ]; then
-		[ -z "$opt_must_exist" ]
+		[ -z "$opt_must_already_exist" ]
 		require_portsnap_files
 		portsnap extract
 	fi
