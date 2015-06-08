@@ -87,6 +87,7 @@ pkg_name () {
 	if [ -n "$opt_db" ]; then
 		cat "${CHROOTDIR-}/var/db/nuos/pkg/`echo $port | tr / _`/name"
 	elif [ -n "$opt_installed" ]; then
+		exit 78
 		${CHROOTDIR:+chroot "$CHROOTDIR"} pkg_info -qO $port
 	else
 		local make_conf= retire_make_conf_cmd=
@@ -107,6 +108,7 @@ pkg_orgn () {
 	[ $# = 0 ]
 	
 	if [ -n "$opt_installed" ]; then
+		exit 78
 		${CHROOTDIR:+chroot "$CHROOTDIR"} pkg_info -qo $pkg
 	else
 		(cd /usr/ports && make search name=$pkg | sed -nEe "/^Port:[[:blank:]]*$pkg\$/{N;s|^.*\nPath:[[:blank:]]*/usr/ports/(.*)\$|\1|;p;}")
