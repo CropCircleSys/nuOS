@@ -63,7 +63,7 @@ for port in $*; do
 		pkg=`pkg_name $port`
 		envvars="$metainfo_dir/$uni.envvars"
 		pkg_file=/usr/ports/packages/All/$pkg.txz
-		if [ ! -f $pkg_file ]; then
+		if [ ! -f $pkg_file ] || [ -z "${CHROOTDIR-}" -a ports-mgmt/pkg = $port ]; then
 			[ -z "${OPT_NOMAKE-}" ]
 			if [ -z "${OPT_NORECURSE-}" ]; then
 				port_deps def_opts my_opts build_deps run_deps $port
