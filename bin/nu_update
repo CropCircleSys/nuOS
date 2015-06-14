@@ -49,14 +49,16 @@ if [ -n "${JAIL_NAME-}" ]; then
 fi
 
 old_tag=`cat "${CHROOTDIR-}/var/db/nuos/pkg/tag"`
+[ -n "$old_tag" ]
 
 if [ -d /usr/ports/.svn ]; then
 	ports_svn=y;
+	[ $old_tag = r`env TZ=UTC svn info /usr/ports | grep ^Revision: | cut -w -f 2` ]
 else
 	[ -f /usr/ports/.portsnap.INDEX ]
 	[ -f /var/db/portsnap/INDEX ]
 	[ ! /usr/ports/.portsnap.INDEX -ot /var/db/portsnap/INDEX ]
-	[ `cut -d '|' -f 2 /var/db/portsnap/tag` = $old_tag ]
+	[ $old_tag = `cut -d '|' -f 2 /var/db/portsnap/tag` ]
 fi
 
 
