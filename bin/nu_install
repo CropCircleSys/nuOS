@@ -23,7 +23,7 @@ while getopts a:b:c:Bd:DeFh:i:kl:m:o:p:PqQs:St:u:vzZ OPT; do case $OPT in
 	b) BD_ACCT=$OPTARG;;
 	B) OPT_NOBRAND=y;;
 	c) PKG_COLLECTION=$OPTARG;;
-	d) push POOL_DEVS $OPTARG;;
+	d) push POOL_DEVS ${OPTARG#/dev/};;
 	D)
 		if [ -n "${OPT_DEBUG-}" ]; then
 			COPY_PORTS=y
