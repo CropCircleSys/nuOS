@@ -24,8 +24,7 @@ while getopts a:b:c:Bd:DeFh:i:kl:m:o:p:PqQs:St:u:vzZ OPT; do case $OPT in
 	B) OPT_NOBRAND=y;;
 	c) PKG_COLLECTION=$OPTARG;;
 	d) push POOL_DEVS ${OPTARG#/dev/};;
-	D)
-		if [ -n "${OPT_DEBUG-}" ]; then
+	D)	if [ -n "${OPT_DEBUG-}" ]; then
 			COPY_PORTS=y
 			COPY_DEV_PKGS=y
 			COPY_SRC=y
@@ -47,9 +46,7 @@ while getopts a:b:c:Bd:DeFh:i:kl:m:o:p:PqQs:St:u:vzZ OPT; do case $OPT in
 	S) OPT_SWAP=y;;
 	t) POOL_TYPE=$OPTARG;;
 	u) USER_ACCT=$OPTARG;;
-	v)
-		[ -n "${OPT_VERBOSE-}" ] && export OPT_VERBOSE
-		OPT_VERBOSE=y;;
+	v) [ -n "${OPT_VERBOSE-}" ] && export OPT_VERBOSE; OPT_VERBOSE=y;;
 	z) OPT_SKIP_INIT_ZPOOL=y;;
 	Z) OPT_ONLY_INIT_ZPOOL=y;;
 esac; done; shift $(($OPTIND-1))
@@ -379,7 +376,7 @@ EOF
 		cat >> $POOL_MNT/etc/motd <<EOF
 nuOS $NUOS_VER
 
-Thank you for choosing nuOS. Welcome!
+Welcome! Thank you for choosing nuOS.
 
 Official updates and community support available at http://nuos.org .
 
@@ -831,8 +828,7 @@ if [ -n "${LOCAL_SCRIPT-}" ]; then
 		for script_file in "$script_files"; do
 			. "$script_file"
 		done
-	fi
-	if [ -f "${LOCAL_SCRIPT-}" ]; then
+	elif [ -f "${LOCAL_SCRIPT-}" ]; then
 		. "$LOCAL_SCRIPT"
 	fi
 fi
