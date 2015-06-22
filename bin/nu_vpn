@@ -43,7 +43,7 @@ nuos_ssl_init
 case $PRIVATE_NET in
 	*/*)
 		mask_bits=${PRIVATE_NET##*/}
-		PRIVATE_MASK=0x`echo "obase=16; 2^32 - 2^(32-$mask_bits)" | bc | tr A-f a-f`
+		PRIVATE_MASK=0x`echo "obase=16; 2^32 - 2^(32-$mask_bits)" | bc | tr A-F a-f`
 		PRIVATE_NET=${PRIVATE_NET%/*}
 esac
 
