@@ -16,8 +16,12 @@ set -e; set -u; set -C
 
 NUOS_VER=0.0.9.3b0
 
-while getopts dDJ:o:qsSuUv OPT; do case $OPT in
+. "$(dirname "$(realpath "$0")")/../lib/nu_system.sh"
+
+while getopts ac:dDJ:o:qsSuUv OPT; do case $OPT in
+	a) incr OPT_AUTO 1;;
 	d) OPT_DEPS=y;;
+	c) PKG_COLLECTION=$OPTARG;;
 	D) OPT_DEBUG=y;;
 	J) JAIL_NAME=$OPTARG;;
 	o) OUTPUT_FILE=$OPTARG;;
@@ -26,27 +30,34 @@ while getopts dDJ:o:qsSuUv OPT; do case $OPT in
 	S) OPT_NO_SNAP=y;;
 	u) OPT_UPDATES=y;;
 	U) OPT_DEP_UPDATES=y;;
-	v) OPT_VERBOSE=y;;
+	v) [ -n "${OPT_VERBOSE-}" ] && export OPT_VERBOSE; OPT_VERBOSE=y;;
 esac; done; shift $(($OPTIND-1))
 [ $# = 0 ]
 
-[ -n "${OPT_ONLY_SNAP-}" ] || [ ! -e "$OUTPUT_FILE" -o ! -s "$OUTPUT_FILE" ] 
+[ -n "${OPT_ONLY_SNAP-}" ] || [ -n "${OPT_AUTO-}" -a -z "${OUTPUT_FILE-}" ] || [ ! -e "$OUTPUT_FILE" -o ! -s "$OUTPUT_FILE" ]
 
-. "$(dirname "$(realpath "$0")")/../lib/nu_system.sh"
-. "$(dirname "$(realpath "$0")")/../lib/nu_make.sh"
-. "$(dirname "$(realpath "$0")")/../lib/nu_ports.sh"
 . "$(dirname "$(realpath "$0")")/../lib/nu_common.sh"
 
 baseos_init
 nuos_init
 
-maybe_pause
-maybe_yell
+if [ -n "${OPT_AUTO-}" ]; then
+	: ${JAIL_NAME:=lab}
+	require_tmp auto_output
+	OUTPUT_FILE="$auto_output"
+fi
 
 if [ -n "${JAIL_NAME-}" ]; then
 	CHROOTDIR=`jls -h -j $JAIL_NAME path | sed -e 1d`
 	[ -n "$CHROOTDIR" ] || (echo "Error: Cannot find jail $JAIL_NAME running." && exit 1)
 fi
+
+. "$(dirname "$(realpath "$0")")/../lib/nu_make.sh"
+. "$(dirname "$(realpath "$0")")/../lib/nu_ports.sh"
+. "$(dirname "$(realpath "$0")")/../lib/nu_collection.sh"
+
+maybe_pause
+maybe_yell
 
 old_tag=`cat "${CHROOTDIR-}/var/db/nuos/pkg/tag"`
 [ -n "$old_tag" ]
@@ -239,4 +250,29 @@ else
 fi
 retire_tmp obsolete_pkgs
 
-echo "Ports tree is now tagged $new_tag ($last_modified).${changed:+ Be sure to run nu_pkg_tree to regenerate the package metadatabase.}"
+echo
+echo "Ports tree is now tagged $new_tag ($last_modified)."
+
+if [ -n "${OPT_AUTO-}" ]; then
+	if [ -n "${changed-}" ]; then
+		echo
+		for pkg in `cat "$OUTPUT_FILE"`; do
+			rm -v /usr/ports/packages/All/$pkg.txz || true
+			pkg -c "$CHROOTDIR" delete -fy $pkg || true
+		done
+		if [ "$OPT_AUTO" -ge 2 ]; then
+			echo
+			require_tmp pkg_tree
+			sister nu_pkg_tree -o dir "$CHROOTDIR/var/db/nuos/pkg" -o txt "$pkg_tree" $PKG_COLLECTION
+			if [ "$OPT_AUTO" -ge 3 ]; then
+				sister -C "$CHROOTDIR" nu_install_pkg -R `grep / "$pkg_tree"`
+				retire_tmp pkg_tree
+				echo Done building new $PKG_COLLECTION packages.
+			fi
+		else
+			echo Be sure to run nu_pkg_tree to regenerate the package metadatabase.
+		fi
+	else
+		retire_tmp auto_output
+	fi
+fi

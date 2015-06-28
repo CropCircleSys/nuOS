@@ -17,8 +17,12 @@ set -e; set -u; set -C
 nuos_lib_ver=0.0.9.3b0
 [ $nuos_lib_ver = "$NUOS_VER" ]
 [ -n "${nuos_lib_system_loaded-}" ]
+[ -n "${nuos_lib_common_loaded-}" ]
 [ -z "${nuos_lib_collection_loaded-}" ]
 nuos_lib_collection_loaded=y
+
+: ${HOSTOS_PKG_COLLECTION:=desktop}
+: ${PKG_COLLECTION:=$HOSTOS_PKG_COLLECTION}
 
 collection_vars_init () {
 	COLL_blank=

@@ -46,7 +46,7 @@ while getopts a:b:c:Bd:DeFh:i:kl:m:o:p:PqQs:St:u:vzZ OPT; do case $OPT in
 	S) OPT_SWAP=y;;
 	t) POOL_TYPE=$OPTARG;;
 	u) USER_ACCT=$OPTARG;;
-	v) [ -n "${OPT_VERBOSE-}" ] && export OPT_VERBOSE; OPT_VERBOSE=y;;
+	v) OPT_VERBOSE=y;;
 	z) OPT_SKIP_INIT_ZPOOL=y;;
 	Z) OPT_ONLY_INIT_ZPOOL=y;;
 esac; done; shift $(($OPTIND-1))
@@ -56,6 +56,7 @@ esac; done; shift $(($OPTIND-1))
 . "$(dirname "$(realpath "$0")")/../lib/nu_admin.sh"
 . "$(dirname "$(realpath "$0")")/../lib/nu_make.sh"
 . "$(dirname "$(realpath "$0")")/../lib/nu_ports.sh"
+. "$(dirname "$(realpath "$0")")/../lib/nu_collection.sh"
 . "$(dirname "$(realpath "$0")")/../lib/nu_install.sh"
 
 baseos_init
@@ -524,11 +525,11 @@ EOF
 # EOF
 	
 	require_tmp pkg_tree
-	sister nu_pkg_tree -o dir $POOL_MNT/var/db/nuos/pkg -o txt "$pkg_tree" $PKG_COLLECTION
+	sister nu_pkg_tree ${OPT_VERBOSE:+-v} -o dir $POOL_MNT/var/db/nuos/pkg -o txt "$pkg_tree" $PKG_COLLECTION
 	for tree_node in `cat "$pkg_tree"`; do
 		case $tree_node in
 			[^/]*/*)
-				sister nu_install_pkg -C $POOL_MNT -R $tree_node
+				sister nu_install_pkg ${OPT_VERBOSE:+-v} -C $POOL_MNT -R $tree_node
 				;;
 			[^/]*)
 				zfs snapshot -r $POOL_NAME/os/nuOS/$NUOS_VER@$tree_node
@@ -750,9 +751,9 @@ zfs snapshot -r $host_ds@blank
 zfs create -o mountpoint=none -o canmount=off $POOL_NAME/svc
 
 export NEW_HOST
-sister nu_jail -C $POOL_MNT -p $POOL_NAME -t clone -w -j base-lab -o $BASEOS_TYPE/$BASEOS_VER -s bare -i 127.0.0.2 -a '' -u '' -b '' -q
-sister nu_jail -C $POOL_MNT -p $POOL_NAME -t clone -w -j nuos-lab -s blank -i 127.0.0.3 -a '' -u '' -b '' -q
-sister nu_jail -C $POOL_MNT -p $POOL_NAME -t clone -w -j lab -i 127.0.0.4 -a '' -u '' -b '' -q
+sister nu_jail ${OPT_VERBOSE:+-v} -C $POOL_MNT -p $POOL_NAME -t clone -w -j base-lab -o $BASEOS_TYPE/$BASEOS_VER -s bare -i 127.0.0.2 -a '' -u '' -b '' -q
+sister nu_jail ${OPT_VERBOSE:+-v} -C $POOL_MNT -p $POOL_NAME -t clone -w -j nuos-lab -s blank -i 127.0.0.3 -a '' -u '' -b '' -q
+sister nu_jail ${OPT_VERBOSE:+-v} -C $POOL_MNT -p $POOL_NAME -t clone -w -j lab -i 127.0.0.4 -a '' -u '' -b '' -q
 
 sister enable_svc -C $POOL_MNT jail2
 

@@ -21,6 +21,38 @@ nuos_lib_ver=0.0.9.3b0
 [ -z "${nuos_lib_ports_loaded-}" ]
 nuos_lib_ports_loaded=y
 
+if [ -n "${PORT_DBDIR-}" ]; then
+	_nuos_ports_dbdir_user_override=y
+	exit 45
+else
+	PORT_DBDIR="$(realpath "$(dirname "$(realpath "$0")")/../port_opts")"
+fi
+
+# 
+# prepare_ports_db () {
+# 	if [ -n "${_nuos_ports_db_dir_poke-}" -a "${CHROOTDIR-}" ]; then
+# 		require_tmp -c -C "$CHROOTDIR" -d _nuos_ports_db_dir_mnt
+# 		mount -t nullfs -r $PORT_DBDIR "$_nuos_ports_db_dir_mnt"
+# 	fi
+# }
+# 
+# discard_ports_db () {
+# 	if [ -n "${_nuos_ports_db_dir_poke-}" -a "${CHROOTDIR-}" ]; then
+# 		umount "$_nuos_ports_db_dir_mnt"
+# 		retire_tmp _nuos_ports_db_dir_mnt
+# 	fi
+# }
+
+if [ -d /usr/ports/.svn ]; then
+	_nu_PORTS_SVN=y
+elif [ -f /var/db/portsnap/tag ]; then
+	_nu_PORTSNAP=y
+fi
+
+if [ -d "${CHROOTDIR-}/var/db/nuos/pkg" -a ! -L "${CHROOTDIR-}/var/db/nuos/pkg" -a -f "${CHROOTDIR-}/var/db/nuos/pkg/tag" ]; then
+	_nu_PORTS_TAG=`cat "${CHROOTDIR-}/var/db/nuos/pkg/tag"`
+fi
+
 require_portsnap_files () {
 	if [ ! -d /var/db/portsnap/files ]; then
 		portsnap fetch
@@ -92,7 +124,7 @@ pkg_name () {
 	else
 		local make_conf= retire_make_conf_cmd=
 		prepare_make_conf make_conf retire_make_conf_cmd
-		(cd /usr/ports/$port && make "__MAKE_CONF=$make_conf" -VPKGNAME)
+		(cd /usr/ports/$port && make "__MAKE_CONF=$make_conf" PORT_DBDIR="$PORT_DBDIR" -VPKGNAME)
 		$retire_make_conf_cmd make_conf
 	fi
 }
@@ -133,10 +165,10 @@ port_deps () {
 	local make_conf= retire_make_conf_cmd=
 	prepare_make_conf make_conf retire_make_conf_cmd
 	[ -z "${ret_def_tmp-}" ] || (cd /usr/ports/$port && make "__MAKE_CONF=$make_conf" PORT_DBDIR=/var/empty -DBATCH showconfig) >| "$ret_def_tmp"
-	[ -z "${ret_opt_tmp-}" ] || (cd /usr/ports/$port && make "__MAKE_CONF=$make_conf" -DBATCH showconfig) >| "$ret_opt_tmp"
+	[ -z "${ret_opt_tmp-}" ] || (cd /usr/ports/$port && make "__MAKE_CONF=$make_conf" PORT_DBDIR="$PORT_DBDIR" -DBATCH showconfig) >| "$ret_opt_tmp"
 	for action in build run; do
 		eval local outfile=\"\$ret_${action}_tmp\"
-		(cd /usr/ports/$port && make "__MAKE_CONF=$make_conf" -DBATCH $action-depends-list | sed -e 's|^/usr/ports/||') >| "$outfile"
+		(cd /usr/ports/$port && make "__MAKE_CONF=$make_conf" PORT_DBDIR="$PORT_DBDIR" -DBATCH $action-depends-list | sed -e 's|^/usr/ports/||') >| "$outfile"
 	done
 	$retire_make_conf_cmd make_conf
 	

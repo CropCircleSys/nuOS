@@ -21,6 +21,7 @@ nuos_lib_ver=0.0.9.3b0
 nuos_lib_make_loaded=y
 
 make_vars_init () {
+	: ${TRGT_ARCH:=`uname -m`}
 	: ${TRGT_PROC:=`uname -p`}
 	case $TRGT_PROC in
 		amd64) : ${TRGT_OPTZ:=core2};;
@@ -47,11 +48,9 @@ prepare_make_conf () {
 		require_tmp tempfile
 		cat >| "$tempfile" <<EOF
 CPUTYPE?=$TRGT_OPTZ
-NO_WARNING_PKG_INSTALL_EOL=yes
-DEFAULT_VERSIONS= perl5=5.20 php=56 pgsql=9.4
-WITH_OPENSSL_PORT=YES
-WITH_MYSQL_VER=56
+DEFAULT_VERSIONS= pgsql=9.4
 QT4_OPTIONS=CUPS
+WITH_OPENSSL_PORT=YES
 EOF
 		setvar $ret_file_var "$tempfile"
 		setvar $ret_cmd_var retire_tmp

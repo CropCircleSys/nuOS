@@ -18,6 +18,8 @@ nuos_lib_ver=0.0.9.3b0
 [ $nuos_lib_ver = "$NUOS_VER" ]
 [ -n "${nuos_lib_system_loaded-}" ]
 [ -n "${nuos_lib_make_loaded-}" ]
+[ -n "${nuos_lib_ports_loaded-}" ]
+[ -n "${nuos_lib_collection_loaded-}" ]
 [ -z "${nuos_lib_install_loaded-}" ]
 nuos_lib_install_loaded=y
 
@@ -34,17 +36,18 @@ install_vars_init () {
 			exit 1
 		fi
 	fi
+	: ${HOST:=`hostname`}
 	echo 'pool devs       -d POOL_DEVS      ' $POOL_DEVS
 	echo 'pool name       -p POOL_NAME      ' ${POOL_NAME:=thumb}
 	echo 'pool mnt pt     -m POOL_MNT       ' ${POOL_MNT:=/$POOL_NAME}
 	echo 'pool type       -t POOL_TYPE      ' ${POOL_TYPE=raidz}
 	echo 'pool options    -o POOL_OPTS      ' ${POOL_OPTS="-O atime=off -O compression=lz4"}
-	echo 'pkg collection  -c PKG_COLLECTION ' ${PKG_COLLECTION:=$HOSTOS_PKG_COLLECTION}
-	echo 'port db dir        PORT_DBDIR     ' ${PORT_DBDIR:="$(realpath "$(dirname "$(realpath "$0")")/../port_opts")"}
+	echo 'pkg collection  -c PKG_COLLECTION ' $PKG_COLLECTION
+	echo 'port db dir        PORT_DBDIR     ' $PORT_DBDIR
 	echo 'swap size       -s SWAP_SIZE      ' ${SWAP_SIZE:=512M}
-	echo 'new host name   -h NEW_HOST       ' ${NEW_HOST:=$POOL_NAME.`hostname | sed -e 's/^[^\.]*\.//'`}
+	echo 'new host name   -h NEW_HOST       ' ${NEW_HOST:=$POOL_NAME.${HOST#*.}}
 	echo 'make jobs          MAKE_JOBS      ' ${MAKE_JOBS:=$((2+`sysctl -n kern.smp.cpus`))}
-	echo 'target arch        TRGT_ARCH      ' ${TRGT_ARCH:=`uname -m`}
+	echo 'target arch        TRGT_ARCH      ' $TRGT_ARCH
 	echo 'target proc        TRGT_PROC      ' $TRGT_PROC
 	echo 'target kern        TRGT_KERN      ' ${TRGT_KERN:=NUOS}
 	echo 'target optimize    TRGT_OPTZ      ' $TRGT_OPTZ
@@ -57,8 +60,6 @@ install_vars_init () {
 	echo -n 'copy all pkgs      COPY_DEV_PKGS   ' && [ -n "${COPY_DEV_PKGS-}" ] && echo set || echo null
 	echo -n 'copy src           COPY_SRC        ' && [ -n "${COPY_SRC-}" ] && echo set || echo null
 	echo -n 'copy svn repo      COPY_SVN        ' && [ -n "${COPY_SRC-}" ] && ([ -n "${COPY_SVN-}" ] && echo set || echo null) || echo n/a
-
-	export PORT_DBDIR
 }
 
 require_subversion () {

@@ -33,8 +33,8 @@ esac; done; shift $(($OPTIND-1))
 . "$(dirname "$(realpath "$0")")/../lib/nu_system.sh"
 . "$(dirname "$(realpath "$0")")/../lib/nu_make.sh"
 . "$(dirname "$(realpath "$0")")/../lib/nu_ports.sh"
-. "$(dirname "$(realpath "$0")")/../lib/nu_collection.sh"
 . "$(dirname "$(realpath "$0")")/../lib/nu_common.sh"
+. "$(dirname "$(realpath "$0")")/../lib/nu_collection.sh"
 
 baseos_init
 nuos_init -q
@@ -120,9 +120,9 @@ main () {
 					retire_tmp build_deps
 					retire_tmp buildonly_deps
 					if [ -z "${OPT_NOSLAVE-}" ]; then
-						local slave=`cd /usr/ports/$arg && make -V SLAVE_PORT`
+						local slave=`cd /usr/ports/$arg && make PORT_DBDIR="$PORT_DBDIR" -V SLAVE_PORT`
 						if [ -n "$slave" -a "$slave" != no ]; then
-							local master=$(realpath "`cd /usr/ports/$arg && make -V MASTERDIR`")
+							local master=$(realpath "`cd /usr/ports/$arg && make PORT_DBDIR="$PORT_DBDIR" -V MASTERDIR`")
 							master=${master#/usr/ports/}
 							echo $master > "$work_dir/$arg_/master"
 							local master_=`echo $master | tr / _`

@@ -19,6 +19,8 @@ nuos_lib_ver=0.0.9.3b0
 [ -z "${nuos_lib_system_loaded-}" ]
 nuos_lib_system_loaded=y
 
+: ${TMPDIR:=/tmp}
+
 baseos_init () {
 	if [ -r /usr/src/sys/conf/newvers.sh ]; then
 		local TYPE REVISION BRANCH
@@ -36,11 +38,12 @@ baseos_init () {
 }
 
 maybe_pause () {
+	local secs="${1-}"
 	if [ -z "${OPT_QUICK-}" ]; then
 		echo
-		echo beginning in 10 seconds
+		echo beginning in ${secs:=10} seconds
 		echo
-		sleep 10
+		sleep $secs
 		echo
 	fi
 }
@@ -70,15 +73,31 @@ push () {
 }
 
 sister () {
+	local chrootdir=
+	while getopts C: OPT; do case $OPT in
+		C) chrootdir=$OPTARG;;
+	esac; done; shift $(($OPTIND-1))
 	local bin=$1; shift
-	sh "$(dirname "$(realpath "$0")")/$bin" "$@"
+	
+	if [ -n "${chrootdir-}" ]; then
+		local nuos_src
+		require_tmp -c -C "$chrootdir" -d nuos_src
+		mount -t nullfs -r "$(dirname "$(realpath "$0")")/.." "$nuos_src"
+		chroot "$chrootdir" sh "${nuos_src#"$chrootdir"}/bin/$bin" "$@"
+		umount "$nuos_src"
+		retire_tmp nuos_src
+	else
+		sh "$(dirname "$(realpath "$0")")/$bin" "$@"
+	fi
 }
 
 require_tmp () {
-	local opt_dir= label; unset label
-	while getopts dl: OPT; do case $OPT in
+	local opt_chroot= chrootdir= opt_dir= label=; unset chrootdir label
+	while getopts cC:dl: OPT; do case $OPT in
+		c) opt_chroot=y;;
+		C) chrootdir=$OPTARG;;
 		d) opt_dir=y;;
-		l) label=$OPTARG;
+		l) label=$OPTARG;;
 	esac; done; shift $(($OPTIND-1))
 	
 	[ $# = 1 ]
@@ -89,7 +108,7 @@ require_tmp () {
 	if eval [ -n \"\${$1-}\" ]; then
 		eval [ -w \"\$$1\" ]
 	else
-		setvar "$1" "$(mktemp ${opt_dir:+-d} -t "$(basename "$0").$$${label:+.$label}")"
+		setvar "$1" "$(env TMPDIR="${opt_chroot:+${chrootdir-$CHROOTDIR}}$TMPDIR" mktemp ${opt_dir:+-d} -t "$(basename "$0").$$${label:+.$label}")"
 	fi
 }
 

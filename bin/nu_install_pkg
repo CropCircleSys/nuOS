@@ -1,5 +1,5 @@
 #!/bin/sh
-set -e; set -u; set -C
+set -e; set -u; set -C; set -v
 
 # nuOS 0.0.9.3b0 - bin/nu_install_pkg - LICENSE: BSD_SMPL
 #
@@ -28,15 +28,16 @@ while getopts AC:d:MRvyY OPT; do case $OPT in
 esac; done; shift $(($OPTIND-1))
 
 . "$(dirname "$(realpath "$0")")/../lib/nu_system.sh"
+. "$(dirname "$(realpath "$0")")/../lib/nu_common.sh"
 . "$(dirname "$(realpath "$0")")/../lib/nu_make.sh"
 . "$(dirname "$(realpath "$0")")/../lib/nu_ports.sh"
+. "$(dirname "$(realpath "$0")")/../lib/nu_collection.sh"
 . "$(dirname "$(realpath "$0")")/../lib/nu_install.sh"
 
 maybe_yell
-
-if [ -n "${PORT_DBDIR-}" ]; then
-	export PORT_DBDIR
-fi
+baseos_init
+nuos_init
+make_vars_init
 
 if [ -n "${OPT_YES-}" ]; then
 	yes | sh $0 ${OPT_ARG_SUBPROCESS:+-A} ${OPT_NOMAKE:+-M} ${OPT_NORECURSE:+-R} ${OPT_VERBOSE:+-v} ${CHROOTDIR:+-C "$CHROOTDIR"} -Y $@
@@ -53,6 +54,14 @@ if [ -z "${OPT_ARG_SUBPROCESS-}" -a -n "${CHROOTDIR-}" ]; then
 		nullfs_mounted=y
 	fi
 fi
+
+os_compat=$BASEOS_TYPE-${BASEOS_VER%%-*}
+if [ $TRGT_ARCH = $TRGT_PROC ]; then
+	mach_compat=$TRGT_ARCH
+else
+	mach_compat=$TRGT_ARCH.$TRGT_PROC
+fi
+
 for port in $*; do
 	uni=`echo $port | tr / _`
 	args="$metainfo_dir/$uni.args"
@@ -61,9 +70,9 @@ for port in $*; do
 	else
 		script="$metainfo_dir/$uni.sh"
 		pkg=`pkg_name $port`
-		envvars="$metainfo_dir/$uni.envvars"
+		env="$metainfo_dir/$uni.env"
 		pkg_file=/usr/ports/packages/All/$pkg.txz
-		if [ ! -f $pkg_file ] || ([ -z "${CHROOTDIR-}" -a ports-mgmt/pkg = $port ] && ! pkg info -e $pkg < /dev/null); then
+		if [ ! -e $pkg_file ] || ([ -z "${CHROOTDIR-}" -a ports-mgmt/pkg = $port ] && ! pkg info -e $pkg < /dev/null); then
 			[ -z "${OPT_NOMAKE-}" ]
 			if [ -z "${OPT_NORECURSE-}" ]; then
 				port_deps def_opts my_opts build_deps run_deps $port
@@ -84,10 +93,17 @@ for port in $*; do
 				pkg_step=pre-build
 				. "$script"
 			fi
-			(cd /usr/ports/$port && make -DNOCLEANDEPENDS clean && env `cat "$envvars" 2>/dev/null` make "__MAKE_CONF=$make_conf" `cat "$makeargs" 2>/dev/null` -DBATCH -DNO_DEPENDS package install && make -DNOCLEANDEPENDS clean)
+			(cd /usr/ports/$port && make -DNOCLEANDEPENDS clean && env `cat "$env" 2>/dev/null` make "__MAKE_CONF=$make_conf" PORT_DBDIR="$PORT_DBDIR" `cat "$makeargs" 2>/dev/null` -DBATCH -DNO_DEPENDS package install && make -DNOCLEANDEPENDS clean)
+			[ -f $pkg_file ]
 			if [ -f "$script" ]; then
 				pkg_step=post-build
 				. "$script"
+			fi
+			if [ -n "${_nu_PORTS_TAG-}" ]; then
+				mkdir -p "/usr/ports/packages/Index.nuOS/$os_compat-$mach_compat"
+				idx=$_nu_PORTS_TAG.`nuos_sha_fngr "$make_conf" "$env" "$makeargs" /var/db/nuos/pkg/$uni/settings /var/db/nuos/pkg/$uni/dependencies/all`
+				mv -v $pkg_file "/usr/ports/packages/Index.nuOS/$os_compat-$mach_compat/$pkg.$idx.txz"
+				ln -s "../Index.nuOS/$os_compat-$mach_compat/$pkg.$idx.txz" $pkg_file
 			fi
 		fi
 		if pkg info -e $pkg < /dev/null && ( [ -z "${CHROOTDIR-}" ] || pkg ${CHROOTDIR:+-c $CHROOTDIR} info -e $pkg < /dev/null ); then
@@ -107,7 +123,7 @@ for port in $*; do
 				pkg_step=pre-install
 				. "$script"
 			fi
-			env `cat "$envvars" 2>/dev/null` pkg ${CHROOTDIR:+-c $CHROOTDIR} info -e $pkg || env `cat "$envvars" 2>/dev/null` pkg ${CHROOTDIR:+-c $CHROOTDIR} add -M $pkg_file
+			env `cat "$env" 2>/dev/null` pkg ${CHROOTDIR:+-c $CHROOTDIR} info -e $pkg || env `cat "$env" 2>/dev/null` pkg ${CHROOTDIR:+-c $CHROOTDIR} add -M $pkg_file
 			if [ -f "$script" ]; then
 				pkg_step=post-install
 				. "$script"

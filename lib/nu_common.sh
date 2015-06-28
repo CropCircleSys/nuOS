@@ -51,3 +51,27 @@ nuos_ssl_init () {
 		SSL_SUITE=openssl-freebsd-base
 	fi
 }
+
+nuos_sha_fngr () {
+	local bytes=24
+	while getopts b:f OPT; do case $OPT in
+		b) bytes=$OPTARG; [ $bytes -ge 1 -a $bytes -le 43 ];;
+		f) opt_force=y;;
+	esac; done; shift $(($OPTIND-1))
+	[ $# -ge 1 ]
+	[ $bytes -le 42 -o -n "${opt_force-}" ]
+	
+	cat $@ 2>/dev/null |
+		sha256 -q |
+		(echo 16i; echo -n FF; tr a-f A-F; echo P) | dc | tail -c +2 |
+		b64encode - |
+		sed -nEe "
+			/^begin-base64 /{
+				n
+				s/=?=\$//
+				y|+/|-_|
+				s/^(.{$bytes}).*\$/\1/
+				p
+				q
+			}"
+}
