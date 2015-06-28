@@ -130,7 +130,7 @@ EOF
 	(cd $POOL_MNT && mkdir -p compat/linux/proc compat/linux/sys usr/ports/packages)
 	
 	cat >> $POOL_MNT/etc/fstab <<'EOF'
-tmp /tmp tmpfs rw 0 0
+tmp /tmp tmpfs rw,nosuid 0 0
 fdesc /dev/fd fdescfs rw 0 0
 proc /proc procfs rw 0 0
 EOF
@@ -328,7 +328,7 @@ devfs_ruleset = 4;
 exec.clean;
 exec.prestart = "mount -t devfs dev $path/dev && devfs -m $path/dev rule -s $devfs_ruleset applyset && ln -sf /var/run/log $path/dev/log";
 exec.prestart += "mount -t fdescfs fdesc $path/dev/fd";
-exec.prestart += "mount -t tmpfs $tmpfs_args tmp $path/tmp";
+exec.prestart += "mount -t tmpfs -o nosuid $tmpfs_args tmp $path/tmp";
 exec.prestart += "mount -t procfs proc $path/proc";
 exec.start = "/bin/sh /etc/rc";
 exec.stop = "/bin/sh /etc/rc.shutdown";
