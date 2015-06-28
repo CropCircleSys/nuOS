@@ -19,7 +19,7 @@ NUOS_VER=0.0.9.3b0
 . "$(dirname "$(realpath "$0")")/../lib/nu_system.sh"
 
 while getopts c:C:d:Dfh:ij:lLm:o:OsSv OPT; do case $OPT in
-	c) NUM_CPUS=$OPTARG;;
+	c) VM_CPUS=$OPTARG;;
 	C) CHROOTDIR=$OPTARG;;
 	d) push VM_HDDS ${OPTARG#/dev/};;
 	D) OPT_DELETE=y;;
