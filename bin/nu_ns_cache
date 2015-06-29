@@ -57,8 +57,8 @@ fi
 
 sister enable_svc ${CHROOTDIR:+-C "$CHROOTDIR"} svscan
 
-cat >> "${CHROOTDIR-}/etc/dhclient.conf" <<'EOF'
-prepend domain-name-servers 127.0.0.1;
+cat >> "${CHROOTDIR-}/etc/resolvconf.conf" <<'EOF'
+name_servers="127.0.0.1"
 EOF
 
 require_tmp tempfile
