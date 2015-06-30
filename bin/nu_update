@@ -18,12 +18,12 @@ NUOS_VER=0.0.9.3b0
 
 . "$(dirname "$(realpath "$0")")/../lib/nu_system.sh"
 
-while getopts ac:dDJ:o:qsSuUv OPT; do case $OPT in
+while getopts ac:dDj:o:qsSuUv OPT; do case $OPT in
 	a) incr OPT_AUTO 1;;
 	d) OPT_DEPS=y;;
 	c) PKG_COLLECTION=$OPTARG;;
 	D) OPT_DEBUG=y;;
-	J) JAIL_NAME=$OPTARG;;
+	j) JAIL_NAME=$OPTARG;;
 	o) OUTPUT_FILE=$OPTARG;;
 	q) OPT_QUICK=y;;
 	s) OPT_ONLY_SNAP=y;;
