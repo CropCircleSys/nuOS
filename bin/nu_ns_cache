@@ -16,10 +16,14 @@ set -e; set -u; set -C
 
 NUOS_VER=0.0.9.3b0
 
-while getopts C:sv OPT; do case $OPT in
+while getopts C:fst:vV OPT; do case $OPT in
 	C) CHROOTDIR=$OPTARG;;
+	f) OPT_FORCE=y;;
 	s) OPT_SELF_SUFFICIENT=y;;
+	t) SOFTWARE=$OPTARG; case $SOFTWARE in
+		djb|unbound) ;; *) exit 22; esac;;
 	v) OPT_VERBOSE=y;;
+	V) OPT_NOVERIFY=y;;
 esac; done; shift $(($OPTIND-1))
 [ $# = 0 ]
 
@@ -28,17 +32,27 @@ esac; done; shift $(($OPTIND-1))
 
 nuos_init
 
+: ${SOFTWARE:=unbound}
+echo 'software        -t SOFTWARE            ' $SOFTWARE
+echo -n 'heavyweight     -s OPT_SELF_SUFFICIENT  ' && [ -n "${OPT_SELF_SUFFICIENT-}" ] && echo set || echo null
+echo -n 'accept poison   -V OPT_NOVERIFY         ' && [ -n "${OPT_NOVERIFY-}" ] && echo set || echo null
 echo
 
 maybe_yell
 
-[ ! -e "${CHROOTDIR-}/var/service/dnscache" ]
 
-mkdir -p "${CHROOTDIR-}/var/service"
-${CHROOTDIR:+chroot "$CHROOTDIR"} dnscache-conf dnscache dnslog /var/service/dnscache
-
-if [ -z "${OPT_SELF_SUFFICIENT-}" ]; then
-	cat > "${CHROOTDIR-}/etc/dhclient-exit-hooks" <<'EOF'
+case $SOFTWARE in
+	
+	djb)
+		
+		[ ! -e "${CHROOTDIR-}/var/service/dnscache" ]
+		[ -n "${OPT_NOVERIFY-}" ]
+		
+		mkdir -p "${CHROOTDIR-}/var/service"
+		${CHROOTDIR:+chroot "$CHROOTDIR"} dnscache-conf dnscache dnslog /var/service/dnscache
+		
+		if [ -z "${OPT_SELF_SUFFICIENT-}" ]; then
+			cat > "${CHROOTDIR-}/etc/dhclient-exit-hooks" <<'EOF'
 if [ -n "$new_domain_name_servers" ]; then
 	for ip in $new_domain_name_servers; do
 		if [ $ip != 127.0.0.1 ]; then
@@ -48,25 +62,72 @@ if [ -n "$new_domain_name_servers" ]; then
 	mv /var/service/dnscache/root/servers/@.new /var/service/dnscache/root/servers/@
 fi
 EOF
-	echo 1 > "${CHROOTDIR-}/var/service/dnscache/env/FORWARDONLY"
-	: >| "${CHROOTDIR-}/var/service/dnscache/root/servers/@"
-	if [ -f "${CHROOTDIR-}/etc/resolv.conf" ]; then
-		grep ^nameserver "${CHROOTDIR-}/etc/resolv.conf" | cut -w -f 2 | grep -v '^127.0.0.1$' >> "${CHROOTDIR-}/var/service/dnscache/root/servers/@"
-	fi
-fi
-
-sister enable_svc ${CHROOTDIR:+-C "$CHROOTDIR"} svscan
-
-cat >> "${CHROOTDIR-}/etc/resolvconf.conf" <<'EOF'
+			echo 1 > "${CHROOTDIR-}/var/service/dnscache/env/FORWARDONLY"
+			: >| "${CHROOTDIR-}/var/service/dnscache/root/servers/@"
+			if [ -f "${CHROOTDIR-}/etc/resolv.conf" ]; then
+				grep ^nameserver "${CHROOTDIR-}/etc/resolv.conf" | cut -w -f 2 | grep -v '^127.0.0.1$' >> "${CHROOTDIR-}/var/service/dnscache/root/servers/@"
+			fi
+		fi
+		
+		sister enable_svc ${CHROOTDIR:+-C "$CHROOTDIR"} svscan
+		
+		cat >> "${CHROOTDIR-}/etc/resolvconf.conf" <<'EOF'
 name_servers="127.0.0.1"
 EOF
+		
+		require_tmp tempfile
+		echo nameserver 127.0.0.1 >| "$tempfile"
+		if [ -f "${CHROOTDIR-}/etc/resolv.conf" ]; then
+			grep -Ev '^nameserver[[:blank:]]+127.0.0.1\>' "${CHROOTDIR-}/etc/resolv.conf" >> "$tempfile"
+		fi
+		cat "$tempfile" >| "${CHROOTDIR-}/etc/resolv.conf"
+		rm "$tempfile"
+		
+	;;
+	
+	unbound)
+		
+		[ ! -e "${CHROOTDIR-}/usr/local/etc/unbound/unbound.conf" ]
+		[ -z "${OPT_NOVERIFY-}" -o -n "${OPT_FORCE-}" ]
+		
+		cat >> "${CHROOTDIR-}/etc/resolvconf.conf" <<'EOF'
+resolv_conf="/dev/null"
+EOF
 
-require_tmp tempfile
-echo nameserver 127.0.0.1 >| "$tempfile"
-if [ -f "${CHROOTDIR-}/etc/resolv.conf" ]; then
-	grep -Ev '^nameserver[[:blank:]]+127.0.0.1\>' "${CHROOTDIR-}/etc/resolv.conf" >> "$tempfile"
-fi
-cat "$tempfile" >| "${CHROOTDIR-}/etc/resolv.conf"
-rm "$tempfile"
+		cp "${CHROOTDIR-}/usr/local/etc/unbound/unbound.conf.sample" "${CHROOTDIR-}/usr/local/etc/unbound/unbound.conf"
+		
+		if [ -n "${OPT_NOVERIFY-}" ]; then
+			sed -i '' -Ee '
+				/^server:/,/^[[:graph:]]/{
+					/^[[:blank:]]*#[[:blank:]]*module-config:/{
+						s/(^[[:blank:]]*)#[[:blank:]]*/\1/
+						s/validator ?//
+					}
+				}
+			' "${CHROOTDIR-}/usr/local/etc/unbound/unbound.conf"
+		fi
+		
+		if [ -z "${OPT_SELF_SUFFICIENT-}" ]; then
+			echo include: /usr/local/etc/unbound/forward.conf >> "${CHROOTDIR-}/usr/local/etc/unbound/unbound.conf"
+			cat >> "${CHROOTDIR-}/etc/resolvconf.conf" <<'EOF'
+unbound_conf="/usr/local/etc/unbound/forward.conf"
+unbound_pid="/usr/local/etc/unbound/unbound.pid"
+unbound_restart="service unbound reload"
+EOF
+			if [ -f "${CHROOTDIR-}/etc/resolv.conf" ]; then
+				${CHROOTDIR:+chroot "$CHROOTDIR"} resolvconf -I
+				${CHROOTDIR:+chroot "$CHROOTDIR"} resolvconf -a net0 < "${CHROOTDIR-}/etc/resolv.conf" 2> /dev/null
+			else
+				touch "${CHROOTDIR-}/usr/local/etc/unbound/forward.conf"
+			fi
+		fi
+		
+		sister enable_svc ${CHROOTDIR:+-C "$CHROOTDIR"} unbound
+		
+		echo nameserver 127.0.0.1 >| "${CHROOTDIR-}/etc/resolv.conf"
+	;;
+	
+esac
+
 
 echo "Configured cache resolver."
