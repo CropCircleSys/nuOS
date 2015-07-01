@@ -51,8 +51,8 @@ cat >> "${CHROOTDIR-}/usr/local/etc/imapd.conf" <<EOF
 
 servername: $HOST_NAME
 altnamespace: yes
-autocreatequota: -1
-createonpost: yes
+autocreate_quota: -1
+autocreate_post: yes
 EOF
 
 if [ -n "${OPT_SSL-}" ]; then
@@ -69,13 +69,13 @@ if [ -n "${OPT_SSL-}" ]; then
 	cp "${CHROOTDIR-}/etc/ssl/private/$HOST_NAME.key" "${CHROOTDIR-}/usr/local/etc/cyrus/ssl/private/"
 	chown cyrus "${CHROOTDIR-}/usr/local/etc/cyrus/ssl/private/$HOST_NAME.key"
 	cat >> "${CHROOTDIR-}/usr/local/etc/imapd.conf" <<EOF
-tls_cert_file: /usr/local/etc/cyrus/ssl/$HOST_NAME.crt
-tls_key_file: /usr/local/etc/cyrus/ssl/private/$HOST_NAME.key
+tls_server_cert: /usr/local/etc/cyrus/ssl/$HOST_NAME.crt
+tls_server_key: /usr/local/etc/cyrus/ssl/private/$HOST_NAME.key
 EOF
 	if [ -f "${CHROOTDIR-}/etc/ssl/certs/$HOST_NAME.ca.crt" ]; then
 		cp "${CHROOTDIR-}/etc/ssl/certs/$HOST_NAME.ca.crt" "${CHROOTDIR-}/usr/local/etc/cyrus/ssl/"
 		cat >> "${CHROOTDIR-}/usr/local/etc/imapd.conf" <<EOF
-tls_ca_file: /usr/local/etc/cyrus/ssl/$HOST_NAME.ca.crt
+tls_client_ca_file: /usr/local/etc/cyrus/ssl/$HOST_NAME.ca.crt
 EOF
 	fi
 else
