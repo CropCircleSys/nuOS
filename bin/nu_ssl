@@ -17,9 +17,9 @@ set -e; set -u; set -C
 NUOS_VER=0.0.9.3b0
 
 while getopts a:b:c:C:e:h:l:m:n:p:sSv OPT; do case $OPT in
-	a) AUTH_FILE=$OPTARG;;
+	a) AUTH_FILE=$OPTARG; grep -q -- '-BEGIN CERTIFICATE-' "$AUTH_FILE";;
 	b) KEY_BITS=$OPTARG;;
-	c) CERT_FILE=$OPTARG;;
+	c) CERT_FILE=$OPTARG; grep -q -- '-BEGIN CERTIFICATE-' "$CERT_FILE";;
 	C) CHROOTDIR=$OPTARG;;
 	e) EXPIRE_DAYS=$OPTARG;;
 	h) SSL_HOST=$OPTARG;;
