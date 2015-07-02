@@ -16,10 +16,12 @@ set -e; set -u; set -C
 
 NUOS_VER=0.0.9.3b0
 
-while getopts C:h:i:s:v OPT; do case $OPT in
+while getopts c:C:h:i:k:s:v OPT; do case $OPT in
+	c) CERT_FILE=$OPTARG; grep -q -- '-BEGIN CERTIFICATE-' "$CERT_FILE";;
 	C) CHROOTDIR=$OPTARG;;
 	h) HOST_NAME=$OPTARG;;
 	i) IDENTIFIER=$OPTARG;;
+	k) KEY_FILE=$OPTARG; grep -q -- '-BEGIN .* PRIVATE KEY-' "$KEY_FILE";;
 	s) SERVER_HOST=$OPTARG;;
 	v) OPT_VERBOSE=y;;
 esac; done; shift $(($OPTIND-1))
@@ -35,10 +37,10 @@ maybe_yell
 
 : ${SERVER_HOST:=`$SSL_CMD x509 -noout -subject -nameopt sep_multiline -in "${CHROOTDIR-}/usr/local/etc/openvpn/${IDENTIFIER:+${IDENTIFIER}_}server.crt" | sed -Ee '/^[[:blank:]]*CN=/!d;s/^[[:blank:]]*CN=//'`}
 : ${HOST_NAME:=$HOST}
+: ${CERT_FILE:="${CHROOTDIR-}/etc/ssl/certs/$HOST_NAME.int.crt"}
+: ${KEY_FILE:="${CHROOTDIR-}/etc/ssl/private/$HOST_NAME.key"}
 
 [ -r "${CHROOTDIR-}/usr/local/etc/openvpn/${IDENTIFIER:+${IDENTIFIER}_}ca.crt" ]
-[ -r "${CHROOTDIR-}/etc/ssl/certs/$HOST_NAME.int.crt" ]
-[ -r "${CHROOTDIR-}/etc/ssl/private/$HOST_NAME.key" ]
 [ -r "${CHROOTDIR-}/usr/local/etc/openvpn/${IDENTIFIER:+${IDENTIFIER}_}dh"*".pem" ]
 [ -r "${CHROOTDIR-}/usr/local/etc/openvpn/private/${IDENTIFIER:+${IDENTIFIER}_}ta.key" ]
 
@@ -53,18 +55,17 @@ user nobody
 group nobody
 persist-key
 persist-tun
-;status ${IDENTIFIER:+${IDENTIFIER}_}openvpn-status.log
 keepalive 15 90
 key-direction 1
+<key>
+`cat "$KEY_FILE" 2>/dev/null || echo %%-PRIVATE_KEY-%%`
+</key>
+<cert>
+`cat "$CERT_FILE" 2>/dev/null || echo %%-CERTIFICATE-%%`
+</cert>
 <ca>
 `cat "${CHROOTDIR-}/usr/local/etc/openvpn/${IDENTIFIER:+${IDENTIFIER}_}ca.crt"`
 </ca>
-<cert>
-`cat "${CHROOTDIR-}/etc/ssl/certs/$HOST_NAME.int.crt"`
-</cert>
-<key>
-`cat "${CHROOTDIR-}/etc/ssl/private/$HOST_NAME.key"`
-</key>
 <dh>
 `cat "${CHROOTDIR-}/usr/local/etc/openvpn/${IDENTIFIER:+${IDENTIFIER}_}dh"*".pem"`
 </dh>
