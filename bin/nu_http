@@ -16,8 +16,10 @@ set -e; set -u; set -C
 
 NUOS_VER=0.0.9.3b0
 
-while getopts C:sv OPT; do case $OPT in
+while getopts c:C:o:sv OPT; do case $OPT in
+	c) SSL_SESSION_CACHE_KB=$OPTARG;;
 	C) CHROOTDIR=$OPTARG;;
+	o) SSL_STAPLING_CACHE_KB=$OPTARG;;
 	s) OPT_SSL=y;;
 	v) OPT_VERBOSE=y;;
 esac; done; shift $(($OPTIND-1))
@@ -31,9 +33,28 @@ esac; done; shift $(($OPTIND-1))
 nuos_init
 
 echo -n 'ssl             -s OPT_SSL         ' && [ -n "${OPT_SSL-}" ] && echo set || echo null
+[ -n "${OPT_SSL-}" ] && echo -n 'old browsers       OPT_OBSOLETE    ' && [ -n "${OPT_OBSOLETE-}" ] && echo set || echo null
+if [ -n "${OPT_SSL-}" -a -n "${OPT_OBSOLETE-}" ]; then
+	cat <<EOF
+    * ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** *
+    ** ** ** ** ** ** ** ** **
+     ** ** ** ** ** ** ** ** * WARNING: You have enabled SSL protocols with
+    * ** ** ** ** ** ** ** **           known security vulnerabilities.
+     ** ** ** ** ** ** ** ** *
+    * ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** *
+EOF
+elif [ -n "${OPT_SSL-}" -a -z "${OPT_OBSOLETE-}" ]; then
+	cat <<EOF
+    ---------------------------------------------------------------------------
+    ---  NOTICE: Modern secure SSL/TLS is incompatible with [very] old browsers.
+    ---------------------------------------------------------------------------
+EOF
+fi
 echo
 
 maybe_yell
+
+[ -n "${OPT_SSL-}" -o -z "${OPT_OBSOLETE-}" ]
 
 service=apache24
 
@@ -57,7 +78,18 @@ if [ -n "${OPT_SSL-}" ]; then
 		zfs create -o mountpoint=/usr/local/etc/$service/ssl/private $POOL_BOOT_NAME-pvt/sys/host/http-ssl
 		chmod go-rx "${CHROOTDIR-}/usr/local/etc/$service/ssl/private"
 	fi
-	sed -i '' -Ee '/^<VirtualHost[[:>:]]/,/^<\/VirtualHost[[:>:]]/s/^/#/' "${CHROOTDIR-}/usr/local/etc/$service/extra/httpd-ssl.conf"
+	sed -i '' -Ee "
+		/^<VirtualHost[[:>:]]/,/^<\/VirtualHost[[:>:]]/s/^/#/
+		/^SSLSessionCache[[:>:]]/s/\([[:digit:]]+\)/($((${SSL_SESSION_CACHE_KB:-2048}*1024)))/
+		/^#SSLUseStapling[[:>:]]/s/^#//
+		/^#SSLStaplingCache[[:>:]]/{
+			s/^#//
+			s/\([[:digit:]]+\)/($((${SSL_STAPLING_CACHE_KB:-512}*1024)))/
+		}
+	" "${CHROOTDIR-}/usr/local/etc/$service/extra/httpd-ssl.conf"
+	if [ -z "${OPT_OBSOLETE-}" ]; then
+		sed -i '' -Ee '/^(SSLCipherSuite)[[:>:]].*$/s//\1 EECDH+ECDSA+AESGCM:EECDH+aRSA+AESGCM:EECDH+ECDSA+SHA384:EECDH+ECDSA+SHA256:EECDH+aRSA+SHA384:EECDH+aRSA+SHA256:EECDH:EDH+aRSA:!aNULL:!eNULL:!LOW:!3DES:!MD5:!EXP:!PSK:!SRP:!DSS:!RC4/' "${CHROOTDIR-}/usr/local/etc/$service/extra/httpd-ssl.conf"
+	fi
 	sed -i '' -Ee 's/^#(Include[[:>:]].*[[:<:]]httpd-ssl.conf)$/\1/;s/^#(LoadModule[[:>:]].*[[:<:]]mod_(ssl|socache_shmcb).so)$/\1/' "${CHROOTDIR-}/usr/local/etc/$service/httpd.conf"
 fi
 
