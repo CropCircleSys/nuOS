@@ -16,10 +16,11 @@ set -e; set -u; set -C
 
 NUOS_VER=0.0.9.3b0
 
-while getopts C:h:p:sv OPT; do case $OPT in
+while getopts C:h:p:Psv OPT; do case $OPT in
 	C) CHROOTDIR=$OPTARG;;
 	h) HOST_NAME=$OPTARG;;
 	p) POOL_NAME=$OPTARG;;
+	P) OPT_POP3=y;;
 	s) OPT_SSL=y;;
 	v) OPT_VERBOSE=y;;
 esac; done; shift $(($OPTIND-1))
@@ -34,6 +35,7 @@ nuos_init
 
 echo 'host name       -h HOST_NAME      ' ${HOST_NAME:=$HOST}
 echo 'pool name       -p POOL_NAME      ' ${POOL_NAME:=$POOL_BOOT_NAME}
+echo -n 'enable pop3     -P OPT_POP3        ' && [ -n "${OPT_POP3-}" ] && echo set || echo null
 echo -n 'ssl             -s OPT_SSL         ' && [ -n "${OPT_SSL-}" ] && echo set || echo null
 echo
 
@@ -46,6 +48,9 @@ mkdir "${CHROOTDIR-}/usr/local/etc/cyrus"
 export LC_CTYPE=C
 
 sed -i '' -Ee 's/^#([[:blank:]]*idled)[[:>:]]/\1/' "${CHROOTDIR-}/usr/local/etc/cyrus.conf"
+if [ -z "${OPT_POP3-}" ]; then
+	sed -i '' -Ee 's/^([[:blank:]]*pop3)[[:>:]]/#\1/;s/^([[:blank:]]*pop3s)[[:>:]]/#\1/' "${CHROOTDIR-}/usr/local/etc/cyrus.conf"
+fi
 
 cat >> "${CHROOTDIR-}/usr/local/etc/imapd.conf" <<EOF
 
