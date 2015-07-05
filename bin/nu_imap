@@ -93,7 +93,7 @@ zfs create -o mountpoint=/var/spool/imap $POOL_NAME/svc/imap/cyrus/spool
 
 ${CHROOTDIR:+chroot "$CHROOTDIR"} /usr/local/cyrus/bin/mkimap
 
-zfs snapshot $POOL_NAME/svc/imap/cyrus@genesis
+zfs snapshot -r $POOL_NAME/svc/imap/cyrus@genesis
 
 sister enable_svc ${CHROOTDIR:+-C "$CHROOTDIR"} cyrus_imapd
 
