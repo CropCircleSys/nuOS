@@ -32,13 +32,12 @@ maybe_yell
 ds_info () {
 	local ds=$1
 	mntd=`zfs get -H -p -o value mounted $ds`
-	mntd_src=`zfs get -H -p -o source mounted $ds`
 	mnt_pt=`zfs get -H -p -o value mountpoint $ds`
 	mnt_src=`zfs get -H -p -o source mountpoint $ds`
 	can_mnt=`zfs get -H -p -o value canmount $ds`
 	can_src=`zfs get -H -p -o source canmount $ds`
 	echo "_nu_recv_zfs_ds_mount	$mntd	$mnt_pt	$can_mnt"
-	echo "_nu_recv_zfs_ds_source	$mntd_src	$mnt_src	$can_src"
+	echo "_nu_recv_zfs_ds_source		$mnt_src	$can_src"
 	echo
 }
 
@@ -62,7 +61,7 @@ trap clean_exit HUP INT QUIT TERM EXIT
 		done
 	) | sed -l -E -e '
 		s/^(found) (clone origin) (.*)$/_nu_recv_zfs_ds_\1	\2	\3/
-		s/^(would receive|receiving) (full stream|incremental stream) of (.*) into (.*)$/_nu_recv_zfs_ds_start	\1	\2	\3	\4/
+		s/^(would receive|receiving) (full|incremental) stream of (.*) into (.*)$/_nu_recv_zfs_ds_start	\1	\2	\3	\4/
 		s/^(received) (.*) stream in (.*) \((.*)\)$/_nu_recv_zfs_ds_end	\1	\2	\3	\4/
 	' | while IFS='	' read event f1 f2 f3 f4; do
 		echo "$event	$f1	$f2	$f3	$f4" >> "$restore_log"
