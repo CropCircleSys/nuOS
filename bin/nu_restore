@@ -99,6 +99,7 @@ while {
 		child_exit=$?
 		if [ $child_exit -gt 0 ]; then
 			if [ "$(cat "$err_out")" = 'cannot receive: failed to read from stream' ]; then
+				retire_tmp err_out
 				exit 1
 			else
 				cat "$err_out" >> "$err_report"
