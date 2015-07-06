@@ -6,8 +6,8 @@
 
 Certain files of this Source Code Form are subject to the terms of the Simplified BSD License. A copy of the Simplified BSD License should be included in this file, if not, you can obtain one at http://www.freebsd.org/copyright/freebsd-license.html . This software project is not affiliated with the FreeBSD Project.
 
-Official updates and community support available at http://nuos.org .
-Other licensing options and professional services available at http://ccsys.com .
+Official updates and community support available at https://nuos.org .
+Other licensing options and professional services available at https://ccsys.com .
 
 file(s) herein covered by the Simplified BSD License:
 	bin/disable_svc

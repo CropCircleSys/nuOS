@@ -11,8 +11,8 @@ set -e; set -u; set -C
 # obtain one at http://www.freebsd.org/copyright/freebsd-license.html . This software
 # project is not affiliated with the FreeBSD Project.
 #
-# Official updates and community support available at http://nuos.org .
-# Other licensing options and professional services available at http://ccsys.com .
+# Official updates and community support available at https://nuos.org .
+# Other licensing options and professional services available at https://ccsys.com .
 
 nuos_lib_ver=0.0.9.3b0
 [ $nuos_lib_ver = "$NUOS_VER" ]

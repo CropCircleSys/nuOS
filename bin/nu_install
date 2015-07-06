@@ -11,8 +11,8 @@ set -e; set -u; set -C
 # obtain one at http://www.freebsd.org/copyright/freebsd-license.html . This software
 # project is not affiliated with the FreeBSD Project.
 #
-# Official updates and community support available at http://nuos.org .
-# Other licensing options and professional services available at http://ccsys.com .
+# Official updates and community support available at https://nuos.org .
+# Other licensing options and professional services available at https://ccsys.com .
 
 NUOS_VER=0.0.9.3b0
 
@@ -379,7 +379,7 @@ nuOS $NUOS_VER
 
 Welcome! Thank you for choosing nuOS.
 
-Official updates and community support available at http://nuos.org .
+Official updates and community support available at https://nuos.org .
 
 This is the $BASEOS_TYPE edition of nuOS, extending $BASEOS_TYPE $BASEOS_VER. More
 information about $BASEOS_TYPE is available at $baseos_info_url .
@@ -405,12 +405,12 @@ EOF
 # > 	2dup at-xy ." " 1+
 # > 	2dup at-xy ."   Official updates and community" 1+
 # > 	2dup at-xy ."        support available at" 1+
-# > 	2dup at-xy ."         http://nuos.org ." 1+
+# > 	2dup at-xy ."         https://nuos.org ." 1+
 # > 	2dup at-xy ." " 1+
 # > 	2dup at-xy ."    Other licensing options and" 1+
 # > 	2dup at-xy ."  professional services available" 1+
 # > 	2dup at-xy ." from Crop Circle Systems, Inc. at" 1+
-# > 	2dup at-xy ."         http://ccsys.com ." 1+
+# > 	2dup at-xy ."         https://ccsys.com ." 1+
 # > 	2dup at-xy ." " 1+
 # > 	2dup at-xy ."   More information about $BASEOS_TYPE" 1+
 # > 	     at-xy ." available at $baseos_info_url ."

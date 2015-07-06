@@ -11,8 +11,8 @@ set -e; set -u; set -C
 # http://mozilla.org/MPL/2.0/ . This software project is not affiliated with the Mozilla
 # Foundation.
 #
-# Official updates and community support available at http://nuos.org .
-# Other licensing options and professional services available at http://ccsys.com .
+# Official updates and community support available at https://nuos.org .
+# Other licensing options and professional services available at https://ccsys.com .
 
 [ $NUOS_VER = 0.0.9.3b0 ]
 
