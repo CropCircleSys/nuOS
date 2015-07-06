@@ -82,7 +82,7 @@ if [ -z "${OPT_SKIP_INIT_ZPOOL-}" ]; then
 	done
 	require_tmp -d tempdir
 	zpool create -o altroot=$POOL_MNT -o "cachefile=$tempdir/zpool.cache" -O mountpoint=none -O canmount=off -O devices=off $POOL_OPTS $POOL_NAME $POOL_TYPE $devlist
-	zpool_id=`zpool get guid $POOL_NAME | grep -E "^$POOL_NAME[[:blank:]]+guid\>" | cut -w -f 3`
+	zpool_id=`zpool get -H -p -o value guid $POOL_NAME`
 	zpool export $POOL_NAME
 	gnop destroy $devlist
 	zpool import -o altroot=$POOL_MNT -o "cachefile=$tempdir/zpool.cache" $zpool_id
@@ -776,7 +776,7 @@ POOL_BOOT_NAME=$POOL_NAME
 EOF
 
 if [ -n "${OPT_ELI-}" ]; then
-	private_chunk=$((`zfs get -H -p available $POOL_NAME | cut -w -f 3`/24/4096*4096))
+	private_chunk=$((`zfs get -H -p -o value available $POOL_NAME`/24/4096*4096))
 	if [ $private_chunk -lt 67117056 ]; then # minimum zpool vdev size plus an extra geli metadata block
 		private_chunk=67117056
 	fi
