@@ -701,7 +701,7 @@ create_swap_vol_cmd="zfs create -o mountpoint=none -o canmount=off -o primarycac
 $create_swap_vol_cmd
 
 if [ -n "$SWAP_SIZE" -a "$SWAP_SIZE" != 0 ]; then
-	zfs create -b 4K -V $SWAP_SIZE $POOL_NAME/swap/one
+	zfs create -V $SWAP_SIZE $POOL_NAME/swap/one
 	zfs snapshot $POOL_NAME/swap/one@blank
 fi
 
@@ -777,10 +777,10 @@ EOF
 
 if [ -n "${OPT_ELI-}" ]; then
 	private_chunk=$((`zfs get -H -p available $POOL_NAME | cut -w -f 3`/24/4096*4096))
-	if [ $private_chunk -lt 67112960 ]; then # minimum zpool vdev size plus an extra geli metadata block
-		private_chunk=67112960
+	if [ $private_chunk -lt 67117056 ]; then # minimum zpool vdev size plus an extra geli metadata block
+		private_chunk=67117056
 	fi
-	zfs create -s -b 4K -V $private_chunk -o compression=off -o checksum=off $POOL_NAME/private
+	zfs create -s -V $private_chunk -o compression=off -o checksum=off $POOL_NAME/private
 	pvt_eli_key_dev=`mdconfig -s 1440k`
 	gpart create -s GPT $pvt_eli_key_dev
 	gpart add -s 1 -t !$blank_key_gpt_type -l $POOL_NAME-key $pvt_eli_key_dev
