@@ -64,7 +64,7 @@ while read ds; do
 					check_ds=${origin%@*}
 				fi
 			done
-			tail -r < "$add_snaps" | xargs -n 1 zfs send
+			tail -r < "$add_snaps" | xargs -n 1 zfs send -p
 			retire_tmp add_snaps
 		done
 	fi
