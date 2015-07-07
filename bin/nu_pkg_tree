@@ -67,14 +67,7 @@ if [ -n "${out_dir-}" ]; then
 	[ ! -e "$out_dir" -o -L "$out_dir" ] || ([ -d "$out_dir" ] && [ "`ls -a "$out_dir" | xargs`" = '. ..' ])
 fi
 require_tmp -d work_dir
-if [ -d /usr/ports/.svn ] && which svn > /dev/null 2>&1; then
-	echo r`svn info /usr/ports | grep ^Revision: | cut -w -f 2` > "$work_dir/tag"
-elif [ -f /usr/ports/.svninfo ]; then
-	echo r`grep ^Revision: /usr/ports/.svninfo | cut -w -f 2` > "$work_dir/tag"
-else
-	[ ! -d /usr/ports/.svn ]
-	cut -d '|' -f 2 /var/db/portsnap/tag > "$work_dir/tag"
-fi
+ports_tag > "$work_dir/tag"
 metainfo_dir="$(dirname "$(realpath "$0")")/../pkg"
 main () {
 	local depth=$((${depth--1}+1))

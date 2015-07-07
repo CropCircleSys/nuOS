@@ -99,11 +99,11 @@ for port in $*; do
 				pkg_step=post-build
 				. "$script"
 			fi
-			if [ -n "${_nu_PORTS_TAG-}" ]; then
+			if tag=`pkg_db_tag` && [ $tag = `ports_tag` ]; then
 				mkdir -p "/usr/ports/packages/Index.nuOS/$os_compat-$mach_compat"
-				idx=$_nu_PORTS_TAG.`nuos_sha_fngr "$make_conf" "$env" "$makeargs" /var/db/nuos/pkg/$uni/settings /var/db/nuos/pkg/$uni/dependencies/all`
-				mv -v $pkg_file "/usr/ports/packages/Index.nuOS/$os_compat-$mach_compat/$pkg.$idx.txz"
-				ln -s "../Index.nuOS/$os_compat-$mach_compat/$pkg.$idx.txz" $pkg_file
+				idx=`nuos_sha_fngr "$make_conf" "$env" "$makeargs" /var/db/nuos/pkg/$uni/settings /var/db/nuos/pkg/$uni/dependencies/all`
+				mv -v $pkg_file "/usr/ports/packages/Index.nuOS/$os_compat-$mach_compat/$pkg.$tag.$idx.txz"
+				ln -s "../Index.nuOS/$os_compat-$mach_compat/$pkg.$tag.$idx.txz" $pkg_file
 			fi
 		fi
 		if pkg info -e $pkg < /dev/null && ( [ -z "${CHROOTDIR-}" ] || pkg ${CHROOTDIR:+-c $CHROOTDIR} info -e $pkg < /dev/null ); then

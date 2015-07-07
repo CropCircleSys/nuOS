@@ -43,15 +43,21 @@ fi
 # 	fi
 # }
 
-if [ -d /usr/ports/.svn ]; then
-	_nu_PORTS_SVN=y
-elif [ -f /var/db/portsnap/tag ]; then
-	_nu_PORTSNAP=y
-fi
+ports_tag () {
+	if [ -d /usr/ports/.svn ] && which svn > /dev/null 2>&1; then
+		echo r`svn info /usr/ports | grep ^Revision: | cut -w -f 2`
+	elif [ -f /usr/ports/.svninfo ]; then
+		echo r`grep ^Revision: /usr/ports/.svninfo | cut -w -f 2`
+	else
+		[ ! -d /usr/ports/.svn ]
+		cut -d '|' -f 2 /var/db/portsnap/tag
+	fi
+}
 
-if [ -d "${CHROOTDIR-}/var/db/nuos/pkg" -a ! -L "${CHROOTDIR-}/var/db/nuos/pkg" -a -f "${CHROOTDIR-}/var/db/nuos/pkg/tag" ]; then
-	_nu_PORTS_TAG=`cat "${CHROOTDIR-}/var/db/nuos/pkg/tag"`
-fi
+pkg_db_tag () {
+	[ -d "${CHROOTDIR-}/var/db/nuos/pkg" -a ! -L "${CHROOTDIR-}/var/db/nuos/pkg" -a -f "${CHROOTDIR-}/var/db/nuos/pkg/tag" ]
+	cat "${CHROOTDIR-}/var/db/nuos/pkg/tag"
+}
 
 require_portsnap_files () {
 	if [ ! -d /var/db/portsnap/files ]; then
