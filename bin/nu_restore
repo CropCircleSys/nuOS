@@ -24,22 +24,11 @@ esac; done; shift $(($OPTIND-1))
 
 . "$(dirname "$(realpath "$0")")/../lib/nu_system.sh"
 . "$(dirname "$(realpath "$0")")/../lib/nu_common.sh"
+. "$(dirname "$(realpath "$0")")/../lib/nu_backup.sh"
 
 nuos_init -q
 
 maybe_yell
-
-ds_info () {
-	local ds=$1
-	mntd=`zfs get -H -p -o value mounted $ds`
-	mnt_pt=`zfs get -H -p -o value mountpoint $ds`
-	mnt_src=`zfs get -H -p -o source mountpoint $ds`
-	can_mnt=`zfs get -H -p -o value canmount $ds`
-	can_src=`zfs get -H -p -o source canmount $ds`
-	echo "_nu_recv_zfs_ds_mount	$mntd	$mnt_pt	$can_mnt"
-	echo "_nu_recv_zfs_ds_source		$mnt_src	$can_src"
-	echo
-}
 
 child_pids () {
 	sh -m -c "ps -o pid= -o pgid= | xargs -L1 | grep ' $$\$' | grep -E -v \"^$$ |^\$\$ \" | xargs -L1 | cut -w -f 1"
@@ -60,29 +49,33 @@ trap clean_exit HUP INT QUIT TERM EXIT
 			cat -u "$pipes/recv_out"
 		done
 	) | sed -l -E -e '
-		s/^(found) (clone origin) (.*)$/_nu_recv_zfs_ds_\1	\2	\3/
-		s/^(would receive|receiving) (full|incremental) stream of (.*) into (.*)$/_nu_recv_zfs_ds_start	\1	\2	\3	\4/
-		s/^(received) (.*) stream in (.*) \((.*)\)$/_nu_recv_zfs_ds_end	\1	\2	\3	\4/
+		s/^(found) (clone origin) (.*)$/nu_restore.zfs_snap_\1	\2	\3/
+		s/^(would receive|receiving) (full|incremental) stream of (.*) into (.*)$/nu_restore.zfs_snap_start	\1	\2	\3	\4/
+		s/^(received) (.*) stream in (.*) \((.*)\)$/nu_restore.zfs_snap_end	\1	\2	\3	\4/
 	' | while IFS='	' read event f1 f2 f3 f4; do
 		echo "$event	$f1	$f2	$f3	$f4" >> "$restore_log"
 		case $event in
-			_nu_recv_zfs_ds_found)
+			nu_restore.zfs_snap_found)
 				what=$f1
 				parent=$f2
 				;;
-			_nu_recv_zfs_ds_start)
+			nu_restore.zfs_snap_start)
 				ds=${f4%%@*}
 				snap=${f4##*@}
 				echo ${parent:+$parent ->} $ds@$snap
 				;;
-			_nu_recv_zfs_ds_end)
+			nu_restore.zfs_snap_end)
 				status=$f1
 				size=$f2
 				elapsed=$f3
 				[ "$status" = received ]
-				ds_info $ds >> "$restore_log"
+				guid=`zfs get -H -p -o value guid $ds`
+				if eval [ -z \"\${seen_ds_$guid-}\" ]; then
+					setvar seen_ds_$guid y
+					ds_mnt_info $ds >> "$restore_log"
+				fi
 				echo "	$size $elapsed"
-				unset ds snap what parent status size elapsed
+				unset ds snap what parent status size elapsed guid
 				;;
 		esac
 	done

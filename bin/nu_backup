@@ -25,6 +25,7 @@ esac; done; shift $(($OPTIND-1))
 
 . "$(dirname "$(realpath "$0")")/../lib/nu_system.sh"
 . "$(dirname "$(realpath "$0")")/../lib/nu_common.sh"
+. "$(dirname "$(realpath "$0")")/../lib/nu_backup.sh"
 
 nuos_init -q
 
@@ -48,10 +49,15 @@ fi
 
 sed -e "s|^|$POOL_NAME/|;s|\$|@$snaptime|" < "$backlist" | xargs zfs snapshot -r
 
+require_tmp backup_log
+
 while read ds; do
 	ds=$POOL_NAME/$ds
+	echo "nu_backup.zfs_ds_start	$ds" >> "$backup_log"
 	if [ -z "${FROM_SNAP-}" ]; then
 		for sub_ds in `zfs get -Hp -r -t filesystem,volume -o value name $ds`; do
+			echo "nu_backup.zfs_sub_ds_start	$sub_ds" >> "$backup_log"
+			ds_mnt_info $sub_ds >> "$backup_log"
 			found_root_ds=
 			check_ds=$sub_ds
 			require_tmp add_snaps
@@ -64,12 +70,29 @@ while read ds; do
 					check_ds=${origin%@*}
 				fi
 			done
-			tail -r < "$add_snaps" | xargs -n 1 zfs send -p
+			tail -r "$add_snaps" | while read add_snap; do
+				snap_guid=`zfs get -H -p -o value guid $add_snap`
+				if eval [ -z \"\${seen_snap_$snap_guid-}\" ]; then
+					setvar seen_snap_$snap_guid y
+					echo "nu_backup.zfs_snap_start	$add_snap" >> "$backup_log"
+					ds_guid=`zfs get -H -p -o value guid ${add_snap%@*}`
+					if eval [ -z \"\${seen_ds_$ds_guid-}\" ]; then
+						setvar seen_ds_$ds_guid y
+						ds_mnt_info ${add_snap%@*} >> "$backup_log"
+					fi
+					zfs send -p $add_snap
+					echo "nu_backup.zfs_snap_end	$add_snap" >> "$backup_log"
+				fi
+			done
 			retire_tmp add_snaps
+			echo "nu_backup.zfs_sub_ds_end	$sub_ds" >> "$backup_log"
 		done
 	fi
 	cmd="zfs send -R ${send_add_args-} $ds@$snaptime"
 	$cmd
+	echo "nu_backup.zfs_ds_end	$ds" >> "$backup_log"
 done < "$backlist"
 
 retire_tmp backlist
+
+#retire_tmp backup_log
