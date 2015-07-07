@@ -30,23 +30,27 @@ nuos_init -q
 
 maybe_yell
 
-child_pids () {
-	sh -m -c "ps -o pid= -o pgid= | xargs -L1 | grep ' $$\$' | grep -E -v \"^$$ |^\$\$ \" | xargs -L1 | cut -w -f 1"
-}
+require_tmp -d child_pids
 
 clean_exit () {
-	kill `child_pids` 2> /dev/null || true
+	(cd "$child_pids" && kill * 2> /dev/null || true)
+	retire_tmp child_pids
 	exit
 }
 
 require_tmp restore_log
 require_tmp -d pipes
 (umask 77 && mkfifo "$pipes/recv_out")
-trap clean_exit HUP INT QUIT TERM EXIT
+set -T
+trap 'clean_exit 2> /dev/null' HUP INT QUIT TERM EXIT
 (
 	(
 		while true; do
-			cat -u "$pipes/recv_out"
+			cat -u "$pipes/recv_out" &
+			cat_pid=$!
+			touch "$child_pids/$cat_pid"
+			wait $cat_pid
+			rm "$child_pids/$cat_pid"
 		done
 	) | sed -l -E -e '
 		s/^(found) (clone origin) (.*)$/nu_restore.zfs_snap_\1	\2	\3/
@@ -88,8 +92,11 @@ while {
 		{
 			zfs receive -d -u -v $TARGET_DS > "$pipes/recv_out" 2>| "$err_out" &
 		} < /dev/stdin
-		wait $!
+		zfs_pid=$!
+		touch "$child_pids/$zfs_pid"
+		wait $zfs_pid
 		child_exit=$?
+		rm "$child_pids/$zfs_pid"
 		if [ $child_exit -gt 0 ]; then
 			if [ "$(cat "$err_out")" = 'cannot receive: failed to read from stream' ]; then
 				retire_tmp err_out
