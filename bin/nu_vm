@@ -18,7 +18,7 @@ NUOS_VER=0.0.9.3b0
 
 . "$(dirname "$(realpath "$0")")/../lib/nu_system.sh"
 
-while getopts c:C:d:Dfh:ij:lLm:o:OsSv OPT; do case $OPT in
+while getopts c:C:d:Dfh:ij:lLm:o:OsSu:U:v OPT; do case $OPT in
 	c) VM_CPUS=$OPTARG;;
 	C) CHROOTDIR=$OPTARG;;
 	d) push VM_HDDS ${OPTARG#/dev/};;
@@ -34,6 +34,8 @@ while getopts c:C:d:Dfh:ij:lLm:o:OsSv OPT; do case $OPT in
 	O) OPT_LIST_OS_TYPES=y;;
 	s) OPT_START=y;;
 	S) OPT_STOP=y;;
+	u) push ADD_USERS $OPTARG;;
+	U) push DEL_USERS $OPTARG;;
 	v) OPT_VERBOSE=y;;
 esac; done; shift $(($OPTIND-1))
 [ $# = 0 ]
@@ -48,17 +50,26 @@ esac; done; shift $(($OPTIND-1))
 
 if [ -n "${OPT_LIST_RUNNING-}" ]; then
 	VBoxManage list runningvms | cut -w -f 1 | xargs
-	exit 0
+	done=y
 fi
 if [ -n "${OPT_LIST_ALL-}" ]; then
 	VBoxManage list vms | cut -w -f 1 | xargs
-	exit 0
+	done=y
 fi
 if [ -n "${OPT_LIST_OS_TYPES-}" ]; then
 	VBoxManage list ostypes | grep ^ID: | cut -w -f 2 | xargs
-	exit 0
+	done=y
 fi
+[ -z "${done-}" ] || exit 0
 
+if [ -n "${ADD_USERS-}" ]; then
+	pw groupmod vboxusers -m "$ADD_USERS"
+	done=y
+fi
+if [ -n "${DEL_USERS-}" ]; then
+	pw groupmod vboxusers -d "$DEL_USERS"
+	done=y
+fi
 if [ -n "${OPT_INIT-}" ]; then
 	kldload vboxdrv
 	service vboxnet onestart
@@ -67,8 +78,9 @@ vboxdrv_load="YES"
 EOF
 	sister enable_svc ${CHROOTDIR:+-C "$CHROOTDIR"} vboxnet
 	echo "Configured vm service."
-	exit 0
+	done=y
 fi
+[ -z "${done-}" ] || exit 0
 
 if [ -n "${OPT_START-}" ]; then
 	if [ -n "${OPT_STOP-}" ]; then
@@ -104,7 +116,13 @@ echo
 
 maybe_yell
 
-[ "$USER" != root ]
+[ `whoami` != root ]
+
+if [ -n "${VM_HDDS-}" ]; then
+	for disk in $VM_HDDS; do
+		[ -w /dev/$disk ]
+	done
+fi
 
 VBoxManage createvm --name "$VM_NAME" --ostype "$OS_TYPE" --register
 VBoxManage modifyvm "$VM_NAME" --rtcuseutc on --hwvirtex on --ioapic on --chipset $CHIPSET --hpet on --cpus "$VM_CPUS" --memory "$VM_MEM_MB" --mouse usb --keyboard usb
