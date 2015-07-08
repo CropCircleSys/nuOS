@@ -18,7 +18,8 @@ NUOS_VER=0.0.9.3b0
 
 . "$(dirname "$(realpath "$0")")/../lib/nu_system.sh"
 
-while getopts c:C:d:Dfh:ij:lLm:o:OsSu:U:v OPT; do case $OPT in
+while getopts ac:C:d:Dfh:ij:lLm:o:OsSu:U:vx: OPT; do case $OPT in
+	a) OPT_ADD=y;;
 	c) VM_CPUS=$OPTARG;;
 	C) CHROOTDIR=$OPTARG;;
 	d) push VM_HDDS ${OPTARG#/dev/};;
@@ -37,6 +38,7 @@ while getopts c:C:d:Dfh:ij:lLm:o:OsSu:U:v OPT; do case $OPT in
 	u) push ADD_USERS $OPTARG;;
 	U) push DEL_USERS $OPTARG;;
 	v) OPT_VERBOSE=y;;
+	x) push DEL_HDDS $OPTARG;;
 esac; done; shift $(($OPTIND-1))
 [ $# = 0 ]
 
@@ -45,7 +47,6 @@ esac; done; shift $(($OPTIND-1))
 . "$(dirname "$(realpath "$0")")/../lib/nu_common.sh"
 
 : ${VM_NAME:=box}
-: ${MAX_VM_DISKS:=24}
 : ${CHIPSET:=ich9} # can set to piix3
 
 if [ -n "${OPT_LIST_RUNNING-}" ]; then
@@ -93,8 +94,10 @@ if [ -n "${OPT_START-}" ]; then
 elif [ -n "${OPT_STOP-}" ]; then
 	if [ -n "${OPT_FORCE-}" ]; then
 		VBoxManage controlvm "$VM_NAME" poweroff
+		echo "Cut off power to vm $VM_NAME forcefully."
 	else
 		VBoxManage controlvm "$VM_NAME" acpipowerbutton
+		echo "Sent vm $VM_NAME the graceful shutdown request signal."
 	fi
 	exit 0
 elif [ -n "${OPT_DELETE-}" ]; then
@@ -106,13 +109,15 @@ fi
 
 nuos_init
 
-echo 'creating vm     -j VM_NAME        ' $VM_NAME
-#echo 'host name       -h HOST_NAME      ' ${HOST_NAME:=$VM_NAME.$HOST}
-echo 'num cpus        -c VM_CPUS        ' ${VM_CPUS:=`sysctl -n kern.smp.cpus`}
-echo 'mem megabytes   -m VM_MEM_MB      ' ${VM_MEM_MB:=1024}
-echo 'os type         -o OS_TYPE        ' ${OS_TYPE:=FreeBSD_64}
-echo -n 'connect hdds    -d VM_HDDS         ' && [ -n "${VM_HDDS-}" ] && echo $VM_HDDS || echo null
-echo
+if [ -n "${OPT_ADD-}" ]; then
+	echo 'creating vm     -j VM_NAME        ' $VM_NAME
+	#echo 'host name       -h HOST_NAME      ' ${HOST_NAME:=$VM_NAME.$HOST}
+	echo 'num cpus        -c VM_CPUS        ' ${VM_CPUS:=`sysctl -n kern.smp.cpus`}
+	echo 'mem megabytes   -m VM_MEM_MB      ' ${VM_MEM_MB:=1024}
+	echo 'os type         -o OS_TYPE        ' ${OS_TYPE:=FreeBSD_64}
+	echo -n 'connect hdds    -d VM_HDDS         ' && [ -n "${VM_HDDS-}" ] && echo $VM_HDDS || echo null
+	echo
+fi
 
 maybe_yell
 
@@ -124,14 +129,52 @@ if [ -n "${VM_HDDS-}" ]; then
 	done
 fi
 
-VBoxManage createvm --name "$VM_NAME" --ostype "$OS_TYPE" --register
-VBoxManage modifyvm "$VM_NAME" --rtcuseutc on --hwvirtex on --ioapic on --chipset $CHIPSET --hpet on --cpus "$VM_CPUS" --memory "$VM_MEM_MB" --mouse usb --keyboard usb
-VBoxManage storagectl "$VM_NAME" --name sata0 --add sata --controller IntelAhci --portcount $MAX_VM_DISKS
+if [ -n "${OPT_ADD-}" ]; then
+	VBoxManage createvm --name "$VM_NAME" --ostype "$OS_TYPE" --register
+	VBoxManage modifyvm "$VM_NAME" --rtcuseutc on --hwvirtex on --ioapic on --chipset $CHIPSET --hpet on --cpus "$VM_CPUS" --memory "$VM_MEM_MB" --mouse usb --keyboard usb
+	#VBoxManage modifyvm "$VM_NAME" --vrdemulticon on --vrdeport 5900 --vrdeproperty VNCPassword="$vncpass" --vrde on --vrdeaddress 172.31.0.1
+	hbaname=sata0
+	hbaname_noblank=$hbaname
+	VBoxManage storagectl "$VM_NAME" --name $hbaname --add sata --controller IntelAhci --portcount 30
+	done=y
+else
+	hbaname=`VBoxManage showvminfo --machinereadable "$VM_NAME" | grep -E '^storagecontrollername[[:digit:]]' | tail -n 1 | sed -Ee 's/^.*="(.+)"$/\1/'`
+	hbaname_noblank=`echo "$hbaname" | tr -d '[[:space:]]/'`
+	[ -n "$hbaname" ]
+	if [ -n "${DEL_HDDS-}" ]; then
+		mediabase=~/"VirtualBox VMs/$VM_NAME/"
+		for port in $DEL_HDDS; do
+			media=`VBoxManage showvminfo --machinereadable "$VM_NAME" | grep -E ^\"\?$hbaname-$port-0\"\? | sed -Ee 's/^.*="(.+)"$/\1/'`
+			if [ -n "$media" -a "$media" != none ]; then
+				VBoxManage storageattach "$VM_NAME" --storagectl "$hbaname" --port $port --device 0 --medium none
+				if [ "$media" != "${media#$mediabase}" -a "$media" != "${media%-nu_vm.vmdk}" ]; then
+					delete=y
+				else
+					delete=
+				fi
+				if [ -n "$delete" ]; then
+					VBoxManage closemedium disk "$media" --delete || rm "$media"
+				else
+					VBoxManage closemedium disk "$media" || true
+				fi
+				done=y
+			fi
+		done
+	fi
+fi
+
 if [ -n "${VM_HDDS-}" ]; then
 	for disk in $VM_HDDS; do
-		incr disk_i 0 $MAX_VM_DISKS
-		VBoxManage internalcommands createrawvmdk -filename ~/"VirtualBox VMs/$VM_NAME/sata0_port$disk_i.vmdk" -rawdisk /dev/$disk
-		VBoxManage storageattach "$VM_NAME" --storagectl sata0 --type hdd --nonrotational on --discard on --port $disk_i --device 0 --medium ~/"VirtualBox VMs/$VM_NAME/sata0_port$disk_i.vmdk"
+		nextport=`VBoxManage showvminfo --machinereadable "$VM_NAME" | grep -E ^\"\?$hbaname-[[:digit:]]+-[[:digit:]]\"\?=\"none\" | head -n 1`
+		nextport=${nextport%-*}
+		nextport=${nextport##*-}
+		rand=`sister nu_randpw -b 6`
+		vmdk=~/"VirtualBox VMs/$VM_NAME/${hbaname_noblank}_port${nextport}_$rand-nu_vm.vmdk"
+		VBoxManage internalcommands createrawvmdk -filename "$vmdk" -rawdisk /dev/$disk
+		VBoxManage storageattach "$VM_NAME" --storagectl "$hbaname" --type hdd --nonrotational on --discard on --port $nextport --device 0 --medium "$vmdk" || true
+		echo "Connected disk $disk to vm $VM_NAME on port $nextport."
 	done
+	done=y
 fi
-echo "Configured vm $VM_NAME successfully."
+
+[ -n "${done-}" ] && echo "Configured vm $VM_NAME successfully."
