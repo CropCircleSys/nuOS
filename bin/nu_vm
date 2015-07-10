@@ -18,7 +18,7 @@ NUOS_VER=0.0.9.3b0
 
 . "$(dirname "$(realpath "$0")")/../lib/nu_system.sh"
 
-while getopts ac:C:d:Dfh:ij:lLm:o:OsSu:U:vx: OPT; do case $OPT in
+while getopts ac:C:d:Dfh:ij:lLm:nNo:OsSu:U:vx: OPT; do case $OPT in
 	a) OPT_ADD=y;;
 	c) VM_CPUS=$OPTARG;;
 	C) CHROOTDIR=$OPTARG;;
@@ -31,6 +31,8 @@ while getopts ac:C:d:Dfh:ij:lLm:o:OsSu:U:vx: OPT; do case $OPT in
 	l) OPT_LIST_RUNNING=y;;
 	L) OPT_LIST_ALL=y;;
 	m) VM_MEM_MB=$OPTARG;;
+	n) OPT_VNC_ON=y;;
+	N) OPT_VNC_OFF=y;;
 	o) OS_TYPE=$OPTARG;;
 	O) OPT_LIST_OS_TYPES=y;;
 	s) OPT_START=y;;
@@ -83,6 +85,16 @@ EOF
 fi
 [ -z "${done-}" ] || exit 0
 
+[ `whoami` != root ]
+
+require_cfgfile () {
+	if [ -z "${cfgfile-}" ]; then
+		cfgfile=`VBoxManage showvminfo --machinereadable "$VM_NAME" | grep ^CfgFile= | sed -Ee 's/^.*="(.+)"$/\1/'`
+		[ -n "$cfgfile" ]
+		cfgdir=`dirname "$cfgfile"`
+	fi
+}
+
 if [ -n "${OPT_START-}" ]; then
 	if [ -n "${OPT_STOP-}" ]; then
 		[ -n "${OPT_FORCE-}" ] || (echo 'Error: You must also specify the -f flag (OPT_FORCE) to perform a hard reset.' && exit 1)
@@ -102,7 +114,10 @@ elif [ -n "${OPT_STOP-}" ]; then
 	exit 0
 elif [ -n "${OPT_DELETE-}" ]; then
 	[ -n "${OPT_FORCE-}" ] || (echo 'Error: You must also specify the -f flag (OPT_FORCE) to delete a vm.' && exit 1)
+	require_cfgfile
 	VBoxManage unregistervm "$VM_NAME" --delete
+	rm "$cfgdir"/*-nu_vm.vmdk 2> /dev/null || true
+	rmdir "$cfgdir" 2> /dev/null || true
 	echo "Deleted vm $VM_NAME successfully."
 	exit 0
 fi
@@ -121,41 +136,52 @@ fi
 
 maybe_yell
 
-[ `whoami` != root ]
-
 if [ -n "${VM_HDDS-}" ]; then
 	for disk in $VM_HDDS; do
 		[ -w /dev/$disk ]
 	done
 fi
 
+require_hbaname () {
+	if [ -z "${hbaname-}" ]; then
+		hbaname=`VBoxManage showvminfo --machinereadable "$VM_NAME" | grep -E '^storagecontrollername[[:digit:]]' | tail -n 1 | sed -Ee 's/^.*="(.+)"$/\1/'`
+		[ -n "$hbaname" ]
+		hbaname_noblank=`echo "$hbaname" | tr -d '[[:space:]]/'`
+	fi
+}
+
+require_cfgfile () {
+	if [ -z "${cfgfile-}" ]; then
+		cfgfile=`VBoxManage showvminfo --machinereadable "$VM_NAME" | grep ^CfgFile= | sed -Ee 's/^.*="(.+)"$/\1/'`
+		[ -n "$cfgfile" ]
+		cfgdir=`dirname "$cfgfile"`
+	fi
+}
+
 if [ -n "${OPT_ADD-}" ]; then
 	VBoxManage createvm --name "$VM_NAME" --ostype "$OS_TYPE" --register
 	VBoxManage modifyvm "$VM_NAME" --rtcuseutc on --hwvirtex on --ioapic on --chipset $CHIPSET --hpet on --cpus "$VM_CPUS" --memory "$VM_MEM_MB" --mouse usb --keyboard usb
-	#VBoxManage modifyvm "$VM_NAME" --vrdemulticon on --vrdeport 5900 --vrdeproperty VNCPassword="$vncpass" --vrde on --vrdeaddress 172.31.0.1
 	hbaname=sata0
 	hbaname_noblank=$hbaname
 	VBoxManage storagectl "$VM_NAME" --name $hbaname --add sata --controller IntelAhci --portcount 30
 	done=y
 else
-	hbaname=`VBoxManage showvminfo --machinereadable "$VM_NAME" | grep -E '^storagecontrollername[[:digit:]]' | tail -n 1 | sed -Ee 's/^.*="(.+)"$/\1/'`
-	hbaname_noblank=`echo "$hbaname" | tr -d '[[:space:]]/'`
-	[ -n "$hbaname" ]
 	if [ -n "${DEL_HDDS-}" ]; then
-		mediabase=~/"VirtualBox VMs/$VM_NAME/"
+		require_cfgfile
+		require_hbaname
 		for port in $DEL_HDDS; do
-			media=`VBoxManage showvminfo --machinereadable "$VM_NAME" | grep -E ^\"\?$hbaname-$port-0\"\? | sed -Ee 's/^.*="(.+)"$/\1/'`
+			media=`VBoxManage showvminfo --machinereadable "$VM_NAME" | grep -E ^\"\?$hbaname-$port-0\"\?= | sed -Ee 's/^.*="(.+)"$/\1/'`
 			if [ -n "$media" -a "$media" != none ]; then
 				VBoxManage storageattach "$VM_NAME" --storagectl "$hbaname" --port $port --device 0 --medium none
-				if [ "$media" != "${media#$mediabase}" -a "$media" != "${media%-nu_vm.vmdk}" ]; then
+				if [ "$media" != "${media#$cfgdir/}" -a "$media" != "${media%-nu_vm.vmdk}" ]; then
 					delete=y
 				else
 					delete=
 				fi
 				if [ -n "$delete" ]; then
-					VBoxManage closemedium disk "$media" --delete || rm "$media"
+					VBoxManage closemedium disk "$media" --delete 2> /dev/null || rm "$media"
 				else
-					VBoxManage closemedium disk "$media" || true
+					VBoxManage closemedium disk "$media" 2> /dev/null || true
 				fi
 				done=y
 			fi
@@ -163,15 +189,40 @@ else
 	fi
 fi
 
+if [ -n "${OPT_VNC_ON-}" ]; then
+	require_cfgfile
+	if [ -n "${VNC_IP-}" ] || [ -z "`sed -n -Ee '/^[[:blank:]]*<VRDEProperties>$/,/^[[:blank:]]*<\/VRDEProperties>$/{/^[[:blank:]]*<Property name="TCP\/Address"/p;}' "$cfgfile"`" ]; then
+		set_vnc_ip=y
+	fi
+	if [ -n "${VNC_PORT-}" ] || [ -z "`sed -n -Ee '/^[[:blank:]]*<VRDEProperties>$/,/^[[:blank:]]*<\/VRDEProperties>$/{/^[[:blank:]]*<Property name="TCP\/Ports"/p;}' "$cfgfile"`" ]; then
+		set_vnc_port=y
+	fi
+	VBoxManage modifyvm "$VM_NAME" --vrde on --vrdemulticon on ${set_vnc_ip+--vrdeaddress ${VNC_IP-172.31.0.1}} ${set_vnc_port+--vrdeport ${VNC_PORT-5900}} 2> /dev/null || (
+		[ -z "${set_vnc_ip-}" ] || VBoxManage controlvm "$VM_NAME" vrdeproperty TCP/Address=${VNC_IP-172.31.0.1}
+		[ -z "${set_vnc_port-}" ] || VBoxManage controlvm "$VM_NAME" vrdeport ${VNC_PORT-5900}
+		VBoxManage controlvm "$VM_NAME" vrde on
+	)
+	done=y
+elif [ -n "${OPT_VNC_OFF-}" ]; then
+	VBoxManage modifyvm "$VM_NAME" --vrde off 2> /dev/null || VBoxManage controlvm "$VM_NAME" vrde off
+	done=y
+fi
+if [ -n "${VNC_PASS-}" ]; then
+	VBoxManage modifyvm "$VM_NAME" --vrdeproperty VNCPassword="$VNC_PASS" 2> /dev/null || VBoxManage controlvm "$VM_NAME" vrdeproperty VNCPassword="$VNC_PASS"
+	done=y
+fi
+
 if [ -n "${VM_HDDS-}" ]; then
+	require_cfgfile
+	require_hbaname
 	for disk in $VM_HDDS; do
 		nextport=`VBoxManage showvminfo --machinereadable "$VM_NAME" | grep -E ^\"\?$hbaname-[[:digit:]]+-[[:digit:]]\"\?=\"none\" | head -n 1`
 		nextport=${nextport%-*}
 		nextport=${nextport##*-}
 		rand=`sister nu_randpw -b 6`
-		vmdk=~/"VirtualBox VMs/$VM_NAME/${hbaname_noblank}_port${nextport}_$rand-nu_vm.vmdk"
+		vmdk="$cfgdir/${hbaname_noblank}_port${nextport}_$rand-nu_vm.vmdk"
 		VBoxManage internalcommands createrawvmdk -filename "$vmdk" -rawdisk /dev/$disk
-		VBoxManage storageattach "$VM_NAME" --storagectl "$hbaname" --type hdd --nonrotational on --discard on --port $nextport --device 0 --medium "$vmdk" || true
+		VBoxManage storageattach "$VM_NAME" --storagectl "$hbaname" --type hdd --nonrotational on --discard on --port $nextport --device 0 --medium "$vmdk" 2> /dev/null || true
 		echo "Connected disk $disk to vm $VM_NAME on port $nextport."
 	done
 	done=y
