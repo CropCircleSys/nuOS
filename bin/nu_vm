@@ -51,20 +51,6 @@ esac; done; shift $(($OPTIND-1))
 : ${VM_NAME:=box}
 : ${CHIPSET:=ich9} # can set to piix3
 
-if [ -n "${OPT_LIST_RUNNING-}" ]; then
-	VBoxManage list runningvms | cut -w -f 1 | xargs
-	done=y
-fi
-if [ -n "${OPT_LIST_ALL-}" ]; then
-	VBoxManage list vms | cut -w -f 1 | xargs
-	done=y
-fi
-if [ -n "${OPT_LIST_OS_TYPES-}" ]; then
-	VBoxManage list ostypes | grep ^ID: | cut -w -f 2 | xargs
-	done=y
-fi
-[ -z "${done-}" ] || exit 0
-
 if [ -n "${ADD_USERS-}" ]; then
 	pw groupmod vboxusers -m "$ADD_USERS"
 	done=y
@@ -86,6 +72,20 @@ fi
 [ -z "${done-}" ] || exit 0
 
 [ `whoami` != root ]
+
+if [ -n "${OPT_LIST_RUNNING-}" ]; then
+	VBoxManage list runningvms | cut -w -f 1 | xargs
+	done=y
+fi
+if [ -n "${OPT_LIST_ALL-}" ]; then
+	VBoxManage list vms | cut -w -f 1 | xargs
+	done=y
+fi
+if [ -n "${OPT_LIST_OS_TYPES-}" ]; then
+	VBoxManage list ostypes | grep ^ID: | cut -w -f 2 | xargs
+	done=y
+fi
+[ -z "${done-}" ] || exit 0
 
 require_cfgfile () {
 	if [ -z "${cfgfile-}" ]; then
