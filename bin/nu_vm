@@ -73,6 +73,8 @@ fi
 
 [ `whoami` != root ]
 
+[ -d ~/.config/VirtualBox ] || VBoxManage setproperty machinefolder ~/.config/VirtualBox/Machines
+
 if [ -n "${OPT_LIST_RUNNING-}" ]; then
 	VBoxManage list runningvms | cut -w -f 1 | xargs
 	done=y
