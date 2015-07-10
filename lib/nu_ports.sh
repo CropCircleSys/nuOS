@@ -95,18 +95,9 @@ require_ports_tree () {
 	for port_diff in $port_diffs; do
 		local port=`echo $port_diff | sed -e 's|_|/|;s/\.diff$//'`
 		local category=${port%/*}
-		if [ -e "$pkg_meta"/$port_diff.test ]; then
-			if (. "$pkg_meta"/$port_diff.test); then
-				patch -C -F 0 -E -t -N -d /usr/ports/$port -i "$pkg_meta"/$port_diff > /dev/null 2>&1
-				patch -F 0 -E -t -N -d /usr/ports/$port -i "$pkg_meta"/$port_diff
-			fi
-		elif patch -C -F 0 -E -t -N -d /usr/ports/$port -i "$pkg_meta"/$port_diff > /dev/null 2>&1; then
+		if (cd /usr/ports/$port && . "$pkg_meta"/$port_diff.test); then
+			patch -C -F 0 -E -t -N -d /usr/ports/$port -i "$pkg_meta"/$port_diff > /dev/null 2>&1
 			patch -F 0 -E -t -N -d /usr/ports/$port -i "$pkg_meta"/$port_diff
-		else
-			echo
-			echo '***' WARNING: Patch $port_diff did not apply cleanly. ASSUMING ports tree already contains up-to-date changes. '***'
-			echo Sleeping 30 seconds...
-			sleep 30
 		fi
 	done
 }
