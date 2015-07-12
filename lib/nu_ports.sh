@@ -28,26 +28,12 @@ else
 	PORT_DBDIR="$(realpath "$(dirname "$(realpath "$0")")/../port_opts")"
 fi
 
-# 
-# prepare_ports_db () {
-# 	if [ -n "${_nuos_ports_db_dir_poke-}" -a "${CHROOTDIR-}" ]; then
-# 		require_tmp -c -C "$CHROOTDIR" -d _nuos_ports_db_dir_mnt
-# 		mount -t nullfs -r $PORT_DBDIR "$_nuos_ports_db_dir_mnt"
-# 	fi
-# }
-# 
-# discard_ports_db () {
-# 	if [ -n "${_nuos_ports_db_dir_poke-}" -a "${CHROOTDIR-}" ]; then
-# 		umount "$_nuos_ports_db_dir_mnt"
-# 		retire_tmp _nuos_ports_db_dir_mnt
-# 	fi
-# }
 
 ports_tag () {
 	if [ -d /usr/ports/.svn ] && which svn > /dev/null 2>&1; then
 		echo r`svn info /usr/ports | grep ^Revision: | cut -w -f 2`
-	elif [ -f /usr/ports/.svninfo ]; then
-		echo r`grep ^Revision: /usr/ports/.svninfo | cut -w -f 2`
+	elif [ -f /usr/ports/.svn/info.txt ]; then
+		echo r`grep ^Revision: /usr/ports/.svn/info.txt | cut -w -f 2`
 	else
 		[ ! -d /usr/ports/.svn ]
 		cut -d '|' -f 2 /var/db/portsnap/tag
