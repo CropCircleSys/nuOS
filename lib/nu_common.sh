@@ -61,7 +61,7 @@ nuos_sha_fngr () {
 	[ $# -ge 1 ]
 	[ $bytes -le 42 -o -n "${opt_force-}" ]
 	
-	cat $@ 2>/dev/null |
+	cat "$@" 2>/dev/null |
 		sha256 -q |
 		(echo 16i; echo -n FF; tr a-f A-F; echo P) | dc | tail -c +2 |
 		b64encode - |
