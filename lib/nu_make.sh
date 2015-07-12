@@ -48,7 +48,7 @@ prepare_make_conf () {
 		require_tmp tempfile
 		cat >| "$tempfile" <<EOF
 CPUTYPE?=$TRGT_OPTZ
-DEFAULT_VERSIONS= pgsql=9.4
+DEFAULT_VERSIONS= lua=5.3 perl5=5.22 pgsql=9.4
 QT4_OPTIONS=CUPS
 WITH_OPENSSL_PORT=YES
 EOF
