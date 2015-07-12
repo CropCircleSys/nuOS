@@ -119,15 +119,13 @@ EOF
 		$retire_make_conf_cmd make_conf
 	fi
 	if [ ! -d /usr/obj/usr/src/sys/$TRGT_KERN ]; then
-		local kern_conf=/usr/src/sys/$TRGT_ARCH/conf/$TRGT_KERN
-		if [ ! -f $kern_conf -a $TRGT_KERN = NUOS ]; then
-			cat > $kern_conf <<EOF
-include GENERIC
-ident NUOS
-options VIMAGE
-options RACCT
-options RCTL
-EOF
+		if [ $TRGT_KERN = NUOS ] && [ ! -e /usr/src/sys/$TRGT_ARCH/conf/NUOS -o /usr/src/sys/$TRGT_ARCH/conf/NUOS -ot "$(realpath "$(dirname "$(realpath "$0")")/../share/kern/NUOS.tmpl")" ]; then
+			if [ -e /usr/src/sys/$TRGT_ARCH/conf/VT ]; then
+				kernel_prototype=VT
+			else
+				kernel_prototype=GENERIC
+			fi
+			sed -e s/%%nuos_kernel_prototype%%/$kernel_prototype/g "$(realpath "$(dirname "$(realpath "$0")")/../share/kern/NUOS.tmpl")" >| /usr/src/sys/$TRGT_ARCH/conf/NUOS
 		fi
 		prepare_make_conf make_conf retire_make_conf_cmd
 		(cd /usr/src && make -j $MAKE_JOBS "__MAKE_CONF=$make_conf" KERNCONF=$TRGT_KERN buildkernel)
