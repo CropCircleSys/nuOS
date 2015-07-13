@@ -53,6 +53,9 @@ if [ -z "${OPT_ARG_SUBPROCESS-}" -a -n "${CHROOTDIR-}" ]; then
 		mount -t nullfs /usr/ports/packages "$CHROOTDIR/usr/ports/packages"
 		nullfs_mounted=y
 	fi
+	if mnt_dev "$CHROOTDIR"; then
+		devfs_mounted=y
+	fi
 fi
 
 os_compat=$BASEOS_TYPE-${BASEOS_VER%%-*}
@@ -134,6 +137,9 @@ for port in $*; do
 done
 if [ -n "${nullfs_mounted-}" ]; then
 	umount "$CHROOTDIR/usr/ports/packages"
+fi
+if [ -n "${devfs_mounted-}" ]; then
+	umount "$CHROOTDIR/dev"
 fi
 
 $retire_make_conf_cmd make_conf

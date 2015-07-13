@@ -72,6 +72,17 @@ push () {
 	eval setvar $var \"\${$var:+\$$var }$*\"
 }
 
+mnt_dev () {
+	if [ -c "${1-}/dev/null" ]; then
+		return 1
+	else
+		mount -t devfs devfs "${1-}/dev"
+		devfs -m "${1-}/dev" ruleset 1
+		devfs -m "${1-}/dev" rule applyset
+		devfs -m "${1-}/dev" rule -s 2 applyset
+	fi
+}
+
 sister () {
 	local chrootdir=
 	while getopts C: OPT; do case $OPT in
@@ -83,7 +94,14 @@ sister () {
 		local nuos_src
 		require_tmp -c -C "$chrootdir" -d nuos_src
 		mount -t nullfs -r "$(dirname "$(realpath "$0")")/.." "$nuos_src"
+		local devfs_mounted=
+		if mnt_dev "$chrootdir"; then
+			devfs_mounted=y
+		fi
 		chroot "$chrootdir" sh "${nuos_src#"$chrootdir"}/bin/$bin" "$@"
+		if [ -n "$devfs_mounted" ]; then
+			umount "$chrootdir/dev"
+		fi
 		umount "$nuos_src"
 		retire_tmp nuos_src
 	else

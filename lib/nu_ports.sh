@@ -66,7 +66,7 @@ require_ports_tree () {
 		mkdir /usr/ports/packages
 	fi
 	if [ ! -d /usr/ports/packages/All ]; then
-		mkdir /usr/ports/packages/All
+		mkdir /usr/ports/packages/All 2> /dev/null || true
 	fi
 	local pkg_meta="$(dirname "$(realpath "$0")")/../pkg"
 	local port_shars="`cd "$pkg_meta" && ls *.shar 2> /dev/null`"
@@ -82,7 +82,7 @@ require_ports_tree () {
 		local port=`echo $port_diff | sed -e 's|_|/|;s/\.diff$//'`
 		local category=${port%/*}
 		if (cd /usr/ports/$port && . "$pkg_meta"/$port_diff.test); then
-			patch -C -F 0 -E -t -N -d /usr/ports/$port -i "$pkg_meta"/$port_diff > /dev/null 2>&1
+			patch -s -C -F 0 -E -t -N -d /usr/ports/$port -i "$pkg_meta"/$port_diff
 			patch -F 0 -E -t -N -d /usr/ports/$port -i "$pkg_meta"/$port_diff
 		fi
 	done
