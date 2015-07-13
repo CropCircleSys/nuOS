@@ -1,0 +1,20 @@
+diff -ruN bitcoin.orig/Makefile bitcoin/Makefile
+--- bitcoin.orig/Makefile	2015-07-13 16:48:34.098370000 +0000
++++ bitcoin/Makefile	2015-07-13 16:49:39.049365863 +0000
+@@ -2,7 +2,7 @@
+ # $FreeBSD: head/net-p2p/bitcoin/Makefile 391383 2015-07-06 03:09:35Z feld $
+ 
+ PORTNAME=	bitcoin
+-PORTVERSION=	0.10.2
++PORTVERSION=	0.11.0
+ DISTVERSIONPREFIX=	v
+ CATEGORIES=	net-p2p finance
+ 
+diff -ruN bitcoin.orig/distinfo bitcoin/distinfo
+--- bitcoin.orig/distinfo	2015-07-06 11:57:58.461883000 +0000
++++ bitcoin/distinfo	2015-07-13 16:49:46.698360829 +0000
+@@ -1,2 +1,2 @@
+-SHA256 (bitcoin-bitcoin-v0.10.2_GH0.tar.gz) = 48c82a35369e54b613f738adf2a3420f8a25636182d272635202a5f99bb1fb9b
+-SIZE (bitcoin-bitcoin-v0.10.2_GH0.tar.gz) = 5075202
++SHA256 (bitcoin-bitcoin-v0.11.0_GH0.tar.gz) = 2bcd61a4c288e5cc5d7fbe724606c610a20037332b06f7a9e99c1153eef73aef
++SIZE (bitcoin-bitcoin-v0.11.0_GH0.tar.gz) = 5894693

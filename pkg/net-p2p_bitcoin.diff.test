@@ -1,0 +1,1 @@
+grep -q '(bitcoin-bitcoin-v0\.10\.2_GH0\.tar\.gz)' distinfo

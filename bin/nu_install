@@ -131,8 +131,6 @@ EOF
 	
 	cat >> $POOL_MNT/etc/fstab <<'EOF'
 tmp /tmp tmpfs rw,nosuid 0 0
-fdesc /dev/fd fdescfs rw 0 0
-proc /proc procfs rw 0 0
 EOF
 
 	zfs snapshot -r $POOL_NAME/os/$BASEOS_TYPE/$BASEOS_VER@bare
@@ -150,6 +148,8 @@ EOF
 	zfs clone $POOL_NAME/os/$BASEOS_TYPE/$BASEOS_VER/var/db@bare $POOL_NAME/os/nuOS/$NUOS_VER/var/db
 	
 	cat >> $POOL_MNT/etc/fstab <<'EOF'
+fdesc /dev/fd fdescfs rw 0 0
+proc /proc procfs rw 0 0
 #linproc /compat/linux/proc linprocfs rw 0 0
 #linsys /compat/linux/sys linsysfs rw 0 0
 EOF
@@ -266,10 +266,10 @@ EOF
 						geli attach -k /dev/gpt/$pool-key -p zvol/$pool/private
 						zpool create -o autoexpand=on -O mountpoint=none -O canmount=off -O devices=off $nuos_pvt_init_opts $pool-pvt zvol/$pool/private.eli
 						zfs create $pool-pvt/sys
-						zfs create $pool-pvt/sys/host
-						zfs create -o mountpoint=/etc/ssl/private $pool-pvt/sys/host/ssl
+						zfs create $pool-pvt/sys/$hostname
+						zfs create -o mountpoint=/etc/ssl/private $pool-pvt/sys/$hostname/ssl
 						chmod go-rx /etc/ssl/private
-						zfs create -o mountpoint=/etc/ssh/private $pool-pvt/sys/host/ssh
+						zfs create -o mountpoint=/etc/ssh/private $pool-pvt/sys/$hostname/ssh
 						chmod go-rx /etc/ssh/private
 						zpool export $pool-pvt
 						geli detach zvol/$pool/private.eli
@@ -326,7 +326,7 @@ path = "/var/jail/$name";
 host.hostname = "$name.jail";
 devfs_ruleset = 4;
 exec.clean;
-exec.prestart = "mount -t devfs dev $path/dev && devfs -m $path/dev rule -s $devfs_ruleset applyset && ln -sf /var/run/log $path/dev/log";
+exec.prestart = "mount -t devfs dev $path/dev && devfs -m $path/dev ruleset $devfs_ruleset && devfs -m $path/dev rule applyset && ln -sf /var/run/log $path/dev/log";
 exec.prestart += "mount -t fdescfs fdesc $path/dev/fd";
 exec.prestart += "mount -t tmpfs -o nosuid $tmpfs_args tmp $path/tmp";
 exec.prestart += "mount -t procfs proc $path/proc";
@@ -476,9 +476,9 @@ EOF
 		echo HOSTOS_NOBRAND=y > $POOL_MNT/$conf
 	fi
 	
-	cat > $POOL_MNT/etc/nuos/backup <<'EOF'
-sys/host/etc
-sys/host/var
+	cat > $POOL_MNT/etc/nuos/backup <<EOF
+sys/$NEW_HOST/rev0/etc
+sys/$NEW_HOST/rev0/var
 svc
 home
 EOF
@@ -524,12 +524,15 @@ EOF
 # > 
 # EOF
 	
-	require_tmp pkg_tree
-	sister nu_pkg_tree ${OPT_VERBOSE:+-v} -o dir $POOL_MNT/var/db/nuos/pkg -o txt "$pkg_tree" $PKG_COLLECTION
+	mount -t tmpfs -o nosuid tmpfs $POOL_MNT/tmp
+	require_tmp -c -C $POOL_MNT pkg_tree
+	mount -r -t nullfs /usr/ports $POOL_MNT/usr/ports
+	sister -C $POOL_MNT nu_pkg_tree -o dir /var/db/nuos/pkg -o txt "${pkg_tree#"$POOL_MNT"}" $PKG_COLLECTION
+	umount $POOL_MNT/usr/ports
 	for tree_node in `cat "$pkg_tree"`; do
 		case $tree_node in
 			[^/]*/*)
-				sister nu_install_pkg ${OPT_VERBOSE:+-v} -C $POOL_MNT -R $tree_node
+				sister nu_install_pkg -C $POOL_MNT -R $tree_node
 				;;
 			[^/]*)
 				zfs snapshot -r $POOL_NAME/os/nuOS/$NUOS_VER@$tree_node
@@ -537,6 +540,7 @@ EOF
 		esac
 	done
 	retire_tmp pkg_tree
+	umount $POOL_MNT/tmp
 	
 else
 	zfs send -R $POOL_BOOT_NAME/os/$BASEOS_TYPE/$BASEOS_VER@bare | zfs receive -vd $POOL_NAME
@@ -669,8 +673,15 @@ zfs clone $POOL_NAME/os/nuOS/$NUOS_VER/etc@base $POOL_NAME/sys/rescue/etc
 zfs clone -o mountpoint=/usr/local/etc $POOL_NAME/os/nuOS/$NUOS_VER/etc/local@base $POOL_NAME/sys/rescue/etc/local
 zfs clone $POOL_NAME/os/nuOS/$NUOS_VER/var@base $POOL_NAME/sys/rescue/var
 zfs clone $POOL_NAME/os/nuOS/$NUOS_VER/var/db@base $POOL_NAME/sys/rescue/var/db
-zfs create -o mountpoint=none -o canmount=off -o logbias=throughput -o sync=disabled $POOL_NAME/entropy
-zfs create -o mountpoint=/var/db/entropy $POOL_NAME/entropy/rescue
+
+eval `stat -f "mode=%OMp%03OLp uid=%Du gid=%Dg flags=%Of" $POOL_MNT/var/db/entropy`
+zfs create -o mountpoint=/var/db/entropy -o logbias=throughput -o sync=disabled $POOL_NAME/entropy
+chown $uid:$gid $POOL_MNT/var/db/entropy
+chmod $mode $POOL_MNT/var/db/entropy
+(umask 77 && dd if=/dev/random of=$POOL_MNT/var/db/entropy/seed count=1 bs=4k)
+chown $uid:$gid $POOL_MNT/var/db/entropy/seed
+chmod a-w $POOL_MNT/var/db/entropy/seed
+chflags $flags $POOL_MNT/var/db/entropy
 
 mkdir $POOL_MNT/boot/etc
 mv -n $POOL_MNT/etc/login.conf.db $POOL_MNT/boot/etc/
@@ -693,7 +704,7 @@ rmdir "$tempdir"
 zfs snapshot -r $POOL_NAME/sys/rescue@sys
 
 if [ -n "${OPT_ELI-}" ]; then
-	swap_fstab_entry="/dev/zvol/$POOL_NAME/swap/one.eli none swap sw 0 0"
+	swap_fstab_entry="/dev/zvol/$POOL_NAME/swap/sw0.eli none swap sw 0 0"
 else
 	swap_prop_args="-o org.freebsd:swap=on"
 fi
@@ -701,8 +712,8 @@ create_swap_vol_cmd="zfs create -o mountpoint=none -o canmount=off -o primarycac
 $create_swap_vol_cmd
 
 if [ -n "$SWAP_SIZE" -a "$SWAP_SIZE" != 0 ]; then
-	zfs create -V $SWAP_SIZE $POOL_NAME/swap/one
-	zfs snapshot $POOL_NAME/swap/one@blank
+	zfs create -V $SWAP_SIZE $POOL_NAME/swap/sw0
+	zfs snapshot $POOL_NAME/swap/sw0@blank
 fi
 
 cat >> $POOL_MNT/etc/rc.conf.local <<'EOF'
@@ -726,19 +737,19 @@ cat > $POOL_MNT/boot/loader.conf.local <<EOF
 vfs.root.mountfrom="zfs:$POOL_NAME/sys/rescue"
 EOF
 
-zfs set canmount=noauto $POOL_NAME/entropy/rescue
-zfs unmount $POOL_NAME/entropy/rescue
 zfs set canmount=noauto $POOL_NAME/sys/rescue/etc
 zfs set canmount=noauto $POOL_NAME/sys/rescue/etc/local
 zfs set canmount=noauto $POOL_NAME/sys/rescue/var
 zfs set canmount=noauto $POOL_NAME/sys/rescue/var/db
 zfs unmount $POOL_NAME/sys/rescue/etc/local
+zfs unmount $POOL_NAME/entropy
 zfs unmount $POOL_NAME/sys/rescue
 zfs set mountpoint=legacy $POOL_NAME/sys/rescue/var
 zfs set mountpoint=legacy $POOL_NAME/sys/rescue/var/db
 zfs snapshot -r $POOL_NAME/sys/rescue@boot
 
-host_ds=$POOL_NAME/sys/host
+zfs create -o mountpoint=none -o canmount=off -o org.nuos:selected_host_revision=rev0 $POOL_NAME/sys/$NEW_HOST
+host_ds=$POOL_NAME/sys/$NEW_HOST/rev0
 
 zfs clone -o mountpoint=/ $POOL_NAME/sys/rescue@sys $host_ds
 zfs clone $POOL_NAME/sys/rescue/etc@sys $host_ds/etc
@@ -758,8 +769,6 @@ sister nu_jail ${OPT_VERBOSE:+-v} -C $POOL_MNT -p $POOL_NAME -t clone -w -j lab 
 sister enable_svc -C $POOL_MNT jail2
 
 zfs snapshot -r $host_ds@bare
-
-zfs create -o mountpoint=/var/db/entropy $POOL_NAME/entropy/host
 
 cat > $POOL_MNT/boot/loader.conf.local <<EOF
 vfs.root.mountfrom="zfs:$host_ds"
@@ -808,8 +817,6 @@ EOF
 fi
 
 sed -i '' -e "s/\.my\.domain\$/.`echo $NEW_HOST | sed -e 's/^[^\.]*\.//'` $NEW_HOST `echo $NEW_HOST | sed -e 's/\..*//'`/" $POOL_MNT/etc/hosts
-
-(umask 77 && dd if=/dev/random of=$POOL_MNT/var/db/entropy/seed count=1 bs=4k)
 
 zfs snapshot -r $host_ds@boot
 zpool set bootfs=$host_ds $POOL_NAME
