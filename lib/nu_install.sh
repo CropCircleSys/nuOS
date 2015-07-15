@@ -23,6 +23,12 @@ nuos_lib_ver=0.0.9.3b0
 [ -z "${nuos_lib_install_loaded-}" ]
 nuos_lib_install_loaded=y
 
+choose_svn_server () {
+	if [ -z "${SVN_SERVER-}" ]; then
+		choose_random SVN_SERVER svn0.us-west.FreeBSD.org svn0.us-east.FreeBSD.org
+	fi
+}
+
 install_vars_init () {
 	make_vars_init
 	if [ -z "${POOL_DEVS-}" ]; then # u shud spec a blank target media
@@ -30,7 +36,6 @@ install_vars_init () {
 			# have 2 - 8 GB of xtra ram depending on install options
 			POOL_DEVS="`mdconfig -s 1g` `mdconfig -s 1g` `mdconfig -s 1g` `mdconfig -s 1g` `mdconfig -s 1g` `mdconfig -s 1g` `mdconfig -s 1g` `mdconfig -s 1g`"
 			# and hopefully your build is successful OR you CLEAN UP after yerself!
-			# this is a gud test that yer build will fit in a retail 8GB stick
 		else
 			echo "`basename $0`: -d or -S must be specified" >&2
 			exit 1
@@ -51,9 +56,7 @@ install_vars_init () {
 	echo 'target proc        TRGT_PROC      ' $TRGT_PROC
 	echo 'target kern        TRGT_KERN      ' ${TRGT_KERN:=NUOS}
 	echo 'target optimize    TRGT_OPTZ      ' $TRGT_OPTZ
-	if [ -z "${SVN_SERVER-}" ]; then
-		choose_random SVN_SERVER svn0.us-west.FreeBSD.org svn0.us-east.FreeBSD.org
-	fi
+	choose_svn_server
 	echo 'subversion server  SVN_SERVER     ' $SVN_SERVER
 	echo 'subversion path    SVN_PATH       ' ${SVN_PATH:=base/releng/9.3}
 	echo -n 'copy ports         COPY_PORTS      ' && [ -n "${COPY_PORTS-}" ] && echo set || echo null
@@ -69,19 +72,18 @@ require_subversion () {
 	fi
 }
 
-require_base_src () {
-	if [ ! -f /usr/src/Makefile ]; then
-		require_subversion
-		[ -d ~/.subversion ] || mkdir ~/.subversion
-		[ -d ~/.subversion/auth ] || (umask 77 && mkdir ~/.subversion/auth)
-		[ -d ~/.subversion/auth/svn.ssl.server ] || mkdir ~/.subversion/auth/svn.ssl.server
-		local svn_server_lc=`echo $SVN_SERVER | tr '[:upper:]' '[:lower:]'`
-		local svn_realm=https://$svn_server_lc:443
-		local svn_realm_len=${#svn_realm}
-		local svn_realm_hash=`echo -n $svn_realm | md5`
-		local srv_pub_key=`eval echo '~/.subversion/auth/svn.ssl.server/$svn_realm_hash'`
-		if [ ! -f $srv_pub_key ]; then
-			cat > $srv_pub_key <<EOF
+require_subversion_server () {
+	choose_svn_server
+	[ -d ~/.subversion ] || mkdir ~/.subversion
+	[ -d ~/.subversion/auth ] || (umask 77 && mkdir ~/.subversion/auth)
+	[ -d ~/.subversion/auth/svn.ssl.server ] || mkdir ~/.subversion/auth/svn.ssl.server
+	local svn_server_lc=`echo $SVN_SERVER | tr '[:upper:]' '[:lower:]'`
+	local svn_realm=https://$svn_server_lc:443
+	local svn_realm_len=${#svn_realm}
+	local svn_realm_hash=`echo -n $svn_realm | md5`
+	local srv_pub_key=~/.subversion/auth/svn.ssl.server/$svn_realm_hash
+	if [ ! -f $srv_pub_key ]; then
+		cat > $srv_pub_key <<EOF
 K 10
 ascii_cert
 V 2284
@@ -96,7 +98,13 @@ V $svn_realm_len
 $svn_realm
 END
 EOF
-		fi
+	fi
+}
+
+require_base_src () {
+	if [ ! -f /usr/src/Makefile ]; then
+		require_subversion
+		require_subversion_server
 		
 		local svn_errors=0
 		svn checkout https://$SVN_SERVER/$SVN_PATH /usr/src || svn_errors=1
