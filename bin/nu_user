@@ -16,9 +16,10 @@ set -e; set -u; set -C
 
 NUOS_VER=0.0.9.3b0
 
-while getopts aC:h:im:n:p:Psu:v OPT; do case $OPT in
+while getopts aC:eh:im:n:p:Psu:v OPT; do case $OPT in
 	a) OPT_SASL=y;;
 	C) CHROOTDIR=$OPTARG;;
+	e) OPT_ELI=y;;
 	h) HOST_NAME=$OPTARG;;
 	i) OPT_IMPORT=y;;
 	m) USER_PATH=$OPTARG;;
@@ -79,15 +80,7 @@ dataset="$POOL_NAME`dirname "$USER_PATH"`"
 if zfs list $dataset; then
 	echo "Creating dataset $dataset/$USER_NAME for user home."
 	zfs create $dataset/$USER_NAME
-	mkdir "${CHROOTDIR-}$USER_PATH/private"
-	chmod go-rx "${CHROOTDIR-}$USER_PATH/private"
-	if zfs list $POOL_NAME-pvt > /dev/null 2>&1; then
-		echo "Creating dataset $POOL_NAME-pvt$USER_PATH for user private data."
-		chflags schg "${CHROOTDIR-}$USER_PATH/private"
-		zfs create -o mountpoint=none -o canmount=off $POOL_NAME-pvt/home 2> /dev/null || true
-		zfs create -o mountpoint=$USER_PATH/private $POOL_NAME-pvt$USER_PATH
-		chmod go-rx "${CHROOTDIR-}$USER_PATH/private"
-	fi
+	zfs_created=y
 else
 	echo "No immediate parent dataset, not creating user home dataset."
 fi
@@ -123,5 +116,21 @@ EOF
 else
 	${CHROOTDIR:+chroot "$CHROOTDIR"} pw useradd -m -n $USER_NAME -g $USER_NAME -c "$USER_FULL_NAME" ${USER_FLAGS-}
 fi
+
+if [ -n "${OPT_ELI-}" ] && zfs list $POOL_NAME-pvt > /dev/null 2>&1; then
+	uid=`stat -f %Du "${CHROOTDIR-}$USER_PATH"`
+	echo "Creating dataset $POOL_NAME-pvt$USER_PATH for user private data."
+	(umask 77 && mkdir "${CHROOTDIR-}$USER_PATH/private")
+	chown $uid "${CHROOTDIR-}$USER_PATH/private"
+	chflags schg "${CHROOTDIR-}$USER_PATH/private"
+	zfs create -o mountpoint=none -o canmount=off $POOL_NAME-pvt/home 2> /dev/null || true
+	pvt_mntpt=`realpath "${CHROOTDIR-}$USER_PATH/private"`
+	pvt_mntpt=${pvt_mntpt#"${CHROOTDIR-}"}
+	gid=`stat -f %Dg "${CHROOTDIR-}$USER_PATH/private"`
+	zfs create -o "mountpoint=$pvt_mntpt" $POOL_NAME-pvt$USER_PATH
+	chmod go-rx "${CHROOTDIR-}$USER_PATH/private"
+	chown $uid:$gid "${CHROOTDIR-}$USER_PATH/private"
+fi
+
 zfs snapshot $dataset/$USER_NAME@genesis
 echo "Account for user $USER_NAME created."
