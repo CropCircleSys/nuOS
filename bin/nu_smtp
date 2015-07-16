@@ -47,6 +47,8 @@ postmap "${CHROOTDIR-}/usr/local/etc/postfix/domains"
 postmap "${CHROOTDIR-}/usr/local/etc/postfix/virtual"
 postalias "${CHROOTDIR-}/usr/local/etc/postfix/aliases"
 
+sed -ne '/^$/,${/^./,$p;}' "${CHROOTDIR-}/usr/local/etc/postfix/bounce.cf.default" > "${CHROOTDIR-}/usr/local/etc/postfix/bounce.cf"
+
 cat >> "${CHROOTDIR-}/usr/local/etc/postfix/main.cf" <<EOF
 
 mydomain = $HOST_NAME
@@ -63,6 +65,7 @@ mailbox_transport = lmtp:unix:/var/imap/socket/lmtp
 local_recipient_maps = $virtual_alias_maps
 virtual_alias_domains = hash:$config_directory/domains
 smtpd_sender_login_maps = $local_recipient_maps
+bounce_template_file = $config_directory/bounce.cf
 smtpd_sasl_auth_enable = yes
 smtpd_sasl_local_domain = $mydomain
 smtpd_sasl_security_options = noanonymous
