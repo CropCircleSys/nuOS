@@ -41,22 +41,18 @@ maybe_yell
 
 [ ! -e "${CHROOTDIR-}/usr/local/etc/postfix/virtual" ]
 
-touch "${CHROOTDIR-}/usr/local/etc/postfix/virtual" "${CHROOTDIR-}/usr/local/etc/postfix/aliases"
-
-cat > "${CHROOTDIR-}/usr/local/etc/postfix/domains" <<EOF
-$HOST_NAME	OK
-EOF
+touch "${CHROOTDIR-}/usr/local/etc/postfix/virtual" "${CHROOTDIR-}/usr/local/etc/postfix/aliases" "${CHROOTDIR-}/usr/local/etc/postfix/domains"
 
 postmap "${CHROOTDIR-}/usr/local/etc/postfix/domains"
 postmap "${CHROOTDIR-}/usr/local/etc/postfix/virtual"
 postalias "${CHROOTDIR-}/usr/local/etc/postfix/aliases"
 
 cat >> "${CHROOTDIR-}/usr/local/etc/postfix/main.cf" <<EOF
+
 mydomain = $HOST_NAME
 EOF
 
 cat >> "${CHROOTDIR-}/usr/local/etc/postfix/main.cf" <<'EOF'
-
 myhostname = $mydomain
 alias_database = hash:$config_directory/aliases
 alias_maps = $alias_database
