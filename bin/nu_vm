@@ -140,7 +140,14 @@ maybe_yell
 
 if [ -n "${VM_HDDS-}" ]; then
 	for disk in $VM_HDDS; do
-		[ -w /dev/$disk ]
+		case "$disk" in
+			cd:*)
+				[ -r "`realpath ${disk#cd:}`" ]
+			;;
+			*)
+				[ -w /dev/$disk ]
+			;;
+		esac
 	done
 fi
 
@@ -218,13 +225,20 @@ if [ -n "${VM_HDDS-}" ]; then
 	require_cfgfile
 	require_hbaname
 	for disk in $VM_HDDS; do
-		nextport=`VBoxManage showvminfo --machinereadable "$VM_NAME" | grep -E ^\"\?$hbaname-[[:digit:]]+-[[:digit:]]\"\?=\"none\" | head -n 1`
+		nextport=`VBoxManage showvminfo --machinereadable "$VM_NAME" | grep -E ^\"\?$hbaname-[[:digit:]]+-[[:digit:]]\"\?=\"\(none\|emptydrive\)\" | head -n 1`
 		nextport=${nextport%-*}
 		nextport=${nextport##*-}
-		rand=`sister nu_randpw -b 6`
-		vmdk="$cfgdir/${hbaname_noblank}_port${nextport}_$rand-nu_vm.vmdk"
-		VBoxManage internalcommands createrawvmdk -filename "$vmdk" -rawdisk /dev/$disk
-		VBoxManage storageattach "$VM_NAME" --storagectl "$hbaname" --type hdd --nonrotational on --discard on --port $nextport --device 0 --medium "$vmdk" 2> /dev/null || true
+		case "$disk" in
+			cd:*)
+				VBoxManage storageattach "$VM_NAME" --storagectl "$hbaname" --type dvddrive --port $nextport --device 0 --medium "`realpath ${disk#cd:}`"
+			;;
+			*)
+				rand=`sister nu_randpw -b 6`
+				vmdk="$cfgdir/${hbaname_noblank}_port${nextport}_$rand-nu_vm.vmdk"
+				VBoxManage internalcommands createrawvmdk -filename "$vmdk" -rawdisk /dev/$disk
+				VBoxManage storageattach "$VM_NAME" --storagectl "$hbaname" --type hdd --nonrotational on --discard on --port $nextport --device 0 --medium "$vmdk" 2> /dev/null || true
+			;;
+		esac
 		echo "Connected disk $disk to vm $VM_NAME on port $nextport."
 	done
 	done=y
