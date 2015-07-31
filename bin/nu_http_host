@@ -84,7 +84,8 @@ if [ -n "${OPT_SSL-}" ]; then
 	SSLEngine on
 	SSLCertificateFile "/usr/local/etc/apache24/ssl/$HOST_NAME.crt"
 	SSLCertificateKeyFile "/usr/local/etc/apache24/ssl/private/$HOST_NAME.key"
-${self_signed:+#}	SSLCertificateChainFile "/usr/local/etc/apache24/ssl/$HOST_NAME.ca.crt"
+${self_signed:+	SSLUseStapling off
+#}	SSLCertificateChainFile "/usr/local/etc/apache24/ssl/$HOST_NAME.ca.crt"
 ${OPT_STRICT:+	Header always set Strict-Transport-Security "max-age=$((5*365*24*60*60)); includeSubdomains; preload"
 }	Header always setifempty X-Frame-Options SAMEORIGIN
 	CustomLog "/var/log/httpd-vhost/$HOST_NAME-ssl_request.log" "%t %h %{SSL_PROTOCOL}x %{SSL_CIPHER}x \"%r\" %b"
@@ -94,7 +95,8 @@ ${OPT_STRICT:+	Header always set Strict-Transport-Security "max-age=$((5*365*24*
 	SSLEngine on
 	SSLCertificateFile "/usr/local/etc/apache24/ssl/$HOST_NAME.crt"
 	SSLCertificateKeyFile "/usr/local/etc/apache24/ssl/private/$HOST_NAME.key"
-${self_signed:+#}	SSLCertificateChainFile "/usr/local/etc/apache24/ssl/$HOST_NAME.ca.crt"
+${self_signed:+	SSLUseStapling off
+#}	SSLCertificateChainFile "/usr/local/etc/apache24/ssl/$HOST_NAME.ca.crt"
 ${OPT_STRICT:+	Header always set Strict-Transport-Security "max-age=$((5*365*24*60*60)); includeSubdomains; preload"
 }	Header always setifempty X-Frame-Options SAMEORIGIN
 	Redirect permanent / https://$HOST_NAME/
