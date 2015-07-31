@@ -91,8 +91,11 @@ fi
 
 require_cfgfile () {
 	if [ -z "${cfgfile-}" ]; then
-		cfgfile=`VBoxManage showvminfo --machinereadable "$VM_NAME" | grep ^CfgFile= | sed -Ee 's/^.*="(.+)"$/\1/'`
-		[ -n "$cfgfile" ]
+		cfgfile=~"/.config/VirtualBox/Machines/$VM_NAME/$VM_NAME.vbox"
+		if [ ! -e "$cfgfile" ]; then
+			cfgfile=`VBoxManage showvminfo --machinereadable "$VM_NAME" | grep ^CfgFile= | sed -Ee 's/^.*="(.+)"$/\1/'`
+			[ -n "$cfgfile" ]
+		fi
 		cfgdir=`dirname "$cfgfile"`
 	fi
 }
