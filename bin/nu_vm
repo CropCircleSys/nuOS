@@ -172,7 +172,7 @@ require_cfgfile () {
 
 if [ -n "${OPT_ADD-}" ]; then
 	VBoxManage createvm --name "$VM_NAME" --ostype "$OS_TYPE" --register
-	VBoxManage modifyvm "$VM_NAME" --rtcuseutc on --hwvirtex on --ioapic on --chipset $CHIPSET --hpet on --cpus "$VM_CPUS" --memory "$VM_MEM_MB" --mouse usb --keyboard usb
+	VBoxManage modifyvm "$VM_NAME" --rtcuseutc on --hwvirtex on --ioapic on --chipset $CHIPSET --hpet on --cpus "$VM_CPUS" --nictype1 virtio --memory "$VM_MEM_MB" --vram 16 --mouse usb --keyboard usb
 	hbaname=sata0
 	hbaname_noblank=$hbaname
 	VBoxManage storagectl "$VM_NAME" --name $hbaname --add sata --controller IntelAhci --portcount 30
