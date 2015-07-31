@@ -75,7 +75,9 @@ if [ -n "${OPT_SSL-}" ]; then
 	(umask 77 && mkdir "${CHROOTDIR-}/usr/local/etc/$service/ssl/private")
 	if zfs list $POOL_BOOT_NAME/private > /dev/null 2>&1; then # this check will need to be refined if ever we support CHROOTDIR
 		chflags schg "${CHROOTDIR-}/usr/local/etc/$service/ssl/private"
-		zfs create -o mountpoint=/usr/local/etc/$service/ssl/private $POOL_BOOT_NAME-pvt/sys/host/http-ssl
+		zfs create -o mountpoint=none -o canmount=off $POOL_BOOT_NAME-pvt/svc 2>/dev/null || true
+		zfs create -o mountpoint=none -o canmount=off $POOL_BOOT_NAME-pvt/svc/$HOST 2>/dev/null || true
+		zfs create -o mountpoint=/usr/local/etc/$service/ssl/private $POOL_BOOT_NAME-pvt/svc/$HOST/http-ssl
 		chmod go-rx "${CHROOTDIR-}/usr/local/etc/$service/ssl/private"
 	fi
 	sed -i '' -Ee "
