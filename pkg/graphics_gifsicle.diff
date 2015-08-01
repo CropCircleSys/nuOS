@@ -1,0 +1,20 @@
+diff -ruN gifsicle.orig/Makefile gifsicle/Makefile
+--- gifsicle.orig/Makefile	2015-01-27 04:12:49.000000000 +0000
++++ gifsicle/Makefile	2015-08-01 21:49:21.418274319 +0000
+@@ -2,7 +2,7 @@
+ # $FreeBSD: head/graphics/gifsicle/Makefile 377976 2015-01-27 04:12:49Z vanilla $
+ 
+ PORTNAME=	gifsicle
+-PORTVERSION=	1.87
++PORTVERSION=	1.88
+ CATEGORIES=	graphics
+ MASTER_SITES=	http://www.lcdf.org/gifsicle/
+ 
+diff -ruN gifsicle.orig/distinfo gifsicle/distinfo
+--- gifsicle.orig/distinfo	2015-01-27 04:12:49.000000000 +0000
++++ gifsicle/distinfo	2015-08-01 21:49:25.500002347 +0000
+@@ -1,2 +1,2 @@
+-SHA256 (gifsicle-1.87.tar.gz) = 470abe3cacaa40cd98ea0d4dc37574148700b50cbf58bbb0ecd120fc0e8c191d
+-SIZE (gifsicle-1.87.tar.gz) = 565438
++SHA256 (gifsicle-1.88.tar.gz) = 4585d2e683d7f68eb8fcb15504732d71d7ede48ab5963e61915201f9e68305be
++SIZE (gifsicle-1.88.tar.gz) = 564670
