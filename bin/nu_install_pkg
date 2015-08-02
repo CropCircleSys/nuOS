@@ -1,5 +1,5 @@
 #!/bin/sh
-set -e; set -u; set -C; set -v
+set -e; set -u; set -C
 
 # nuOS 0.0.9.3b0 - bin/nu_install_pkg - LICENSE: BSD_SMPL
 #
