@@ -68,7 +68,12 @@ cat >> "${CHROOTDIR-}/usr/local/etc/$service/extra/httpd-vhosts.conf" <<EOF
 	DocumentRoot "/usr/local/www/$service/data"
 </VirtualHost>
 EOF
-sed -i '' -Ee 's/^#(Include[[:>:]].*[[:<:]]httpd-(mpm|vhosts|default).conf)$/\1/' "${CHROOTDIR-}/usr/local/etc/$service/httpd.conf"
+sed -i '' -Ee '
+	s/^#(LoadModule[[:>:]].*[[:<:]]mod_(proxy|proxy_http|proxy_wstunnel|rewrite).so)$/\1/
+	s/^#(Include[[:>:]].*[[:<:]]httpd-(mpm|vhosts|default).conf)$/\1/
+	/^#ServerName /a\
+ServerName localhost
+' "${CHROOTDIR-}/usr/local/etc/$service/httpd.conf"
 
 if [ -n "${OPT_SSL-}" ]; then
 	mkdir "${CHROOTDIR-}/usr/local/etc/$service/ssl"
