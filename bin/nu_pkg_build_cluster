@@ -24,14 +24,14 @@ while getopts C:d:vw: OPT; do case $OPT in
 esac; done; shift $(($OPTIND-1))
 [ $# = 0 ]
 
-[ -z "${CHROOTDIR-}" ] || exit 43 # CHROOTDIR is unsupported, though we want to some day so most of the code is still written with support
-
+[ -z "${CHROOTDIR-}" ] || exit 43 # CHROOTDIR is unsupported, though we want to some day
 . "$(dirname "$(realpath "$0")")/../lib/nu_system.sh"
 . "$(dirname "$(realpath "$0")")/../lib/nu_common.sh"
 
 maybe_yell
 
 : ${WORKERS:=6}
+: ${PKG_DBDIR:=/var/db/nuos/pkg}
 
 require_tmp -d data_graph
 require_tmp -d workers
@@ -41,14 +41,21 @@ while incr i 0 $(($WORKERS-1)); do
 	mkdir "$workers/$i:localhost"
 done
 
-(cd "${PKG_DBDIR:=/var/db/nuos/pkg}" && tar -cf - */dependencies */dependants | tar -xf - -C "$data_graph")
+(cd "${CHROOTDIR-}$PKG_DBDIR" && tar -cf - */dependencies */dependants | tar -xf - -C "$data_graph")
 
 getwork () {
 	[ -n "`cd "$data_graph" && find . -depth 1 -name '*_*' | head -n 1`" ] || return 1
-	local port=
+	local port= idle=
 	while [ -z "$port" ]; do
 		port=`cd "$data_graph" && find . -name dependencies -and -empty | sed -Ee 's%./([^_]+)_(.*)/dependencies%\1/\2%' | head -n 1`
-		[ -n "$port" ] || sleep 1
+		if [ -z "$port" ]; then
+			if [ -n "`find "$workers" -depth 2 -type d`" ]; then
+				idle=
+			else
+				incr idle 0 3 || (echo "Starved for work. See errors in $logs." >&2 && exit 1)
+			fi
+			sleep 1
+		fi
 	done
 	echo $port
 }
@@ -62,21 +69,21 @@ while port=`getwork`; do
 	done
 	mv "$data_graph/$port_" "$worker/"
 	(
-		sister nu_install_pkg -R $port > "$worker/out" 2>&1 &
+		sister nu_install_pkg -R $port > "$worker/$port_/out" 2>&1 &
 		workpid=$!
-		echo $workpid > "$worker/pid"
+		echo $workpid > "$worker/$port_/pid"
 		err=0;
 		wait $workpid || err=$?
 		if [ $err = 0 ]; then
-			mv "$worker/out" "$logs/$port_.out"
-			for dependant in `cat "$worker/$port_/dependants/all"`; do
+			mv "$worker/$port_/out" "$logs/$port_.out"
+			for dependant in `cat "$worker/$port_/dependants/all" 2> /dev/null`; do
 				dependant_=`echo $dependant | tr / _`
 				lockf -kn "$data_graph/$dependant_/dependencies" sh -c "sed -i '' -e \\\\%^$port\\$%d \"$data_graph/$dependant_/dependencies/\"*; find \"$data_graph/$dependant_/dependencies\" -depth 1 -empty -delete"
 			done
 		else
-			mv "$worker/out" "$logs/$port_.err"
+			mv "$worker/$port_/out" "$logs/$port_.err"
 		fi
-		rm -r "$worker/pid" "$worker/$port_"
+		rm -r "$worker/$port_"
 		cat -l <<EOF
 `basename "$worker"`	$port
 EOF
@@ -84,5 +91,9 @@ EOF
 done
 wait
 
+echo
+echo Built packages described in $PKG_DBDIR.
+
 #retire_tmp workers
+#retire_tmp logs
 #retire_tmp data_graph
