@@ -50,6 +50,7 @@ prepare_make_conf () {
 CPUTYPE?=$TRGT_OPTZ
 DEFAULT_VERSIONS= lua=5.3 perl5=5.22 pgsql=9.4
 QT4_OPTIONS=CUPS
+WANT_OPENLDAP_SASL=YES
 WITH_OPENSSL_PORT=YES
 EOF
 		setvar $ret_file_var "$tempfile"
