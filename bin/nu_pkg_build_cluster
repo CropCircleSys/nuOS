@@ -30,7 +30,7 @@ esac; done; shift $(($OPTIND-1))
 
 maybe_yell
 
-: ${WORKERS:=6}
+: ${WORKERS:=3}
 : ${PKG_DBDIR:=/var/db/nuos/pkg}
 
 require_tmp -d data_graph
