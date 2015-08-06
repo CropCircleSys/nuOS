@@ -733,10 +733,6 @@ EOF
 }
 maybe_add_eli_swap_to_fstab
 
-cat > $POOL_MNT/boot/loader.conf.local <<EOF
-vfs.root.mountfrom="zfs:$POOL_NAME/sys/rescue"
-EOF
-
 zfs set canmount=noauto $POOL_NAME/sys/rescue/etc
 zfs set canmount=noauto $POOL_NAME/sys/rescue/etc/local
 zfs set canmount=noauto $POOL_NAME/sys/rescue/var
@@ -769,10 +765,6 @@ sister nu_jail ${OPT_VERBOSE:+-v} -C $POOL_MNT -p $POOL_NAME -t clone -w -j lab 
 sister enable_svc -C $POOL_MNT jail2
 
 zfs snapshot -r $host_ds@bare
-
-cat > $POOL_MNT/boot/loader.conf.local <<EOF
-vfs.root.mountfrom="zfs:$host_ds"
-EOF
 
 maybe_add_eli_swap_to_fstab
 
