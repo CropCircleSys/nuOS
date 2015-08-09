@@ -25,6 +25,8 @@ nuos_init -q
 
 : ${from_ds:=$POOL_BOOT_NAME}
 
-for ds in `zfs list -r -H -p -o name $from_ds`; do
-	zfs get -H -p all $ds
-done
+{
+	for ds in `zfs list -r -H -p -o name $from_ds`; do
+		zfs get -H -p all $ds
+	done
+} | grep -E -v '	(used|available|logicalused|usedbydataset|usedbysnapshots|compressratio|refcompressratio|usedbychildren|referenced|logicalreferenced|written)	'
