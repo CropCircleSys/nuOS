@@ -30,6 +30,7 @@ collection_vars_init () {
 		blank
 		sysutils/memtest86+
 		sysutils/jail2
+		sysutils/beadm-devel
 	'
 	COLL_lite='
 		bare

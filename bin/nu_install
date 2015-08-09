@@ -115,7 +115,7 @@ if [ -n "${OPT_FORCE_BUILD-}" \
 	(cd /usr/src && make -D WITHOUT_KERNEL_SYMBOLS DESTDIR=$POOL_MNT KERNCONF=$TRGT_KERN installkernel installworld distribution)
 	:> $POOL_MNT/etc/fstab
 	
-	zfs snapshot -r $POOL_NAME/os/$BASEOS_TYPE/$BASEOS_VER@dist
+	zfs snapshot -r $POOL_NAME/os/$BASEOS_TYPE/$BASEOS_VER@freebsd_dist
 	
 	cat > $POOL_MNT/boot/loader.conf <<'EOF'
 zfs_load="YES"
@@ -125,15 +125,18 @@ EOF
 zfs_enable="YES"
 EOF
 	
-	zfs snapshot -r $POOL_NAME/os/$BASEOS_TYPE/$BASEOS_VER@blank
+	zfs snapshot -r $POOL_NAME/os/$BASEOS_TYPE/$BASEOS_VER@zfs_enabled
 
-	(cd $POOL_MNT && mkdir -p compat/linux/proc compat/linux/sys usr/ports/packages)
-	
 	cat >> $POOL_MNT/etc/fstab <<'EOF'
 tmp /tmp tmpfs rw,nosuid 0 0
 EOF
-
-	zfs snapshot -r $POOL_NAME/os/$BASEOS_TYPE/$BASEOS_VER@bare
+	
+	zfs snapshot -r $POOL_NAME/os/$BASEOS_TYPE/$BASEOS_VER@tmpfs_enabled
+	
+	(cd $POOL_MNT && mkdir -p compat/linux/proc compat/linux/sys usr/ports/packages)
+	
+	zfs snapshot -r $POOL_NAME/os/$BASEOS_TYPE/$BASEOS_VER@pkg_ready
+	
 	
 	zfs set mountpoint=none $POOL_NAME/os/$BASEOS_TYPE/$BASEOS_VER/etc/local
 	zfs set canmount=off $POOL_NAME/os/$BASEOS_TYPE/$BASEOS_VER/etc/local
@@ -141,11 +144,11 @@ EOF
 	zfs set canmount=off $POOL_NAME/os/$BASEOS_TYPE/$BASEOS_VER
 	
 	zfs create -o mountpoint=none -o canmount=off $POOL_NAME/os/nuOS
-	zfs clone -o mountpoint=/ -o canmount=noauto $POOL_NAME/os/$BASEOS_TYPE/$BASEOS_VER@bare $POOL_NAME/os/nuOS/$NUOS_VER
-	zfs clone $POOL_NAME/os/$BASEOS_TYPE/$BASEOS_VER/etc@bare $POOL_NAME/os/nuOS/$NUOS_VER/etc
-	zfs clone -o mountpoint=/usr/local/etc $POOL_NAME/os/$BASEOS_TYPE/$BASEOS_VER/etc/local@bare $POOL_NAME/os/nuOS/$NUOS_VER/etc/local
-	zfs clone $POOL_NAME/os/$BASEOS_TYPE/$BASEOS_VER/var@bare $POOL_NAME/os/nuOS/$NUOS_VER/var
-	zfs clone $POOL_NAME/os/$BASEOS_TYPE/$BASEOS_VER/var/db@bare $POOL_NAME/os/nuOS/$NUOS_VER/var/db
+	zfs clone -o mountpoint=/ -o canmount=noauto $POOL_NAME/os/$BASEOS_TYPE/$BASEOS_VER@pkg_ready $POOL_NAME/os/nuOS/$NUOS_VER
+	zfs clone $POOL_NAME/os/$BASEOS_TYPE/$BASEOS_VER/etc@pkg_ready $POOL_NAME/os/nuOS/$NUOS_VER/etc
+	zfs clone -o mountpoint=/usr/local/etc $POOL_NAME/os/$BASEOS_TYPE/$BASEOS_VER/etc/local@pkg_ready $POOL_NAME/os/nuOS/$NUOS_VER/etc/local
+	zfs clone $POOL_NAME/os/$BASEOS_TYPE/$BASEOS_VER/var@pkg_ready $POOL_NAME/os/nuOS/$NUOS_VER/var
+	zfs clone $POOL_NAME/os/$BASEOS_TYPE/$BASEOS_VER/var/db@pkg_ready $POOL_NAME/os/nuOS/$NUOS_VER/var/db
 	
 	cat >> $POOL_MNT/etc/fstab <<'EOF'
 fdesc /dev/fd fdescfs rw 0 0
@@ -535,6 +538,9 @@ EOF
 				sister nu_install_pkg -C $POOL_MNT -R $tree_node
 				;;
 			[^/]*)
+				if [ bare = $tree_node ]; then
+					sister enable_svc -C $POOL_MNT jail2
+				fi
 				zfs snapshot -r $POOL_NAME/os/nuOS/$NUOS_VER@$tree_node
 				;;
 		esac
@@ -543,7 +549,7 @@ EOF
 	umount $POOL_MNT/tmp
 	
 else
-	zfs send -R $POOL_BOOT_NAME/os/$BASEOS_TYPE/$BASEOS_VER@bare | zfs receive -vd $POOL_NAME
+	zfs send -R $POOL_BOOT_NAME/os/$BASEOS_TYPE/$BASEOS_VER@pkg_ready | zfs receive -vd $POOL_NAME
 	zfs set mountpoint=none $POOL_NAME/os
 	zfs set canmount=off $POOL_NAME/os
 	zfs set mountpoint=none $POOL_NAME/os/$BASEOS_TYPE
@@ -552,7 +558,7 @@ else
 	zfs set canmount=off $POOL_NAME/os/nuOS
 fi
 
-zfs snapshot -r $POOL_NAME/os/nuOS/$NUOS_VER@base
+zfs snapshot -r $POOL_NAME/os/nuOS/$NUOS_VER@base_nuos_install
 
 zfs create -o mountpoint=none -o canmount=off $POOL_NAME/os/$BASEOS_TYPE/src
 zfs create -o mountpoint=none -o canmount=off $POOL_NAME/os/$BASEOS_TYPE/src/obj
@@ -563,31 +569,31 @@ if [ -z "${COPY_SVN-}" ]; then
 fi
 if [ -n "${COPY_SRC-}" ]; then
 	if [ -z "${OPT_FORCE_BUILD-}" -a -n "${POOL_BOOT_NAME-}" ] \
-		&& zfs list $POOL_BOOT_NAME/os/$BASEOS_TYPE/src/$BASEOS_VER@dist \
-		&& [ -n "${COPY_SVN-}" -a -d /usr/src/.zfs/snapshot/dist/.svn ] \
-			|| [ -z "${COPY_SVN-}" -a ! -d /usr/src/.zfs/snapshot/dist/.svn ]
+		&& zfs list $POOL_BOOT_NAME/os/$BASEOS_TYPE/src/$BASEOS_VER@freebsd_dist \
+		&& [ -n "${COPY_SVN-}" -a -d /usr/src/.zfs/snapshot/freebsd_dist/.svn ] \
+			|| [ -z "${COPY_SVN-}" -a ! -d /usr/src/.zfs/snapshot/freebsd_dist/.svn ]
 	then
-		zfs send $POOL_BOOT_NAME/os/$BASEOS_TYPE/src/$BASEOS_VER@dist | zfs receive -vFd $POOL_NAME
+		zfs send $POOL_BOOT_NAME/os/$BASEOS_TYPE/src/$BASEOS_VER@freebsd_dist | zfs receive -vFd $POOL_NAME
 		if [ -n "${OPT_DONT_PRESERVE_DIST_SNAP-}" ]; then
-			zfs destroy $POOL_NAME/os/$BASEOS_TYPE/src/$BASEOS_VER@dist
+			zfs destroy $POOL_NAME/os/$BASEOS_TYPE/src/$BASEOS_VER@freebsd_dist
 		fi
 	else
 		tar -cpf - -C /usr ${exclude_svn:+--exclude src/.svn} src | tar -xpvf - -C $POOL_MNT/usr
 		if [ -z "${OPT_DONT_PRESERVE_DIST_SNAP-}" ]; then
-			zfs snapshot $POOL_NAME/os/$BASEOS_TYPE/src/$BASEOS_VER@dist
+			zfs snapshot $POOL_NAME/os/$BASEOS_TYPE/src/$BASEOS_VER@freebsd_dist
 		fi
 	fi
 	if [ -z "${OPT_FORCE_BUILD-}" -a -n "${POOL_BOOT_NAME-}" ] \
-		&& zfs list $POOL_BOOT_NAME/os/$BASEOS_TYPE/src/obj/$BASEOS_VER@dist
+		&& zfs list $POOL_BOOT_NAME/os/$BASEOS_TYPE/src/obj/$BASEOS_VER@freebsd_dist
 	then
-		zfs send $POOL_BOOT_NAME/os/$BASEOS_TYPE/src/obj/$BASEOS_VER@dist | zfs receive -vFd $POOL_NAME
+		zfs send $POOL_BOOT_NAME/os/$BASEOS_TYPE/src/obj/$BASEOS_VER@freebsd_dist | zfs receive -vFd $POOL_NAME
 		if [ -n "${OPT_DONT_PRESERVE_DIST_SNAP-}" ]; then
-			zfs destroy $POOL_NAME/os/$BASEOS_TYPE/src/obj/$BASEOS_VER@dist
+			zfs destroy $POOL_NAME/os/$BASEOS_TYPE/src/obj/$BASEOS_VER@freebsd_dist
 		fi
 	else
 		tar -cpf - -C /usr obj | tar -xpvf - -C $POOL_MNT/usr
 		if [ -z "${OPT_DONT_PRESERVE_DIST_SNAP-}" ]; then
-			zfs snapshot $POOL_NAME/os/$BASEOS_TYPE/src/obj/$BASEOS_VER@dist
+			zfs snapshot $POOL_NAME/os/$BASEOS_TYPE/src/obj/$BASEOS_VER@freebsd_dist
 		fi
 	fi
 fi
@@ -617,7 +623,7 @@ if [ -n "${COPY_PORTS-}" ]; then
 		fi
 	fi
 	if [ -z "${OPT_DONT_PRESERVE_DIST_SNAP-}" ]; then
-		zfs snapshot $POOL_NAME/os/$BASEOS_TYPE/ports/snap-db@dist
+		zfs snapshot $POOL_NAME/os/$BASEOS_TYPE/ports/snap-db@pool_genesis
 	fi
 	if [ -z "${OPT_FORCE_BUILD-}" -a -n "${POOL_BOOT_NAME-}" ] \
 		&& zfs list $POOL_BOOT_NAME/os/$BASEOS_TYPE/ports/src/head
@@ -637,7 +643,7 @@ if [ -n "${COPY_PORTS-}" ]; then
 		fi
 	fi
 	if [ -z "${OPT_DONT_PRESERVE_DIST_SNAP-}" ]; then
-		zfs snapshot $POOL_NAME/os/$BASEOS_TYPE/ports/src/head@dist
+		zfs snapshot $POOL_NAME/os/$BASEOS_TYPE/ports/src/head@pool_genesis
 	fi
 fi
 zfs unmount $POOL_NAME/os/$BASEOS_TYPE/ports/snap-db
@@ -657,7 +663,7 @@ if [ -n "${COPY_DEV_PKGS-}" ]; then
 		tar -cpf - -C /usr/ports packages | tar -xpvf - -C $POOL_MNT/usr/ports
 	fi
 	if [ -z "${OPT_DONT_PRESERVE_DIST_SNAP-}" ]; then
-		zfs snapshot $POOL_NAME/os/nuOS/pkg/$NUOS_VER@dist
+		zfs snapshot $POOL_NAME/os/nuOS/pkg/$NUOS_VER@nuos_dist
 	fi
 fi
 zfs unmount $POOL_NAME/os/nuOS/pkg/$NUOS_VER
@@ -668,11 +674,11 @@ zfs set mountpoint=none $POOL_NAME/os/nuOS/$NUOS_VER
 zfs set canmount=off $POOL_NAME/os/nuOS/$NUOS_VER
 
 zfs create -o mountpoint=none -o canmount=off $POOL_NAME/sys
-zfs clone -o mountpoint=/ -o canmount=noauto $POOL_NAME/os/nuOS/$NUOS_VER@base $POOL_NAME/sys/rescue
-zfs clone $POOL_NAME/os/nuOS/$NUOS_VER/etc@base $POOL_NAME/sys/rescue/etc
-zfs clone -o mountpoint=/usr/local/etc $POOL_NAME/os/nuOS/$NUOS_VER/etc/local@base $POOL_NAME/sys/rescue/etc/local
-zfs clone $POOL_NAME/os/nuOS/$NUOS_VER/var@base $POOL_NAME/sys/rescue/var
-zfs clone $POOL_NAME/os/nuOS/$NUOS_VER/var/db@base $POOL_NAME/sys/rescue/var/db
+zfs clone -o mountpoint=/ -o canmount=noauto $POOL_NAME/os/nuOS/$NUOS_VER@base_nuos_install $POOL_NAME/sys/rescue
+zfs clone $POOL_NAME/os/nuOS/$NUOS_VER/etc@base_nuos_install $POOL_NAME/sys/rescue/etc
+zfs clone -o mountpoint=/usr/local/etc $POOL_NAME/os/nuOS/$NUOS_VER/etc/local@base_nuos_install $POOL_NAME/sys/rescue/etc/local
+zfs clone $POOL_NAME/os/nuOS/$NUOS_VER/var@base_nuos_install $POOL_NAME/sys/rescue/var
+zfs clone $POOL_NAME/os/nuOS/$NUOS_VER/var/db@base_nuos_install $POOL_NAME/sys/rescue/var/db
 
 eval `stat -f "mode=%OMp%03OLp uid=%Du gid=%Dg flags=%Of" $POOL_MNT/var/db/entropy`
 zfs create -o mountpoint=/var/db/entropy -o logbias=throughput -o sync=disabled $POOL_NAME/entropy
@@ -701,7 +707,7 @@ else
 fi
 rmdir "$tempdir"
 
-zfs snapshot -r $POOL_NAME/sys/rescue@sys
+zfs snapshot -r $POOL_NAME/sys/rescue@default_sys_parent
 
 if [ -n "${OPT_ELI-}" ]; then
 	swap_fstab_entry="/dev/zvol/$POOL_NAME/swap/sw0.eli none swap sw 0 0"
@@ -742,29 +748,29 @@ zfs unmount $POOL_NAME/entropy
 zfs unmount $POOL_NAME/sys/rescue
 zfs set mountpoint=legacy $POOL_NAME/sys/rescue/var
 zfs set mountpoint=legacy $POOL_NAME/sys/rescue/var/db
-zfs snapshot -r $POOL_NAME/sys/rescue@boot
 
-zfs create -o mountpoint=none -o canmount=off -o org.nuos:selected_host_revision=rev0 $POOL_NAME/sys/$NEW_HOST
-host_ds=$POOL_NAME/sys/$NEW_HOST/rev0
+zfs snapshot -r $POOL_NAME/sys/rescue@emergency_boot
 
-zfs clone -o mountpoint=/ $POOL_NAME/sys/rescue@sys $host_ds
-zfs clone $POOL_NAME/sys/rescue/etc@sys $host_ds/etc
-zfs clone -o mountpoint=/usr/local/etc $POOL_NAME/sys/rescue/etc/local@sys $host_ds/etc/local
-zfs clone $POOL_NAME/sys/rescue/var@sys $host_ds/var
-zfs clone $POOL_NAME/sys/rescue/var/db@sys $host_ds/var/db
+#zfs create -o mountpoint=none -o canmount=off -o org.nuos:selected_host_revision=rev0 $POOL_NAME/sys/$NEW_HOST
+host_ds=$POOL_NAME/sys/$NEW_HOST-rev0
 
-zfs snapshot -r $host_ds@blank
+zfs clone -o mountpoint=/ $POOL_NAME/sys/rescue@default_sys_parent $host_ds
+zfs clone $POOL_NAME/sys/rescue/etc@default_sys_parent $host_ds/etc
+zfs clone -o mountpoint=/usr/local/etc $POOL_NAME/sys/rescue/etc/local@default_sys_parent $host_ds/etc/local
+zfs clone $POOL_NAME/sys/rescue/var@default_sys_parent $host_ds/var
+zfs clone $POOL_NAME/sys/rescue/var/db@default_sys_parent $host_ds/var/db
+
+
 
 zfs create -o mountpoint=none -o canmount=off $POOL_NAME/svc
 
 export NEW_HOST
-sister nu_jail ${OPT_VERBOSE:+-v} -C $POOL_MNT -p $POOL_NAME -t clone -w -j base-lab -o $BASEOS_TYPE/$BASEOS_VER -s bare -i 127.0.0.2 -a '' -u '' -b '' -q
+sister nu_jail ${OPT_VERBOSE:+-v} -C $POOL_MNT -p $POOL_NAME -t clone -w -j base-lab -o $BASEOS_TYPE/$BASEOS_VER -s pkg_ready -i 127.0.0.2 -a '' -u '' -b '' -q
 sister nu_jail ${OPT_VERBOSE:+-v} -C $POOL_MNT -p $POOL_NAME -t clone -w -j nuos-lab -s blank -i 127.0.0.3 -a '' -u '' -b '' -q
 sister nu_jail ${OPT_VERBOSE:+-v} -C $POOL_MNT -p $POOL_NAME -t clone -w -j lab -i 127.0.0.4 -a '' -u '' -b '' -q
 
-sister enable_svc -C $POOL_MNT jail2
 
-zfs snapshot -r $host_ds@bare
+zfs snapshot -r $host_ds@bare_sys_host
 
 maybe_add_eli_swap_to_fstab
 

@@ -25,7 +25,7 @@ jail_vars_init () {
 	echo 'jail type       -t JAIL_TYPE      ' ${JAIL_TYPE:=jail}
 	echo 'jail opsys      -o JAIL_OS        ' ${JAIL_OS:=$HOSTOS_TYPE/$HOSTOS_VER}
 	echo 'pool name       -p POOL_NAME      ' ${POOL_NAME:=$POOL_BOOT_NAME}
-	echo 'jail snapshot   -s JAIL_SNAP      ' ${JAIL_SNAP:=base}
+	echo 'jail snapshot   -s JAIL_SNAP      ' ${JAIL_SNAP:=base_nuos_install}
 	echo 'jail dataset       JAIL_DATA      ' ${JAIL_DATA:=$POOL_NAME/jail/$JAIL_NAME}
 	echo 'jail path          JAIL_PATH      ' ${JAIL_PATH:=/var/jail/$JAIL_NAME}
 	local hostname=${NEW_HOST:-`hostname`}
