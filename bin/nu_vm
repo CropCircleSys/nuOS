@@ -18,12 +18,14 @@ NUOS_VER=0.0.9.3b0
 
 . "$(dirname "$(realpath "$0")")/../lib/nu_system.sh"
 
-while getopts ac:C:d:Dfh:ij:lLm:nNo:OsSu:U:vx: OPT; do case $OPT in
+while getopts ab:c:C:d:De:fh:ij:lLm:nNo:Or:sSu:U:vx: OPT; do case $OPT in
 	a) OPT_ADD=y;;
+	b) BRIDGE_IFACE=$OPTARG;;
 	c) VM_CPUS=$OPTARG;;
 	C) CHROOTDIR=$OPTARG;;
 	d) push VM_HDDS ${OPTARG#/dev/};;
 	D) OPT_DELETE=y;;
+	e) ETHERNET_CARD=$OPTARG;;
 	f) OPT_FORCE=y;;
 	h) HOST_NAME=$OPTARG;;
 	i) OPT_INIT=y;;
@@ -37,6 +39,7 @@ while getopts ac:C:d:Dfh:ij:lLm:nNo:OsSu:U:vx: OPT; do case $OPT in
 	O) OPT_LIST_OS_TYPES=y;;
 	s) OPT_START=y;;
 	S) OPT_STOP=y;;
+	r) STORAGE_BUS=$OPTARG;;
 	u) push ADD_USERS $OPTARG;;
 	U) push DEL_USERS $OPTARG;;
 	v) OPT_VERBOSE=y;;
@@ -171,11 +174,17 @@ require_cfgfile () {
 }
 
 if [ -n "${OPT_ADD-}" ]; then
+	: ${STORAGE_BUS:=sata}
 	VBoxManage createvm --name "$VM_NAME" --ostype "$OS_TYPE" --register
-	VBoxManage modifyvm "$VM_NAME" --rtcuseutc on --hwvirtex on --ioapic on --chipset $CHIPSET --hpet on --cpus "$VM_CPUS" --nictype1 virtio --memory "$VM_MEM_MB" --vram 16 --mouse usb --keyboard usb
-	hbaname=sata0
+	VBoxManage modifyvm "$VM_NAME" --rtcuseutc on --hwvirtex on --ioapic on --chipset $CHIPSET --hpet on --cpus "$VM_CPUS" --nictype1 ${ETHERNET_CARD:-virtio} ${BRIDGE_IFACE:+--nic1 bridged --bridgeadapter1 $BRIDGE_IFACE} --memory "$VM_MEM_MB" --vram 16 --mouse usb --keyboard usb
+	case $STORAGE_BUS in
+		sata) STORAGE_CARD=IntelAHCI STORAGE_PORTS=30;;
+		scsi) STORAGE_CARD=LSILogic STORAGE_PORTS=16;;
+		sas) STORAGE_CARD=LSILogicSAS STORAGE_PORTS=8;;
+	esac
+	hbaname=${STORAGE_BUS}0
 	hbaname_noblank=$hbaname
-	VBoxManage storagectl "$VM_NAME" --name $hbaname --add sata --controller IntelAhci --portcount 30
+	VBoxManage storagectl "$VM_NAME" --name $hbaname --add $STORAGE_BUS --controller $STORAGE_CARD --portcount $STORAGE_PORTS
 	done=y
 else
 	if [ -n "${DEL_HDDS-}" ]; then
