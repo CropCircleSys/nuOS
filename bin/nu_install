@@ -150,6 +150,11 @@ EOF
 	zfs clone $POOL_NAME/os/$BASEOS_TYPE/$BASEOS_VER/var@pkg_ready $POOL_NAME/os/nuOS/$NUOS_VER/var
 	zfs clone $POOL_NAME/os/$BASEOS_TYPE/$BASEOS_VER/var/db@pkg_ready $POOL_NAME/os/nuOS/$NUOS_VER/var/db
 	
+	cat > $POOL_MNT/usr/local/etc/beadm.conf <<'EOF'
+echo beadm is incompatible with nuOS >&2
+exit 79
+EOF
+	
 	cat >> $POOL_MNT/etc/fstab <<'EOF'
 fdesc /dev/fd fdescfs rw 0 0
 proc /proc procfs rw 0 0
@@ -558,8 +563,6 @@ else
 	zfs set canmount=off $POOL_NAME/os/nuOS
 fi
 
-zfs snapshot -r $POOL_NAME/os/nuOS/$NUOS_VER@base_nuos_install
-
 zfs create -o mountpoint=none -o canmount=off $POOL_NAME/os/$BASEOS_TYPE/src
 zfs create -o mountpoint=none -o canmount=off $POOL_NAME/os/$BASEOS_TYPE/src/obj
 zfs create -o mountpoint=/usr/src $POOL_NAME/os/$BASEOS_TYPE/src/$BASEOS_VER
@@ -668,17 +671,7 @@ if [ -n "${COPY_DEV_PKGS-}" ]; then
 fi
 zfs unmount $POOL_NAME/os/nuOS/pkg/$NUOS_VER
 
-zfs set mountpoint=none $POOL_NAME/os/nuOS/$NUOS_VER/etc/local
-zfs set canmount=off $POOL_NAME/os/nuOS/$NUOS_VER/etc/local
-zfs set mountpoint=none $POOL_NAME/os/nuOS/$NUOS_VER
-zfs set canmount=off $POOL_NAME/os/nuOS/$NUOS_VER
-
-zfs create -o mountpoint=none -o canmount=off $POOL_NAME/sys
-zfs clone -o mountpoint=/ -o canmount=noauto $POOL_NAME/os/nuOS/$NUOS_VER@base_nuos_install $POOL_NAME/sys/rescue
-zfs clone $POOL_NAME/os/nuOS/$NUOS_VER/etc@base_nuos_install $POOL_NAME/sys/rescue/etc
-zfs clone -o mountpoint=/usr/local/etc $POOL_NAME/os/nuOS/$NUOS_VER/etc/local@base_nuos_install $POOL_NAME/sys/rescue/etc/local
-zfs clone $POOL_NAME/os/nuOS/$NUOS_VER/var@base_nuos_install $POOL_NAME/sys/rescue/var
-zfs clone $POOL_NAME/os/nuOS/$NUOS_VER/var/db@base_nuos_install $POOL_NAME/sys/rescue/var/db
+zfs snapshot -r $POOL_NAME/os/nuOS/$NUOS_VER@base_nuos_install
 
 eval `stat -f "mode=%OMp%03OLp uid=%Du gid=%Dg flags=%Of" $POOL_MNT/var/db/entropy`
 zfs create -o mountpoint=/var/db/entropy -o logbias=throughput -o sync=disabled $POOL_NAME/entropy
@@ -688,14 +681,21 @@ chmod $mode $POOL_MNT/var/db/entropy
 chown $uid:$gid $POOL_MNT/var/db/entropy/seed
 chmod a-w $POOL_MNT/var/db/entropy/seed
 chflags $flags $POOL_MNT/var/db/entropy
+zfs unmount $POOL_NAME/entropy
 
-mkdir $POOL_MNT/boot/etc
-mv -n $POOL_MNT/etc/login.conf.db $POOL_MNT/boot/etc/
-ln -s ../boot/etc/login.conf.db $POOL_MNT/etc/login.conf.db
-zfs unmount $POOL_NAME/sys/rescue/etc
-ln -s ../boot/etc/login.conf.db $POOL_MNT/etc/login.conf.db
-zfs mount $POOL_NAME/sys/rescue/etc
+zfs set mountpoint=none $POOL_NAME/os/nuOS/$NUOS_VER/etc/local
+zfs set canmount=off $POOL_NAME/os/nuOS/$NUOS_VER/etc/local
+zfs set mountpoint=none $POOL_NAME/os/nuOS/$NUOS_VER
+zfs set canmount=off $POOL_NAME/os/nuOS/$NUOS_VER
 
+zfs create -o mountpoint=none -o canmount=off $POOL_NAME/sys
+zfs create -o mountpoint=none -o canmount=off $POOL_NAME/sys/factory
+
+zfs clone -o mountpoint=/ -o canmount=noauto $POOL_NAME/os/nuOS/$NUOS_VER@base_nuos_install $POOL_NAME/sys/factory/nuOS-$NUOS_VER
+zfs clone $POOL_NAME/os/nuOS/$NUOS_VER/etc@base_nuos_install $POOL_NAME/sys/factory/nuOS-$NUOS_VER/etc
+zfs clone -o mountpoint=/usr/local/etc $POOL_NAME/os/nuOS/$NUOS_VER/etc/local@base_nuos_install $POOL_NAME/sys/factory/nuOS-$NUOS_VER/etc/local
+zfs clone $POOL_NAME/os/nuOS/$NUOS_VER/var@base_nuos_install $POOL_NAME/sys/factory/nuOS-$NUOS_VER/var
+zfs clone $POOL_NAME/os/nuOS/$NUOS_VER/var/db@base_nuos_install $POOL_NAME/sys/factory/nuOS-$NUOS_VER/var/db
 
 require_tmp -d tempdir
 if [ -n "${INJECT_CACHE-}" ]; then
@@ -707,7 +707,29 @@ else
 fi
 rmdir "$tempdir"
 
-zfs snapshot -r $POOL_NAME/sys/rescue@default_sys_parent
+cat >> $POOL_MNT/etc/nuos/conf <<EOF
+POOL_BOOT_NAME=$POOL_NAME
+EOF
+
+mkdir $POOL_MNT/boot/etc
+mv -n $POOL_MNT/etc/login.conf.db $POOL_MNT/boot/etc/
+ln -s ../boot/etc/login.conf.db $POOL_MNT/etc/login.conf.db
+zfs unmount $POOL_NAME/sys/factory/nuOS-$NUOS_VER/etc
+ln -s ../boot/etc/login.conf.db $POOL_MNT/etc/login.conf.db
+zfs mount $POOL_NAME/sys/factory/nuOS-$NUOS_VER/etc
+
+zfs snapshot -r $POOL_NAME/sys/factory/nuOS-$NUOS_VER@manufacture
+
+zfs set mountpoint=none $POOL_NAME/sys/factory/nuOS-$NUOS_VER/etc/local
+zfs set canmount=off $POOL_NAME/sys/factory/nuOS-$NUOS_VER/etc/local
+zfs set mountpoint=none $POOL_NAME/sys/factory/nuOS-$NUOS_VER
+zfs set canmount=off $POOL_NAME/sys/factory/nuOS-$NUOS_VER
+
+zfs clone -o mountpoint=/ -o canmount=noauto $POOL_NAME/sys/factory/nuOS-$NUOS_VER@manufacture $POOL_NAME/sys/rescue
+zfs clone $POOL_NAME/sys/factory/nuOS-$NUOS_VER/etc@manufacture $POOL_NAME/sys/rescue/etc
+zfs clone -o mountpoint=/usr/local/etc $POOL_NAME/sys/factory/nuOS-$NUOS_VER/etc/local@manufacture $POOL_NAME/sys/rescue/etc/local
+zfs clone $POOL_NAME/sys/factory/nuOS-$NUOS_VER/var@manufacture $POOL_NAME/sys/rescue/var
+zfs clone $POOL_NAME/sys/factory/nuOS-$NUOS_VER/var/db@manufacture $POOL_NAME/sys/rescue/var/db
 
 if [ -n "${OPT_ELI-}" ]; then
 	swap_fstab_entry="/dev/zvol/$POOL_NAME/swap/sw0.eli none swap sw 0 0"
@@ -744,44 +766,34 @@ zfs set canmount=noauto $POOL_NAME/sys/rescue/etc/local
 zfs set canmount=noauto $POOL_NAME/sys/rescue/var
 zfs set canmount=noauto $POOL_NAME/sys/rescue/var/db
 zfs unmount $POOL_NAME/sys/rescue/etc/local
-zfs unmount $POOL_NAME/entropy
 zfs unmount $POOL_NAME/sys/rescue
 zfs set mountpoint=legacy $POOL_NAME/sys/rescue/var
 zfs set mountpoint=legacy $POOL_NAME/sys/rescue/var/db
 
 zfs snapshot -r $POOL_NAME/sys/rescue@emergency_boot
 
-#zfs create -o mountpoint=none -o canmount=off -o org.nuos:selected_host_revision=rev0 $POOL_NAME/sys/$NEW_HOST
-host_ds=$POOL_NAME/sys/$NEW_HOST-rev0
-
-zfs clone -o mountpoint=/ $POOL_NAME/sys/rescue@default_sys_parent $host_ds
-zfs clone $POOL_NAME/sys/rescue/etc@default_sys_parent $host_ds/etc
-zfs clone -o mountpoint=/usr/local/etc $POOL_NAME/sys/rescue/etc/local@default_sys_parent $host_ds/etc/local
-zfs clone $POOL_NAME/sys/rescue/var@default_sys_parent $host_ds/var
-zfs clone $POOL_NAME/sys/rescue/var/db@default_sys_parent $host_ds/var/db
-
 zfs create -o mountpoint=none -o canmount=off $POOL_NAME/svc
 
+host_ds=$POOL_NAME/sys/$NEW_HOST-v0
 
-zfs snapshot -r $host_ds@blank_sys_host
+zfs clone -o mountpoint=/ $POOL_NAME/sys/factory/nuOS-$NUOS_VER@manufacture $host_ds
+zfs clone $POOL_NAME/sys/factory/nuOS-$NUOS_VER/etc@manufacture $host_ds/etc
+zfs clone -o mountpoint=/usr/local/etc $POOL_NAME/sys/factory/nuOS-$NUOS_VER/etc/local@manufacture $host_ds/etc/local
+zfs clone $POOL_NAME/sys/factory/nuOS-$NUOS_VER/var@manufacture $host_ds/var
+zfs clone $POOL_NAME/sys/factory/nuOS-$NUOS_VER/var/db@manufacture $host_ds/var/db
+
+cat >> $POOL_MNT/etc/rc.conf.local <<EOF
+hostname="$NEW_HOST"
+EOF
+
+sed -i '' -e "s/\.my\.domain\$/.`echo $NEW_HOST | sed -e 's/^[^\.]*\.//'` $NEW_HOST `echo $NEW_HOST | sed -e 's/\..*//'`/" $POOL_MNT/etc/hosts
 
 export NEW_HOST
 sister nu_jail ${OPT_VERBOSE:+-v} -C $POOL_MNT -p $POOL_NAME -t clone -w -j base-lab -o $BASEOS_TYPE/$BASEOS_VER -s pkg_ready -i 127.0.0.2 -a '' -u '' -b '' -q
 sister nu_jail ${OPT_VERBOSE:+-v} -C $POOL_MNT -p $POOL_NAME -t clone -w -j nuos-lab -s blank -i 127.0.0.3 -a '' -u '' -b '' -q
 sister nu_jail ${OPT_VERBOSE:+-v} -C $POOL_MNT -p $POOL_NAME -t clone -w -j lab -i 127.0.0.4 -a '' -u '' -b '' -q
 
-zfs snapshot -r $host_ds@bare_sys_host
-
-
 maybe_add_eli_swap_to_fstab
-
-cat >> $POOL_MNT/etc/rc.conf.local <<EOF
-hostname="$NEW_HOST"
-EOF
-
-cat >> $POOL_MNT/etc/nuos/conf <<EOF
-POOL_BOOT_NAME=$POOL_NAME
-EOF
 
 if [ -n "${OPT_ELI-}" ]; then
 	private_chunk=$((`zfs get -H -p -o value available $POOL_NAME`/24/4096*4096))
@@ -814,8 +826,6 @@ EOF
 private
 EOF
 fi
-
-sed -i '' -e "s/\.my\.domain\$/.`echo $NEW_HOST | sed -e 's/^[^\.]*\.//'` $NEW_HOST `echo $NEW_HOST | sed -e 's/\..*//'`/" $POOL_MNT/etc/hosts
 
 zfs snapshot -r $host_ds@boot
 zpool set bootfs=$host_ds $POOL_NAME
