@@ -30,6 +30,11 @@ collection_vars_init () {
 		blank
 		sysutils/memtest86+
 		sysutils/jail2
+		sysutils/pefs-kmod
+		security/gnupg
+		security/wpa_supplicant
+		net/dhcpcd
+		dns/unbound
 	'
 	COLL_lite='
 		bare
@@ -49,10 +54,8 @@ collection_vars_init () {
 	COLL_server='
 		developer
 		mail/postfix
-		sysutils/pefs-kmod
-		security/gnupg
-		dns/unbound
 		dns/djbdns
+		dns/knot2
 		net/openldap24-server
 		security/openvpn
 		ftp/pure-ftpd
