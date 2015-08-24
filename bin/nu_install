@@ -398,82 +398,6 @@ Edit /etc/motd to change this login announcement.
 
 EOF
 		
-		nuos_supported_len=${#NUOS_SUPPORTED}
-		[ $nuos_supported_len -le 23 ]
-		nuos_supported_23_chrs=`echo "$NUOS_SUPPORTED" | awk '{printf "%-23s", $1}'`
-		
-# 		patch -b '' $POOL_MNT/boot/beastie.4th <<EOF
-# 174a175,197
-# > : nuosbw-logo ( x y -- ) \\ B/W nuOS spam (21 rows x 33ish columns)
-# > 
-# > 	2dup at-xy ."      Copyright (c) 2008-2015" 1+
-# > 	2dup at-xy ." " 1+
-# > 	2dup at-xy ."   $BASEOS_TYPE Edition (a.k.a. nuBSD)" 1+
-# > 	2dup at-xy ."   extends $BASEOS_TYPE $BASEOS_VER" 1+
-# > 	2dup at-xy ." " 1+
-# > 	2dup at-xy ."   Official updates and community" 1+
-# > 	2dup at-xy ."        support available at" 1+
-# > 	2dup at-xy ."         https://nuos.org ." 1+
-# > 	2dup at-xy ." " 1+
-# > 	2dup at-xy ."    Other licensing options and" 1+
-# > 	2dup at-xy ."  professional services available" 1+
-# > 	2dup at-xy ." from Crop Circle Systems, Inc. at" 1+
-# > 	2dup at-xy ."         https://ccsys.com ." 1+
-# > 	2dup at-xy ." " 1+
-# > 	2dup at-xy ."   More information about $BASEOS_TYPE" 1+
-# > 	     at-xy ." available at $baseos_info_url ."
-# > 
-# > 	\\ Put the cursor back at the bottom
-# > 	0 25 at-xy
-# > ;
-# > 
-# 186a210
-# > \\ 	nuosbw      B/W nuOS spam (21 rows x 33ish columns)
-# 233a258,261
-# > 	2dup s" nuosbw" compare-insensitive 0= if
-# > 		logoX @ logoY @ nuosbw-logo
-# > 		2drop exit
-# > 	then
-# EOF
-# 		
-# 		patch -b '' $POOL_MNT/boot/brand.4th <<EOF
-# 49a50,63
-# > : nuos-logo ( x y -- ) \\ "nuOS" logo in B/W (7 rows x 38 columns)
-# > 
-# > 	2dup at-xy ." nuOS $NUOS_VER" 1+
-# > 	2dup at-xy ." $nuos_supported_23_chrs _____   _____" 1+
-# > 	2dup at-xy ."        ______  _     _ / ___ \\ / ____|" 1+
-# > 	2dup at-xy ."       |  ___ \\| |   | | |   | | (___" 1+
-# > 	2dup at-xy ."       | |   | | |   | | |   | |\\___ \\" 1+
-# > 	2dup at-xy ."       | |   | | |___| | |___| |____) |" 1+
-# > 	     at-xy ."       |_|   |_|\\______|\\_____/|_____/"
-# > 
-# > 	\\ Put the cursor back at the bottom
-# > 	0 25 at-xy
-# > ;
-# > 
-# 57a72
-# > \\ 	nuos        nuOS banner
-# 89a105,109
-# > 	2dup s" nuos" compare-insensitive 0= if
-# > 		brandX @ brandY @ nuos-logo
-# > 		2drop exit
-# > 	then
-# > 
-# EOF
-# 		
-# 		patch -b '' $POOL_MNT/boot/menu.4th <<'EOF'
-# 420c420
-# < 		drop s" Welcome to FreeBSD"
-# ---
-# > 		drop s" Welcome to nuOS"
-# EOF
-# 		
-# 		cat >> $POOL_MNT/boot/loader.conf <<'EOF'
-# loader_brand="nuos"
-# loader_logo="nuosbw"
-# EOF
-		
 		mkdir $POOL_MNT/usr/nuos
 		tar -cf - -C "$(dirname "$(realpath "$0")")/.." --exclude ^conf --exclude '.?*' . | tar -xvf - -C $POOL_MNT/usr/nuos
 		chown -R root:wheel $POOL_MNT/usr/nuos
@@ -490,7 +414,7 @@ sys/$NEW_HOST/rev0/var
 svc
 home
 EOF
-
+	
 	cat >> $POOL_MNT/$conf <<EOF
 HOSTOS_TYPE=nuOS
 HOSTOS_VER=$NUOS_VER
@@ -510,27 +434,6 @@ HOSTOS_PROC=$TRGT_PROC
 HOSTOS_KERN=$TRGT_KERN
 HOSTOS_OPTZ=$TRGT_OPTZ
 EOF
-		
-# 		patch -b '' $POOL_MNT/boot/menu-commands.4th <<'EOF'
-# 190a191,196
-# > 
-# > : memtest-boot ( -- )
-# >         s" unload" evaluate
-# >         s" load /boot/opt/memtest86+" evaluate
-# >         s" boot" evaluate
-# > ;
-# EOF
-# 		
-# 		patch -b '' $POOL_MNT/boot/menu.rc <<'EOF'
-# 69a70,76
-# > set menu_caption[8]="MemTest86+ RAM test"
-# > \ set menu_caption[8]="Mem[T]est86+ RAM test"
-# > set menu_command[8]="memtest-boot"
-# > \ set menu_keycode[8]="114"
-# > set ansi_caption[8]="MemTest86+ RAM test"
-# > \ set ansi_caption[8]="Mem[1mT[37mest86+ RAM test"
-# > 
-# EOF
 	
 	mount -t tmpfs -o nosuid tmpfs $POOL_MNT/tmp
 	require_tmp -c -C $POOL_MNT pkg_tree
