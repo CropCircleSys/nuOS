@@ -47,12 +47,13 @@ else
 	grep -Ev '^#|^$' < /etc/nuos/backup >| "$backlist"
 fi
 
-sed -e "s|^|$POOL_NAME/|;s|\$|@$snaptime|" < "$backlist" | xargs zfs snapshot -r
+grep -v @ "$backlist" | sed -e "s|^|$POOL_NAME/|;s|\$|@$snaptime|" | xargs zfs snapshot -r
 
 require_tmp backup_log
 
-while read ds; do
+while IFS=@ read ds snap; do
 	ds=$POOL_NAME/$ds
+	: ${snap:=$snaptime}
 	echo "nu_backup.zfs_ds_start	$ds" >> "$backup_log"
 	if [ -z "${FROM_SNAP-}" ]; then
 		for sub_ds in `zfs get -Hp -r -t filesystem,volume -o value name $ds`; do
@@ -88,7 +89,7 @@ while read ds; do
 			echo "nu_backup.zfs_sub_ds_end	$sub_ds" >> "$backup_log"
 		done
 	fi
-	cmd="zfs send -R ${send_add_args-} $ds@$snaptime"
+	cmd="zfs send -R ${send_add_args-} $ds@$snap"
 	$cmd
 	echo "nu_backup.zfs_ds_end	$ds" >> "$backup_log"
 done < "$backlist"
