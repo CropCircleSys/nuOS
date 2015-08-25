@@ -37,9 +37,11 @@ esac; done; shift $(($OPTIND-1))
 [ -n "${OPT_ONLY_SNAP-}" ] || [ -n "${OPT_AUTO-}" -a -z "${OUTPUT_FILE-}" ] || [ ! -e "$OUTPUT_FILE" -o ! -s "$OUTPUT_FILE" ]
 
 . "$(dirname "$(realpath "$0")")/../lib/nu_common.sh"
+. "$(dirname "$(realpath "$0")")/../lib/nu_collection.sh"
 
 baseos_init
 nuos_init
+collection_vars_init
 
 if [ -n "${OPT_AUTO-}" ]; then
 	: ${JAIL_NAME:=lab}
@@ -54,7 +56,6 @@ fi
 
 . "$(dirname "$(realpath "$0")")/../lib/nu_make.sh"
 . "$(dirname "$(realpath "$0")")/../lib/nu_ports.sh"
-. "$(dirname "$(realpath "$0")")/../lib/nu_collection.sh"
 . "$(dirname "$(realpath "$0")")/../lib/nu_install.sh"
 
 maybe_pause

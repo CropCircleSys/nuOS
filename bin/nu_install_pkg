@@ -38,6 +38,7 @@ maybe_yell
 baseos_init
 nuos_init
 make_vars_init
+collection_vars_init
 
 if [ -n "${OPT_YES-}" ]; then
 	yes | sh $0 ${OPT_ARG_SUBPROCESS:+-A} ${OPT_NOMAKE:+-M} ${OPT_NORECURSE:+-R} ${OPT_VERBOSE:+-v} ${CHROOTDIR:+-C "$CHROOTDIR"} -Y $@

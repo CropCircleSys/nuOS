@@ -17,15 +17,17 @@ set -e; set -u; set -C
 nuos_lib_ver=0.0.9.3b0
 [ $nuos_lib_ver = "$NUOS_VER" ]
 [ -n "${nuos_lib_system_loaded-}" ]
-[ -n "${nuos_lib_common_loaded-}" ]
 [ -z "${nuos_lib_collection_loaded-}" ]
 nuos_lib_collection_loaded=y
 
 : ${HOSTOS_PKG_COLLECTION:=desktop}
-: ${PKG_COLLECTION:=$HOSTOS_PKG_COLLECTION}
 
 collection_vars_init () {
+	
+	: ${PKG_COLLECTION:=$HOSTOS_PKG_COLLECTION}
+	
 	COLL_blank=
+	
 	COLL_bare='
 		blank
 		sysutils/memtest86+
@@ -36,6 +38,7 @@ collection_vars_init () {
 		net/dhcpcd
 		dns/unbound
 	'
+	
 	COLL_lite='
 		bare
 		sysutils/screen
@@ -46,11 +49,13 @@ collection_vars_init () {
 		net/rsync
 		security/sudo
 	'
+	
 	COLL_developer='
 		lite
 		devel/subversion
 		devel/git
 	'
+	
 	COLL_server='
 		developer
 		mail/postfix
@@ -96,6 +101,7 @@ collection_vars_init () {
 		mail/roundcube-sieverules
 		irc/irssi
 	'
+	
 	COLL_desktop='
 		server
 		graphics/gimp

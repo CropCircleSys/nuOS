@@ -40,8 +40,10 @@ esac; done; shift $(($OPTIND-1))
 . "$(dirname "$(realpath "$0")")/../lib/nu_common.sh"
 . "$(dirname "$(realpath "$0")")/../lib/nu_admin.sh"
 . "$(dirname "$(realpath "$0")")/../lib/nu_jail.sh"
+. "$(dirname "$(realpath "$0")")/../lib/nu_collection.sh"
 
 nuos_init
+collection_vars_init
 jail_vars_init
 admin_init
 
