@@ -30,10 +30,10 @@ fi
 
 
 ports_tag () {
-	if [ -d /usr/ports/.svn ] && which svn > /dev/null 2>&1; then
-		echo r`svn info /usr/ports | grep ^Revision: | cut -w -f 2`
-	elif [ -f /usr/ports/.svn/info.txt ]; then
+	if [ /usr/ports/.svn/info.txt -nt /usr/ports/.svn/wc.db ]; then
 		echo r`grep ^Revision: /usr/ports/.svn/info.txt | cut -w -f 2`
+	elif [ -d /usr/ports/.svn ] && which svn > /dev/null 2>&1; then
+		echo r`svn info /usr/ports | grep ^Revision: | cut -w -f 2`
 	else
 		[ ! -d /usr/ports/.svn ]
 		cut -d '|' -f 2 /var/db/portsnap/tag
