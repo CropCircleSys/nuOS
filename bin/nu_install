@@ -445,9 +445,11 @@ EOF
 				sister nu_install_pkg -C $POOL_MNT -R $tree_node
 				;;
 			[^/]*)
-				if [ bare = $tree_node ]; then
-					sister enable_svc -C $POOL_MNT jail2
-				fi
+				case $tree_node in
+					bare)
+						sister enable_svc -C $POOL_MNT jail2
+						;;
+				esac
 				zfs snapshot -r $POOL_NAME/os/nuOS/$NUOS_VER@$tree_node
 				;;
 		esac
