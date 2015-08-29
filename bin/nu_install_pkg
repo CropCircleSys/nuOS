@@ -35,8 +35,8 @@ esac; done; shift $(($OPTIND-1))
 . "$(dirname "$(realpath "$0")")/../lib/nu_install.sh"
 
 maybe_yell
-baseos_init
-nuos_init
+baseos_init -q
+nuos_init -q
 make_vars_init
 collection_vars_init
 
