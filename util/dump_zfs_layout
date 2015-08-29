@@ -29,4 +29,4 @@ nuos_init -q
 	for ds in `zfs list -r -H -p -o name $from_ds`; do
 		zfs get -H -p all $ds
 	done
-} | grep -E -v '	(used|available|logicalused|usedbydataset|usedbysnapshots|compressratio|refcompressratio|usedbychildren|referenced|logicalreferenced|written)	'
+} | grep -E -v '	(used|available|logicalused|usedbydataset|usedbysnapshots|compressratio|refcompressratio|usedbychildren|referenced|logicalreferenced|written|creation)	'
