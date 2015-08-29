@@ -30,7 +30,6 @@ choose_svn_server () {
 }
 
 install_vars_init () {
-	make_vars_init
 	if [ -z "${POOL_DEVS-}" ]; then # u shud spec a blank target media
 		if [ -n "${OPT_SWAP-}" ]; then # or ask to use these in (-S)wap
 			# have 2 - 8 GB of xtra ram depending on install options

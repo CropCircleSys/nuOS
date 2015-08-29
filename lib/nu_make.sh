@@ -17,17 +17,23 @@ set -e; set -u; set -C
 nuos_lib_ver=0.0.9.3b0
 [ $nuos_lib_ver = "$NUOS_VER" ]
 [ -n "${nuos_lib_system_loaded-}" ]
+[ -n "${nuos_lib_common_loaded-}" ]
 [ -z "${nuos_lib_make_loaded-}" ]
 nuos_lib_make_loaded=y
 
 make_vars_init () {
-	: ${TRGT_ARCH:=`uname -m`}
-	: ${TRGT_PROC:=`uname -p`}
+	: ${TRGT_ARCH:=$HOSTOS_ARCH}
+	: ${TRGT_PROC:=$HOSTOS_PROC}
 	case $TRGT_PROC in
 		amd64) : ${TRGT_OPTZ:=core2};;
 		i386) : ${TRGT_OPTZ:=pentium3};;
 		*) [ -n "${TRGT_OPTZ-}" ]
 	esac
+	if [ $TRGT_ARCH = $TRGT_PROC ]; then
+		TRGT_MACH=$TRGT_ARCH
+	else
+		TRGT_MACH=$TRGT_ARCH.$TRGT_PROC
+	fi
 }
 
 prepare_make_conf () {

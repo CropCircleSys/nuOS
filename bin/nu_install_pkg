@@ -60,11 +60,6 @@ if [ -z "${OPT_ARG_SUBPROCESS-}" -a -n "${CHROOTDIR-}" ]; then
 fi
 
 os_compat=$BASEOS_TYPE-${BASEOS_VER%%-*}
-if [ $TRGT_ARCH = $TRGT_PROC ]; then
-	mach_compat=$TRGT_ARCH
-else
-	mach_compat=$TRGT_ARCH.$TRGT_PROC
-fi
 
 for port in $*; do
 	uni=`echo $port | tr / _`
@@ -110,10 +105,10 @@ for port in $*; do
 				. "$script"
 			fi
 			if tag=`pkg_db_tag` && [ $tag = `ports_tag` ]; then
-				mkdir -p "/usr/ports/packages/Index.nuOS/$os_compat-$mach_compat"
+				mkdir -p "/usr/ports/packages/Index.nuOS/$os_compat-$TRGT_MACH"
 				idx=`nuos_sha_fngr "$make_conf" "$env" "$makeargs" /var/db/nuos/pkg/$uni/settings /var/db/nuos/pkg/$uni/dependencies/all`
-				mv -v $pkg_file "/usr/ports/packages/Index.nuOS/$os_compat-$mach_compat/$pkg.$tag.$idx.txz"
-				ln -s "../Index.nuOS/$os_compat-$mach_compat/$pkg.$tag.$idx.txz" $pkg_file
+				mv -v $pkg_file "/usr/ports/packages/Index.nuOS/$os_compat-$TRGT_MACH/$pkg.$tag.$idx.txz"
+				ln -s "../Index.nuOS/$os_compat-$TRGT_MACH/$pkg.$tag.$idx.txz" $pkg_file
 			fi
 		fi
 		if pkg info -e $pkg < /dev/null && ( [ -z "${CHROOTDIR-}" ] || pkg ${CHROOTDIR:+-c $CHROOTDIR} info -e $pkg < /dev/null ); then

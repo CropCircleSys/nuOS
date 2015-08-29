@@ -29,6 +29,13 @@ nuos_init () {
 	: ${NUOS_SUPPORTED:=UNSUPPORTED}
 	: ${HOSTOS_TYPE:=$BASEOS_TYPE}
 	: ${HOSTOS_VER:=$BASEOS_VER}
+	: ${HOSTOS_ARCH:=`uname -m`}
+	: ${HOSTOS_PROC:=`uname -p`}
+	if [ $HOSTOS_ARCH = $HOSTOS_PROC ]; then
+		HOSTOS_MACH=$HOSTOS_ARCH
+	else
+		HOSTOS_MACH=$HOSTOS_ARCH.$HOSTOS_PROC
+	fi
 	if [ -q != "${1-}" ]; then
 		echo 'nuos app v#                       ' $NUOS_VER
 		echo 'nuos support       NUOS_SUPPORTED ' "$NUOS_SUPPORTED"

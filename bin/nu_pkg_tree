@@ -31,12 +31,12 @@ while getopts Dko:NOSrv OPT; do case $OPT in
 esac; done; shift $(($OPTIND-1))
 
 . "$(dirname "$(realpath "$0")")/../lib/nu_system.sh"
+. "$(dirname "$(realpath "$0")")/../lib/nu_common.sh"
 . "$(dirname "$(realpath "$0")")/../lib/nu_make.sh"
 . "$(dirname "$(realpath "$0")")/../lib/nu_ports.sh"
 . "$(dirname "$(realpath "$0")")/../lib/nu_collection.sh"
-. "$(dirname "$(realpath "$0")")/../lib/nu_common.sh"
 
-baseos_init
+baseos_init -q
 nuos_init -q
 collection_vars_init
 
