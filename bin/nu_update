@@ -75,13 +75,8 @@ if [ -n "${OPT_NO_SNAP-}" ]; then
 	cat /usr/ports/MOVED >| "$previous_moved_tbl"
 else
 	packages_dataset=`mount -p | awk '{if ($2=="/usr/ports/packages") print $1}'`
-	packages_nuos_ver=${packages_dataset##*/}
 	snaptime=t`date +%s`
 	zfs snapshot -r $POOL_BOOT_NAME/os/$BASEOS_TYPE/ports@$snaptime $packages_dataset@$snaptime
-	if [ $packages_nuos_ver != $NUOS_VER ]; then
-		zfs set canmount=off $packages_dataset
-		zfs clone -o mountpoint=/usr/ports/packages $packages_dataset@$snaptime $POOL_BOOT_NAME/os/$HOSTOS_TYPE/pkg/$NUOS_VER
-	fi
 	previous_moved_tbl=/usr/ports/.zfs/snapshot/$snaptime/MOVED
 fi
 [ -z "${OPT_ONLY_SNAP-}" ] || exit

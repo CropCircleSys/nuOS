@@ -580,24 +580,23 @@ zfs unmount $POOL_NAME/os/$BASEOS_TYPE/ports/snap-db
 zfs unmount $POOL_NAME/os/$BASEOS_TYPE/ports/src/head
 
 zfs create -o mountpoint=none -o canmount=off $POOL_NAME/os/nuOS/pkg
-zfs create -o mountpoint=none -o canmount=off $POOL_NAME/os/nuOS/pkg/$NUOS_VER
-zfs create -o mountpoint=/usr/ports/packages $POOL_NAME/os/nuOS/pkg/$NUOS_VER/$TRGT_MACH
+zfs create -o mountpoint=/usr/ports/packages $POOL_NAME/os/nuOS/pkg/$TRGT_MACH
 if [ -n "${COPY_DEV_PKGS-}" ]; then
 	if [ -z "${OPT_FORCE_BUILD-}" -a -n "${POOL_BOOT_NAME-}" ] \
-		&& zfs list $POOL_BOOT_NAME/os/nuOS/pkg/$NUOS_VER/$TRGT_MACH
+		&& zfs list $POOL_BOOT_NAME/os/nuOS/pkg/$TRGT_MACH
 	then
-		zfs snapshot $POOL_BOOT_NAME/os/nuOS/pkg/$NUOS_VER/$TRGT_MACH@$snaptime
-		zfs send $POOL_BOOT_NAME/os/nuOS/pkg/$NUOS_VER/$TRGT_MACH@$snaptime | zfs receive -vF $POOL_NAME/os/nuOS/pkg/$NUOS_VER/$TRGT_MACH
-		zfs destroy $POOL_BOOT_NAME/os/nuOS/pkg/$NUOS_VER/$TRGT_MACH@$snaptime
-		zfs destroy $POOL_NAME/os/nuOS/pkg/$NUOS_VER/$TRGT_MACH@$snaptime
+		zfs snapshot $POOL_BOOT_NAME/os/nuOS/pkg/$TRGT_MACH@$snaptime
+		zfs send $POOL_BOOT_NAME/os/nuOS/pkg/$TRGT_MACH@$snaptime | zfs receive -vF $POOL_NAME/os/nuOS/pkg/$TRGT_MACH
+		zfs destroy $POOL_BOOT_NAME/os/nuOS/pkg/$TRGT_MACH@$snaptime
+		zfs destroy $POOL_NAME/os/nuOS/pkg/$TRGT_MACH@$snaptime
 	else
 		tar -cpf - -C /usr/ports packages | tar -xpvf - -C $POOL_MNT/usr/ports
 	fi
 	if [ -z "${OPT_DONT_PRESERVE_DIST_SNAP-}" ]; then
-		zfs snapshot $POOL_NAME/os/nuOS/pkg/$NUOS_VER/$TRGT_MACH@nuos_dist
+		zfs snapshot $POOL_NAME/os/nuOS/pkg/$TRGT_MACH@$NUOS_VER
 	fi
 fi
-zfs unmount $POOL_NAME/os/nuOS/pkg/$NUOS_VER/$TRGT_MACH
+zfs unmount $POOL_NAME/os/nuOS/pkg/$TRGT_MACH
 
 eval `stat -f "mode=%OMp%03OLp uid=%Du gid=%Dg flags=%Of" $POOL_MNT/var/db/entropy`
 zfs create -o mountpoint=/var/db/entropy -o logbias=throughput -o sync=disabled $POOL_NAME/entropy
