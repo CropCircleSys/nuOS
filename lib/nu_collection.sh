@@ -33,6 +33,7 @@ collection_vars_init () {
 		sysutils/memtest86+
 		sysutils/jail2
 		sysutils/pefs-kmod
+		security/openssh-portable
 		security/gnupg
 		security/wpa_supplicant
 		net/dhcpcd

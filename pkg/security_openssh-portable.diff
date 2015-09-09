@@ -1,0 +1,98 @@
+diff -ruN ../openssh-portable.orig/files/openssh.in ./files/openssh.in
+--- ../openssh-portable.orig/files/openssh.in	2015-09-09 20:52:43.411309000 +0000
++++ ./files/openssh.in	2015-09-09 20:56:15.957246971 +0000
+@@ -24,6 +24,15 @@
+ : ${openssh_enable:="NO"}
+ : ${openssh_skipportscheck="NO"}
+ 
++: ${openssh_dsa_keygen_enable="YES"}
++: ${openssh_dsa_keygen_flags=""}
++: ${openssh_rsa_keygen_enable="YES"}
++: ${openssh_rsa_keygen_flags=""}
++: ${openssh_ecdsa_keygen_enable="YES"}
++: ${openssh_ecdsa_keygen_flags=""}
++: ${openssh_ed25519_keygen_enable="YES"}
++: ${openssh_ed25519_keygen_flags=""}
++
+ command=%%PREFIX%%/sbin/sshd
+ extra_commands="configtest reload keygen"
+ start_precmd="${name}_checks"
+@@ -35,11 +44,16 @@
+ 
+ openssh_keygen()
+ {
+-	if [ -f %%ETCDIR%%/ssh_host_key -a \
+-	    -f %%ETCDIR%%/ssh_host_dsa_key -a \
+-	    -f %%ETCDIR%%/ssh_host_rsa_key -a \
+-	    -f %%ETCDIR%%/ssh_host_ecdsa_key -a \
+-	    -f %%ETCDIR%%/ssh_host_ed25519_key ]; then
++	local skip_dsa= skip_rsa= skip_ecdsa= skip_ed25519=
++	checkyesno openssh_dsa_keygen_enable || skip_dsa=y
++	checkyesno openssh_rsa_keygen_enable || skip_rsa=y
++	checkyesno openssh_ecdsa_keygen_enable || skip_ecdsa=y
++	checkyesno openssh_ed25519_keygen_enable || skip_ed25519=y
++
++	if [ \( -n "$skip_dsa" -o -f %%ETCDIR%%/ssh_host_dsa_key \) -a \
++	    \( -n "$skip_rsa" -o -f %%ETCDIR%%/ssh_host_rsa_key \) -a \
++	    \( -n "$skip_ecdsa" -o -f %%ETCDIR%%/ssh_host_ecdsa_key \) -a \
++	    \( -n "$skip_ed25519" -o -f %%ETCDIR%%/ssh_host_ed25519_key \) ]; then
+ 		return 0
+ 	fi
+ 
+@@ -49,21 +63,12 @@
+ 	[ -x %%PREFIX%%/bin/ssh-keygen ] ||
+ 		err 1 "%%PREFIX%%/bin/ssh-keygen does not exist."
+ 
+-	if [ -f %%ETCDIR%%/ssh_host_key ]; then
+-		echo "You already have an RSA host key" \
+-			"in %%ETCDIR%%/ssh_host_key"
+-		echo "Skipping protocol version 1 RSA Key Generation"
+-	else
+-		%%PREFIX%%/bin/ssh-keygen -t rsa1 -b 1024 \
+-			-f %%ETCDIR%%/ssh_host_key -N ''
+-	fi
+-
+ 	if [ -f %%ETCDIR%%/ssh_host_dsa_key ]; then
+ 		echo "You already have a DSA host key" \
+ 			"in %%ETCDIR%%/ssh_host_dsa_key"
+ 		echo "Skipping protocol version 2 DSA Key Generation"
+-	else
+-		%%PREFIX%%/bin/ssh-keygen -t dsa \
++	elif checkyesno openssh_dsa_keygen_enable; then
++		%%PREFIX%%/bin/ssh-keygen -t dsa $openssh_dsa_keygen_flags \
+ 			-f %%ETCDIR%%/ssh_host_dsa_key -N ''
+ 	fi
+ 
+@@ -71,8 +76,8 @@
+ 		echo "You already have a RSA host key" \
+ 			"in %%ETCDIR%%/ssh_host_rsa_key"
+ 		echo "Skipping protocol version 2 RSA Key Generation"
+-	else
+-		%%PREFIX%%/bin/ssh-keygen -t rsa \
++	elif checkyesno openssh_rsa_keygen_enable; then
++		%%PREFIX%%/bin/ssh-keygen -t rsa $openssh_rsa_keygen_flags \
+ 			-f %%ETCDIR%%/ssh_host_rsa_key -N ''
+ 	fi
+ 
+@@ -80,8 +85,8 @@
+ 		echo "You already have a Elliptic Curve DSA host key" \
+ 			"in %%ETCDIR%%/ssh_host_ecdsa_key"
+ 		echo "Skipping protocol version 2 Elliptic Curve DSA Key Generation"
+-	else
+-		%%PREFIX%%/bin/ssh-keygen -t ecdsa \
++	elif checkyesno openssh_ecdsa_keygen_enable; then
++		%%PREFIX%%/bin/ssh-keygen -t ecdsa $openssh_ecdsa_keygen_flags \
+ 			-f %%ETCDIR%%/ssh_host_ecdsa_key -N ''
+ 	fi
+ 
+@@ -89,8 +94,8 @@
+ 		echo "You already have a Elliptic Curve ED25519 host key" \
+ 			"in %%ETCDIR%%/ssh_host_ed25519_key"
+ 		echo "Skipping protocol version 2 Elliptic Curve ED25519 Key Generation"
+-	else
+-		%%PREFIX%%/bin/ssh-keygen -t ed25519 \
++	elif checkyesno openssh_ed25519_keygen_enable; then
++		%%PREFIX%%/bin/ssh-keygen -t ed25519 $openssh_ed22519_keygen_flags \
+ 			-f %%ETCDIR%%/ssh_host_ed25519_key -N ''
+ 	fi
+ }

@@ -197,6 +197,9 @@ devfs_load_rulesets="YES"
 sendmail_submit_enable="NO"
 sendmail_outbound_enable="NO"
 sendmail_msp_queue_enable="NO"
+openssh_dsa_keygen_enable="NO"
+openssh_rsa_keygen_flags="-b 4096"
+openssh_ecdsa_keygen_flags="-b 521"
 EOF
 	
 	cat > $POOL_MNT/etc/rc.d/nuos_zpool <<'EOF'
