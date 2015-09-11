@@ -1,0 +1,14 @@
+diff -ruN ../gnome-vfs.orig/Makefile ./Makefile
+--- ../gnome-vfs.orig/Makefile	2015-08-06 12:34:04.260471000 +0000
++++ ./Makefile	2015-09-09 22:01:33.975656056 +0000
+@@ -49,9 +49,7 @@
+ USES+=		fam
+ .endif
+ 
+-.if exists(${LOCALBASE}/lib/libkrb5.so)
+-LIB_DEPENDS+=	libkrb5.so:${PORTSDIR}/security/heimdal
+-.endif
++LIB_DEPENDS+=	libkrb5.so:${PORTSDIR}/security/krb5
+ 
+ .if ${PORT_OPTIONS:MHAL}
+ CONFIGURE_ARGS+=--enable-hal
