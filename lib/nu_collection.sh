@@ -90,8 +90,6 @@ collection_vars_init () {
 		mail/cyrus-imapd25
 		security/cyrus-sasl2-saslauthd
 		net-im/ejabberd
-		lang/phantomjs
-		lang/clojure
 		textproc/rubygem-sass
 		emulators/virtualbox-ose
 		graphics/povray-meta
@@ -117,9 +115,6 @@ collection_vars_init () {
 		net/tightvnc
 		www/firefox
 		mail/thunderbird
-		editors/libreoffice
 		multimedia/vlc
-		net-p2p/qbittorrent
-		irc/kvirc
 	'
 }
