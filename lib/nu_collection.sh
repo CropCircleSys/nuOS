@@ -36,6 +36,7 @@ collection_vars_init () {
 		security/openssh-portable
 		security/gnupg
 		security/wpa_supplicant
+		net/hostapd
 		net/dhcpcd
 		dns/unbound
 	'
