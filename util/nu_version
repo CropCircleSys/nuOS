@@ -47,7 +47,7 @@ if [ $old_len -lt $new_len ]; then
 	del_spc=`printf %$(($new_len - $old_len))s ''`
 fi
 
-sed -i '' -Ee "s/[[:<:]]nuOS $nuos_ver_escd[[:>:]]${del_spc-}/nuOS $new_ver${add_spc-}/g;s/[[:<:]]nuOS $nuos_ver_escd[[:>:]]/nuOS $new_ver/g" $readmes
+sed -i '' -Ee "s/[[:<:]]nuOS $nuos_ver_escd[[:>:]]${del_spc-}/nuOS $new_ver${add_spc-}/" $readmes
 
 sed -i '' -Ee "s/#([[:blank:]]*)nuOS $nuos_ver_escd[[:>:]]/#\\1nuOS $new_ver/" $libs $bins
 sed -i '' -Ee "s/[[:<:]]NUOS_VER=$nuos_ver_escd[[:>:]]/NUOS_VER=$new_ver/" $bins
