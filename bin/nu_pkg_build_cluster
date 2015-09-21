@@ -91,9 +91,12 @@ EOF
 done
 wait
 
+errors=`ls $logs/*.err 2> /dev/null | wc -l | xargs`
 echo
-echo Built packages described in $PKG_DBDIR.
+echo Built packages described in $PKG_DBDIR with $errors errors.
 
-#retire_tmp workers
+retire_tmp workers
+retire_tmp data_graph
 #retire_tmp logs
-#retire_tmp data_graph
+
+[ $errors = 0 ]
