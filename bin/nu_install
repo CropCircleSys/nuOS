@@ -494,46 +494,44 @@ else
 	zfs mount $POOL_NAME/os/nuOS/$NUOS_VER/$TRGT_MACH/etc/local
 fi
 
-zfs create -o mountpoint=none -o canmount=off $POOL_NAME/os/$BASEOS_TYPE/src
+zfs create -o mountpoint=/usr/src $POOL_NAME/os/$BASEOS_TYPE/src
 zfs create -o mountpoint=none -o canmount=off $POOL_NAME/os/$BASEOS_TYPE/src/obj
-zfs create -o mountpoint=/usr/src $POOL_NAME/os/$BASEOS_TYPE/src/$BASEOS_VER
-zfs create -o mountpoint=none -o canmount=off $POOL_NAME/os/$BASEOS_TYPE/src/obj/$BASEOS_VER
-zfs create -o mountpoint=/usr/obj $POOL_NAME/os/$BASEOS_TYPE/src/obj/$BASEOS_VER/$TRGT_MACH
+zfs create -o mountpoint=/usr/obj $POOL_NAME/os/$BASEOS_TYPE/src/obj/$TRGT_MACH
 if [ -z "${COPY_SVN-}" ]; then
 	exclude_svn=y
 fi
 if [ -n "${COPY_SRC-}" ]; then
 	if [ -z "${OPT_FORCE_BUILD-}" -a -n "${POOL_BOOT_NAME-}" ] \
-		&& zfs list $POOL_BOOT_NAME/os/$BASEOS_TYPE/src/$BASEOS_VER/$TRGT_MACH@freebsd_dist \
-		&& [ -n "${COPY_SVN-}" -a -d /usr/src/.zfs/snapshot/freebsd_dist/.svn ] \
-			|| [ -z "${COPY_SVN-}" -a ! -d /usr/src/.zfs/snapshot/freebsd_dist/.svn ]
+		&& zfs list $POOL_BOOT_NAME/os/$BASEOS_TYPE/src@$BASEOS_VER \
+		&& [ -n "${COPY_SVN-}" -a -d /usr/src/.zfs/snapshot/$BASEOS_VER/.svn ] \
+			|| [ -z "${COPY_SVN-}" -a ! -d /usr/src/.zfs/snapshot/$BASEOS_VER/.svn ]
 	then
-		zfs send $POOL_BOOT_NAME/os/$BASEOS_TYPE/src/$BASEOS_VER/$TRGT_MACH@freebsd_dist | zfs receive -vFd $POOL_NAME
+		zfs send $POOL_BOOT_NAME/os/$BASEOS_TYPE/src@$BASEOS_VER | zfs receive -vFd $POOL_NAME
 		if [ -n "${OPT_DONT_PRESERVE_DIST_SNAP-}" ]; then
-			zfs destroy $POOL_NAME/os/$BASEOS_TYPE/src/$BASEOS_VER/$TRGT_MACH@freebsd_dist
+			zfs destroy $POOL_NAME/os/$BASEOS_TYPE/src@$BASEOS_VER
 		fi
 	else
 		tar -cpf - -C /usr ${exclude_svn:+--exclude src/.svn} src | tar -xpvf - -C $POOL_MNT/usr
 		if [ -z "${OPT_DONT_PRESERVE_DIST_SNAP-}" ]; then
-			zfs snapshot $POOL_NAME/os/$BASEOS_TYPE/src/$BASEOS_VER/$TRGT_MACH@freebsd_dist
+			zfs snapshot $POOL_NAME/os/$BASEOS_TYPE/src@$BASEOS_VER
 		fi
 	fi
 	if [ -z "${OPT_FORCE_BUILD-}" -a -n "${POOL_BOOT_NAME-}" ] \
-		&& zfs list $POOL_BOOT_NAME/os/$BASEOS_TYPE/src/obj/$BASEOS_VER/$TRGT_MACH@freebsd_dist
+		&& zfs list $POOL_BOOT_NAME/os/$BASEOS_TYPE/src/obj/$TRGT_MACH@$BASEOS_VER
 	then
-		zfs send $POOL_BOOT_NAME/os/$BASEOS_TYPE/src/obj/$BASEOS_VER/$TRGT_MACH@freebsd_dist | zfs receive -vFd $POOL_NAME
+		zfs send $POOL_BOOT_NAME/os/$BASEOS_TYPE/src/obj/$TRGT_MACH@$BASEOS_VER | zfs receive -vFd $POOL_NAME
 		if [ -n "${OPT_DONT_PRESERVE_DIST_SNAP-}" ]; then
-			zfs destroy $POOL_NAME/os/$BASEOS_TYPE/src/obj/$BASEOS_VER/$TRGT_MACH@freebsd_dist
+			zfs destroy $POOL_NAME/os/$BASEOS_TYPE/src/obj/$TRGT_MACH@$BASEOS_VER
 		fi
 	else
 		tar -cpf - -C /usr obj | tar -xpvf - -C $POOL_MNT/usr
 		if [ -z "${OPT_DONT_PRESERVE_DIST_SNAP-}" ]; then
-			zfs snapshot $POOL_NAME/os/$BASEOS_TYPE/src/obj/$BASEOS_VER/$TRGT_MACH@freebsd_dist
+			zfs snapshot $POOL_NAME/os/$BASEOS_TYPE/src/obj/$TRGT_MACH@$BASEOS_VER
 		fi
 	fi
 fi
-zfs unmount $POOL_NAME/os/$BASEOS_TYPE/src/$BASEOS_VER
-zfs unmount $POOL_NAME/os/$BASEOS_TYPE/src/obj/$BASEOS_VER/$TRGT_MACH
+zfs unmount $POOL_NAME/os/$BASEOS_TYPE/src
+zfs unmount $POOL_NAME/os/$BASEOS_TYPE/src/obj/$TRGT_MACH
 
 snaptime=t`date +%s`
 
