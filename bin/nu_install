@@ -286,6 +286,8 @@ EOF
 						chmod go-rx /etc/ssl/private
 						zfs create -o mountpoint=/etc/ssh/private $pool-pvt/sys/$hostname/ssh
 						chmod go-rx /etc/ssh/private
+						zfs create -o mountpoint=/usr/local/etc/ssh/private $pool-pvt/sys/$hostname/ssh-port
+						chmod go-rx /usr/local/etc/ssh/private
 						zpool export $pool-pvt
 						geli detach zvol/$pool/private.eli
 					fi
@@ -738,9 +740,13 @@ if [ -n "${OPT_ELI-}" ]; then
 	chflags schg $POOL_MNT/etc/ssl/private
 	(umask 77 && mkdir $POOL_MNT/etc/ssh/private)
 	chflags schg $POOL_MNT/etc/ssh/private
+	mkdir -p $POOL_MNT $POOL_MNT/usr/local/etc/ssh
+	(umask 77 && mkdir $POOL_MNT/usr/local/etc/ssh/private)
+	chflags schg $POOL_MNT/usr/local/etc/ssh/private
 	for key_filename in ssh_host_dsa_key ssh_host_ecdsa_key ssh_host_ed25519_key ssh_host_key ssh_host_rsa_key; do
 		(umask 77 && ln -s private/$key_filename $POOL_MNT/etc/ssh/$key_filename)
-		chflags -h schg $POOL_MNT/etc/ssh/$key_filename
+		(umask 77 && ln -s private/$key_filename $POOL_MNT/usr/local/etc/ssh/$key_filename)
+		chflags -h schg $POOL_MNT/etc/ssh/$key_filename $POOL_MNT/usr/local/etc/ssh/$key_filename
 	done
 	
 	cat >> $POOL_MNT/etc/rc.conf.local <<EOF
