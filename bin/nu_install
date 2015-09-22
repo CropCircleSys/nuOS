@@ -536,9 +536,8 @@ zfs unmount $POOL_NAME/os/$BASEOS_TYPE/src/obj/$TRGT_MACH
 snaptime=t`date +%s`
 
 zfs create -o mountpoint=none -o canmount=off $POOL_NAME/os/$BASEOS_TYPE/ports
-zfs create -o mountpoint=none -o canmount=off $POOL_NAME/os/$BASEOS_TYPE/ports/src
 zfs create -o mountpoint=/var/db/portsnap $POOL_NAME/os/$BASEOS_TYPE/ports/snap-db
-zfs create -o mountpoint=/usr/ports $POOL_NAME/os/$BASEOS_TYPE/ports/src/head
+zfs create -o mountpoint=/usr/ports $POOL_NAME/os/$BASEOS_TYPE/ports/src
 zfs create -o mountpoint=/usr/ports/distfiles $POOL_NAME/os/$BASEOS_TYPE/ports/distfiles
 zfs unmount $POOL_NAME/os/$BASEOS_TYPE/ports/distfiles
 if [ -n "${COPY_PORTS-}" ]; then
@@ -556,15 +555,15 @@ if [ -n "${COPY_PORTS-}" ]; then
 		fi
 	fi
 	if [ -z "${OPT_DONT_PRESERVE_DIST_SNAP-}" ]; then
-		zfs snapshot $POOL_NAME/os/$BASEOS_TYPE/ports/snap-db@pool_genesis
+		zfs snapshot $POOL_NAME/os/$BASEOS_TYPE/ports/snap-db@pool_birth
 	fi
 	if [ -z "${OPT_FORCE_BUILD-}" -a -n "${POOL_BOOT_NAME-}" ] \
-		&& zfs list $POOL_BOOT_NAME/os/$BASEOS_TYPE/ports/src/head
+		&& zfs list $POOL_BOOT_NAME/os/$BASEOS_TYPE/ports/src
 	then
-		zfs snapshot $POOL_BOOT_NAME/os/$BASEOS_TYPE/ports/src/head@$snaptime
-		zfs send $POOL_BOOT_NAME/os/$BASEOS_TYPE/ports/src/head@$snaptime | zfs receive -vF $POOL_NAME/os/$BASEOS_TYPE/ports/src/head
-		zfs destroy $POOL_BOOT_NAME/os/$BASEOS_TYPE/ports/src/head@$snaptime
-		zfs destroy $POOL_NAME/os/$BASEOS_TYPE/ports/src/head@$snaptime
+		zfs snapshot $POOL_BOOT_NAME/os/$BASEOS_TYPE/ports/src@$snaptime
+		zfs send $POOL_BOOT_NAME/os/$BASEOS_TYPE/ports/src@$snaptime | zfs receive -vF $POOL_NAME/os/$BASEOS_TYPE/ports/src
+		zfs destroy $POOL_BOOT_NAME/os/$BASEOS_TYPE/ports/src@$snaptime
+		zfs destroy $POOL_NAME/os/$BASEOS_TYPE/ports/src@$snaptime
 	else
 		if [ -d /usr/ports/.svn ]; then
 			tar -cpf - -C /usr ${exclude_svn:+--exclude ports/.svn} --exclude ports/'*'/'*'/work --exclude ports/local --exclude ports/distfiles --exclude ports/packages ports | tar -xpvf - -C $POOL_MNT/usr
@@ -576,11 +575,11 @@ if [ -n "${COPY_PORTS-}" ]; then
 		fi
 	fi
 	if [ -z "${OPT_DONT_PRESERVE_DIST_SNAP-}" ]; then
-		zfs snapshot $POOL_NAME/os/$BASEOS_TYPE/ports/src/head@pool_genesis
+		zfs snapshot $POOL_NAME/os/$BASEOS_TYPE/ports/src@pool_birth
 	fi
 fi
 zfs unmount $POOL_NAME/os/$BASEOS_TYPE/ports/snap-db
-zfs unmount $POOL_NAME/os/$BASEOS_TYPE/ports/src/head
+zfs unmount $POOL_NAME/os/$BASEOS_TYPE/ports/src
 
 zfs create -o mountpoint=none -o canmount=off $POOL_NAME/os/nuOS/pkg
 zfs create -o mountpoint=/usr/ports/packages $POOL_NAME/os/nuOS/pkg/$TRGT_MACH
