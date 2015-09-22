@@ -601,6 +601,7 @@ fi
 zfs unmount $POOL_NAME/os/nuOS/pkg/$TRGT_MACH
 
 eval `stat -f "mode=%OMp%03OLp uid=%Du gid=%Dg flags=%Of" $POOL_MNT/var/db/entropy`
+chflags schg $POOL_MNT/var/db/entropy
 zfs create -o mountpoint=/var/db/entropy -o logbias=throughput -o sync=disabled $POOL_NAME/entropy
 chown $uid:$gid $POOL_MNT/var/db/entropy
 chmod $mode $POOL_MNT/var/db/entropy
@@ -680,6 +681,7 @@ EOF
 cat >> $POOL_MNT/etc/fstab <<EOF
 $POOL_NAME/sys/rescue/var /var zfs rw 0 0
 $POOL_NAME/sys/rescue/var/db /var/db zfs rw 0 0
+$POOL_NAME/entropy /var/db/entropy zfs rw 0 0
 EOF
 maybe_add_eli_swap_to_fstab () {
 	if [ -n "${OPT_ELI-}" -a -n "$SWAP_SIZE" -a "$SWAP_SIZE" != 0 ]; then
