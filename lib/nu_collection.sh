@@ -1,7 +1,7 @@
 #!/usr/bin/false
 set -e; set -u; set -C
 
-# nuOS 0.0.9.3b0 - lib/nu_collection.sh - LICENSE: BSD_SMPL
+# nuOS 0.0.9.3b0.1 - lib/nu_collection.sh - LICENSE: BSD_SMPL
 #
 # Copyright (c) 2008-2015 Chad Jacob Milios and Crop Circle Systems, Inc.
 # All rights reserved.
@@ -14,7 +14,7 @@ set -e; set -u; set -C
 # Official updates and community support available at https://nuos.org .
 # Other licensing options and professional services available at https://ccsys.com .
 
-nuos_lib_ver=0.0.9.3b0
+nuos_lib_ver=0.0.9.3b0.1
 [ $nuos_lib_ver = "$NUOS_VER" ]
 [ -n "${nuos_lib_system_loaded-}" ]
 [ -z "${nuos_lib_collection_loaded-}" ]
