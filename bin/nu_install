@@ -718,7 +718,7 @@ sed -i '' -e "s/\.my\.domain\$/.`echo $NEW_HOST | sed -e 's/^[^\.]*\.//'` $NEW_H
 
 maybe_add_eli_swap_to_fstab
 
-	cat >> $POOL_MNT/etc/nuos/backup <<EOF
+cat >> $POOL_MNT/etc/nuos/backup <<EOF
 sys/$NEW_HOST/(org.nuos:active_revision)/etc
 sys/$NEW_HOST/(org.nuos:active_revision)/var
 EOF
