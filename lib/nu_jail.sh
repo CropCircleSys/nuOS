@@ -26,10 +26,10 @@ jail_vars_init () {
 	echo 'jail opsys      -o JAIL_OS        ' ${JAIL_OS:=$HOSTOS_TYPE/$HOSTOS_VER/$HOSTOS_MACH}
 	echo 'pool name       -p POOL_NAME      ' ${POOL_NAME:=$POOL_BOOT_NAME}
 	echo 'jail snapshot   -s JAIL_SNAP      ' ${JAIL_SNAP:=$PKG_COLLECTION}
-	echo 'jail dataset       JAIL_DATA      ' ${JAIL_DATA:=$POOL_NAME/jail/$JAIL_NAME}
-	echo 'jail path          JAIL_PATH      ' ${JAIL_PATH:=/var/jail/$JAIL_NAME}
 	local hostname=${NEW_HOST:-`hostname`}
 	echo 'jail host name  -h JAIL_HOST      ' ${JAIL_HOST:=$JAIL_NAME.$hostname}
+	echo 'jail dataset       JAIL_DATA      ' ${JAIL_DATA:=$POOL_NAME/jail/$JAIL_HOST}
+	echo 'jail path          JAIL_PATH      ' ${JAIL_PATH:=/var/jail/$JAIL_NAME}
 	echo 'jail ip address -i JAIL_IP        ' ${JAIL_IP:=`
 		awk '
 			/^127\.[0-9]+\.[0-9]+\.[0-9]+/{
