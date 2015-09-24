@@ -1,1 +1,1 @@
-grep -q ssh_host_key files/openssh.in
+! grep -q keygen_flags files/openssh.in
