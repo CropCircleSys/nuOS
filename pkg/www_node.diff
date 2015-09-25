@@ -1,0 +1,12 @@
+diff -ruN ../node.orig/Makefile ./Makefile
+--- ../node.orig/Makefile	2015-09-24 22:58:29.955724000 +0000
++++ ./Makefile	2015-09-25 04:29:52.663343552 +0000
+@@ -39,7 +39,7 @@
+ .endif
+ .else
+ MAKE_ARGS+=	strictaliasing=off
+-USE_GCC=	any
++USE_GCC=	4.8+
+ .endif
+ 
+ post-patch:
