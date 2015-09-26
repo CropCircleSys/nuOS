@@ -161,7 +161,7 @@ main () {
 		fi
 	done
 }
-main ${@:-$HOSTOS_PKG_COLLECTION}
+main ${@:-$PKG_COLLECTION}
 if [ -n "${out_dir-}" ]; then
 	if [ -L "$out_dir" ]; then
 		rm "$out_dir"
