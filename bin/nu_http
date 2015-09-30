@@ -67,10 +67,22 @@ cat >> "${CHROOTDIR-}/usr/local/etc/$service/extra/httpd-vhosts.conf" <<EOF
 <VirtualHost *:80>
 	DocumentRoot "/usr/local/www/$service/data"
 </VirtualHost>
+EOF
+
+if [ -n "${OPT_SSL-}" ]; then
+	sister nu_ssl ${CHROOTDIR:+-C "$CHROOTDIR"} -s -S -b 1024 -e 29200 -n XX -p Void -h dummy.void
+	mv "${CHROOTDIR-}/etc/ssl/private/dummy.void.key" "${CHROOTDIR-}/usr/local/etc/apache24/ssl/private/"
+	mv "${CHROOTDIR-}/etc/ssl/certs/dummy.void.crt" "${CHROOTDIR-}/usr/local/etc/apache24/ssl/"
+	cat >> "${CHROOTDIR-}/usr/local/etc/$service/extra/httpd-vhosts.conf" <<EOF
 <VirtualHost *:443>
 	DocumentRoot "/usr/local/www/$service/data"
+	SSLEngine on
+	SSLCertificateFile "/usr/local/etc/apache24/ssl/dummy.void.crt"
+	SSLCertificateKeyFile "/usr/local/etc/apache24/ssl/private/dummy.void.key"
 </VirtualHost>
 EOF
+fi
+
 sed -i '' -Ee '
 	s/^#(LoadModule[[:>:]].*[[:<:]]mod_(proxy|proxy_http|proxy_wstunnel|rewrite).so)$/\1/
 	s/^#(Include[[:>:]].*[[:<:]]httpd-(mpm|vhosts|default).conf)$/\1/
@@ -98,7 +110,7 @@ if [ -n "${OPT_SSL-}" ]; then
 		}
 	" "${CHROOTDIR-}/usr/local/etc/$service/extra/httpd-ssl.conf"
 	if [ -z "${OPT_OBSOLETE-}" ]; then
-		sed -i '' -Ee '/^(SSLCipherSuite)[[:>:]].*$/s//\1 EECDH+ECDSA+AESGCM:EECDH+aRSA+AESGCM:EECDH+ECDSA+SHA384:EECDH+ECDSA+SHA256:EECDH+aRSA+SHA384:EECDH+aRSA+SHA256:EECDH:EDH+aRSA:!aNULL:!eNULL:!LOW:!3DES:!MD5:!EXP:!PSK:!SRP:!DSS:!RC4/' "${CHROOTDIR-}/usr/local/etc/$service/extra/httpd-ssl.conf"
+		sed -i '' -Ee '/^(SSLCipherSuite|SSLProxyCipherSuite)[[:>:]].*$/s//\1 HIGH:MEDIUM:!SSLv3:!kRSA/' "${CHROOTDIR-}/usr/local/etc/$service/extra/httpd-ssl.conf"
 	fi
 	sed -i '' -Ee 's/^#(Include[[:>:]].*[[:<:]]httpd-ssl.conf)$/\1/;s/^#(LoadModule[[:>:]].*[[:<:]]mod_(ssl|socache_shmcb).so)$/\1/' "${CHROOTDIR-}/usr/local/etc/$service/httpd.conf"
 fi
