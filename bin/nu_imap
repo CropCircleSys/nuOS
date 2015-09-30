@@ -87,6 +87,7 @@ else
 	sed -i '' -Ee 's/^([[:blank:]]*imaps)[[:>:]]/#\1/;s/^([[:blank:]]*pop3s)[[:>:]]/#\1/' "${CHROOTDIR-}/usr/local/etc/cyrus.conf"
 fi
 
+zfs list $POOL_NAME/svc || zfs create -o mountpoint=none -o canmount=off $POOL_NAME/svc
 zfs create -o mountpoint=none -o canmount=off $POOL_NAME/svc/imap
 zfs create -o mountpoint=/var/imap $POOL_NAME/svc/imap/cyrus
 zfs create -o mountpoint=/var/spool/imap $POOL_NAME/svc/imap/cyrus/spool

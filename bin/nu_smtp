@@ -109,6 +109,7 @@ sed -i '' -Ee '
 	}
 ' "${CHROOTDIR-}/usr/local/etc/postfix/master.cf"
 
+zfs list $POOL_NAME/svc || zfs create -o mountpoint=none -o canmount=off $POOL_NAME/svc
 zfs create -o mountpoint=none -o canmount=off $POOL_NAME/svc/smtp
 zfs create -o mountpoint=none -o canmount=off $POOL_NAME/svc/smtp/postfix
 
