@@ -116,7 +116,7 @@ unbound_restart="service unbound reload"
 EOF
 			if [ -f "${CHROOTDIR-}/etc/resolv.conf" ]; then
 				${CHROOTDIR:+chroot "$CHROOTDIR"} resolvconf -I
-				${CHROOTDIR:+chroot "$CHROOTDIR"} resolvconf -a net0 < "${CHROOTDIR-}/etc/resolv.conf" 2> /dev/null
+				${CHROOTDIR:+chroot "$CHROOTDIR"} resolvconf -a net0 < "${CHROOTDIR-}/etc/resolv.conf" || true
 			else
 				touch "${CHROOTDIR-}/usr/local/etc/unbound/forward.conf"
 			fi
