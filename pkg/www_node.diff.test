@@ -1,1 +1,0 @@
-[ "`grep ^USE_GCC= Makefile | cut -w -f 2`" = any ]
