@@ -16,10 +16,11 @@ set -e; set -u; set -C
 
 NUOS_VER=0.0.9.3b0.1
 
-while getopts f:vp: OPT; do case $OPT in
+while getopts f:vp:s OPT; do case $OPT in
 	f) FROM_SNAP=$OPTARG;;
 	v) OPT_VERBOSE=y;;
 	p) POOL_NAME=$OPTARG;;
+	s) OPT_ONLY_SNAP=y;;
 esac; done; shift $(($OPTIND-1))
 [ $# -ge 1 -o -f /etc/nuos/backup ]
 
@@ -34,6 +35,7 @@ nuos_init -q
 maybe_yell
 
 if [ -n "${FROM_SNAP-}" ]; then
+	[ -z "${OPT_ONLY_SNAP-}" ]
 	send_add_args="-I @$FROM_SNAP"
 fi
 
@@ -65,49 +67,50 @@ retire_tmp backlist
 
 grep -v @ "$output_backlist" | sed -e "s/\$/@$snaptime/" | xargs zfs snapshot -r
 
-require_tmp backup_log
-
-while IFS=@ read ds snap; do
-	: ${snap:=$snaptime}
-	echo "nu_backup.zfs_ds_start	$ds" >> "$backup_log"
-	if [ -z "${FROM_SNAP-}" ]; then
-		for sub_ds in `zfs get -Hp -r -t filesystem,volume -o value name $ds`; do
-			echo "nu_backup.zfs_sub_ds_start	$sub_ds" >> "$backup_log"
-			ds_mnt_info $sub_ds >> "$backup_log"
-			found_root_ds=
-			check_ds=$sub_ds
-			require_tmp add_snaps
-			while [ -z "$found_root_ds" ]; do
-				origin=`zfs get -Hp -o value origin $check_ds`
-				if [ "$origin" = - ]; then
-					found_root_ds=y
-				else
-					echo $origin >> "$add_snaps"
-					check_ds=${origin%@*}
-				fi
-			done
-			tail -r "$add_snaps" | while read add_snap; do
-				snap_guid=`zfs get -H -p -o value guid $add_snap`
-				if eval [ -z \"\${seen_snap_$snap_guid-}\" ]; then
-					setvar seen_snap_$snap_guid y
-					echo "nu_backup.zfs_snap_start	$add_snap" >> "$backup_log"
-					ds_guid=`zfs get -H -p -o value guid ${add_snap%@*}`
-					if eval [ -z \"\${seen_ds_$ds_guid-}\" ]; then
-						setvar seen_ds_$ds_guid y
-						ds_mnt_info ${add_snap%@*} >> "$backup_log"
+if [ -z "${OPT_ONLY_SNAP-}" ]; then
+	require_tmp backup_log
+	while IFS=@ read ds snap; do
+		: ${snap:=$snaptime}
+		echo "nu_backup.zfs_ds_start	$ds" >> "$backup_log"
+		if [ -z "${FROM_SNAP-}" ]; then
+			for sub_ds in `zfs get -Hp -r -t filesystem,volume -o value name $ds`; do
+				echo "nu_backup.zfs_sub_ds_start	$sub_ds" >> "$backup_log"
+				ds_mnt_info $sub_ds >> "$backup_log"
+				found_root_ds=
+				check_ds=$sub_ds
+				require_tmp add_snaps
+				while [ -z "$found_root_ds" ]; do
+					origin=`zfs get -Hp -o value origin $check_ds`
+					if [ "$origin" = - ]; then
+						found_root_ds=y
+					else
+						echo $origin >> "$add_snaps"
+						check_ds=${origin%@*}
 					fi
-					zfs send -p $add_snap
-					echo "nu_backup.zfs_snap_end	$add_snap" >> "$backup_log"
-				fi
+				done
+				tail -r "$add_snaps" | while read add_snap; do
+					snap_guid=`zfs get -H -p -o value guid $add_snap`
+					if eval [ -z \"\${seen_snap_$snap_guid-}\" ]; then
+						setvar seen_snap_$snap_guid y
+						echo "nu_backup.zfs_snap_start	$add_snap" >> "$backup_log"
+						ds_guid=`zfs get -H -p -o value guid ${add_snap%@*}`
+						if eval [ -z \"\${seen_ds_$ds_guid-}\" ]; then
+							setvar seen_ds_$ds_guid y
+							ds_mnt_info ${add_snap%@*} >> "$backup_log"
+						fi
+						zfs send -p $add_snap
+						echo "nu_backup.zfs_snap_end	$add_snap" >> "$backup_log"
+					fi
+				done
+				retire_tmp add_snaps
+				echo "nu_backup.zfs_sub_ds_end	$sub_ds" >> "$backup_log"
 			done
-			retire_tmp add_snaps
-			echo "nu_backup.zfs_sub_ds_end	$sub_ds" >> "$backup_log"
-		done
-	fi
-	cmd="zfs send -R ${send_add_args-} $ds@$snap"
-	$cmd
-	echo "nu_backup.zfs_ds_end	$ds" >> "$backup_log"
-done < "$output_backlist"
+		fi
+		cmd="zfs send -R ${send_add_args-} $ds@$snap"
+		$cmd
+		echo "nu_backup.zfs_ds_end	$ds" >> "$backup_log"
+	done < "$output_backlist"
+fi
 
 retire_tmp output_backlist
 
