@@ -81,7 +81,7 @@ if [ -n "${OPT_SSL-}" ]; then
 	ServerAdmin webmaster@$HOST_NAME
 	ErrorLog "/var/log/httpd-vhost/$HOST_NAME-error.log"
 	CustomLog "/var/log/httpd-vhost/$HOST_NAME-access.log" common
-	SSLEngine on
+	SSLEngine On
 	SSLCertificateFile "/usr/local/etc/apache24/ssl/$HOST_NAME.crt"
 	SSLCertificateKeyFile "/usr/local/etc/apache24/ssl/private/$HOST_NAME.key"
 ${self_signed:+	SSLUseStapling off
@@ -92,7 +92,7 @@ ${OPT_STRICT:+	Header always set Strict-Transport-Security "max-age=$((5*365*24*
 </VirtualHost>
 <VirtualHost _default_:443>
 	ServerName www.$HOST_NAME:443
-	SSLEngine on
+	SSLEngine On
 	SSLCertificateFile "/usr/local/etc/apache24/ssl/$HOST_NAME.crt"
 	SSLCertificateKeyFile "/usr/local/etc/apache24/ssl/private/$HOST_NAME.key"
 ${self_signed:+	SSLUseStapling off
