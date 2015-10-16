@@ -78,7 +78,7 @@ if [ ! -d "${CHROOTDIR-}/usr/local/etc/openvpn" ]; then
 	fi
 fi
 
-cp "${CHROOTDIR-}/etc/ssl/certs/$CERT_AUTH.crt" "${CHROOTDIR-}/usr/local/etc/openvpn/${IDENTIFIER:+${IDENTIFIER}_}ca.crt"
+cp "${CHROOTDIR-}/etc/ssl/certs/$CERT_AUTH.int.crt" "${CHROOTDIR-}/usr/local/etc/openvpn/${IDENTIFIER:+${IDENTIFIER}_}ca.crt"
 cp "${CHROOTDIR-}/etc/ssl/certs/$HOST_NAME.int.crt" "${CHROOTDIR-}/usr/local/etc/openvpn/${IDENTIFIER:+${IDENTIFIER}_}server.crt"
 cp "${CHROOTDIR-}/etc/ssl/private/$HOST_NAME.key" "${CHROOTDIR-}/usr/local/etc/openvpn/private/${IDENTIFIER:+${IDENTIFIER}_}server.key"
 openvpn --genkey --secret "${CHROOTDIR-}/usr/local/etc/openvpn/private/${IDENTIFIER:+${IDENTIFIER}_}ta.key"
