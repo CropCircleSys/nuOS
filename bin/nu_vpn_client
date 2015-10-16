@@ -49,6 +49,7 @@ cat <<EOF
 `grep '^topology ' "${CHROOTDIR-}/usr/local/etc/openvpn/openvpn${IDENTIFIER:+_$IDENTIFIER}.conf"`
 client
 remote $SERVER_HOST
+verify-x509-name $SERVER_HOST name
 float
 `grep '^cipher ' "${CHROOTDIR-}/usr/local/etc/openvpn/openvpn${IDENTIFIER:+_$IDENTIFIER}.conf"`
 `grep ^comp- "${CHROOTDIR-}/usr/local/etc/openvpn/openvpn${IDENTIFIER:+_$IDENTIFIER}.conf"`
