@@ -1,1 +1,0 @@
-grep -q '(tor-0\.2\.6\.9\.tar\.gz)' distinfo
