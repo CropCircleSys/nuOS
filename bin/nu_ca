@@ -44,6 +44,6 @@ if [ ! -d "${CHROOTDIR-}/etc/ssl/serials" ]; then
 	mkdir "${CHROOTDIR-}/etc/ssl/serials"
 fi
 
-$SSL_CMD x509 -req -CA "${CHROOTDIR-}/etc/ssl/certs/$CERT_AUTH.int.crt" -CAkey "${CHROOTDIR-}/etc/ssl/private/$CERT_AUTH.key" -CAcreateserial -CAserial "${CHROOTDIR-}/etc/ssl/serials/$CERT_AUTH.srl" -days $EXPIRE_DAYS -in "${CHROOTDIR-}/etc/ssl/csrs/$HOST_NAME.csr" -out "${CHROOTDIR-}/etc/ssl/certs/$HOST_NAME.int.crt"
+$SSL_CMD x509 -req -CA "${CHROOTDIR-}/etc/ssl/certs/$CERT_AUTH.internal.crt" -CAkey "${CHROOTDIR-}/etc/ssl/private/$CERT_AUTH.key" -CAcreateserial -CAserial "${CHROOTDIR-}/etc/ssl/serials/$CERT_AUTH.srl" -days $EXPIRE_DAYS -in "${CHROOTDIR-}/etc/ssl/csrs/$HOST_NAME.csr" -out "${CHROOTDIR-}/etc/ssl/certs/$HOST_NAME.internal.crt"
 
-echo "Created certificate $HOST_NAME.int.crt signed by authority $CERT_AUTH, saved into /etc/ssl/certs/."
+echo "Created certificate $HOST_NAME.internal.crt signed by authority $CERT_AUTH, saved into /etc/ssl/certs/."

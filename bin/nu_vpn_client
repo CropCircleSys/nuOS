@@ -37,7 +37,7 @@ maybe_yell
 
 : ${SERVER_HOST:=`$SSL_CMD x509 -noout -subject -nameopt sep_multiline -in "${CHROOTDIR-}/usr/local/etc/openvpn/${IDENTIFIER:+${IDENTIFIER}_}server.crt" | sed -Ee '/^[[:blank:]]*CN=/!d;s/^[[:blank:]]*CN=//'`}
 : ${HOST_NAME:=$HOST}
-: ${CERT_FILE:="${CHROOTDIR-}/etc/ssl/certs/$HOST_NAME.int.crt"}
+: ${CERT_FILE:="${CHROOTDIR-}/etc/ssl/certs/$HOST_NAME.internal.crt"}
 : ${KEY_FILE:="${CHROOTDIR-}/etc/ssl/private/$HOST_NAME.key"}
 
 [ -r "${CHROOTDIR-}/usr/local/etc/openvpn/${IDENTIFIER:+${IDENTIFIER}_}ca.crt" ]
