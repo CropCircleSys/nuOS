@@ -1,0 +1,1 @@
+! grep -q knot_foo_enable files/knot.in

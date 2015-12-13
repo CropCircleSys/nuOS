@@ -16,8 +16,9 @@ set -e; set -u; set -C
 
 NUOS_VER=0.0.9.3b0.1
 
-while getopts Dko:NOSrv OPT; do case $OPT in
+while getopts Di:ko:NOPSrv OPT; do case $OPT in
 	D) OPT_DEBUG=y;;
+	i) INPUT=$OPTARG;;
 	k) OPT_KEEP=y;;
 	o) type=$OPTARG; eval file=\"\$$OPTIND\"; case $type in
 		dot|xml|txt|tbl|dir)
@@ -25,6 +26,7 @@ while getopts Dko:NOSrv OPT; do case $OPT in
 		*) exit 22; esac; shift $OPTIND;;
 	N) OPT_NONAME=y;;
 	O) OPT_NOOPTIONS=y;;
+	P) OPT_PKGNAME=y;;
 	S) OPT_NOSLAVE=y;;
 	r) OPT_RUNONLY=y;;
 	v) OPT_VERBOSE=y;;
@@ -42,31 +44,64 @@ collection_vars_init
 
 maybe_yell
 
-require_ports_tree
-
 if [ -n "${OPT_RUNONLY-}" ]; then
 	recurse=run
 else
 	recurse=all
 fi
-if [ -n "${OPT_NOOPTIONS-}" ]; then
-	opt_args="_ _"
-else
-	opt_args="def_opts my_opts"
-fi
+
 for type in dot xml txt tbl; do
 	if eval [ -n \"\${out_$type-}\" ]; then
 		eval [ ! -e \"\$out_$type\" -o ! -s \"\$out_$type\" ]
 		require_tmp tmp_$type
 	fi
 done
+
+walk () {
+	local node=$1
+	for dep in `cat "$dir/$node/dependencies/collection" "$dir/$node/dependencies/$recurse" 2> /dev/null | tr / _`; do
+		[ -f "$work_dir/$dep" ] || walk $dep
+	done
+	echo $node
+	touch "$work_dir/$node"
+}
+
+require_tmp -d work_dir
+
+if [ -n "${INPUT-}" ]; then
+	if [ -f "$INPUT/root" ]; then
+		dir="$INPUT"
+		start="`cat "$INPUT/root"`"
+	elif [ -f "$INPUT/name" ]; then
+		dir="`dirname "$INPUT"`"
+		start=`basename "$INPUT"`
+	else
+		exit 1
+	fi
+	if [ "${OPT_PKGNAME-}" ]; then
+		walk $start | grep _ | while read -r node; do
+			cat "$dir/$node/name" 2> /dev/null
+		done
+	else
+		walk $start | sed -e s+_+/+
+	fi
+	retire_tmp ${OPT_KEEP:+-k} work_dir
+	exit
+fi
+
+require_ports_tree
+
+if [ -n "${OPT_NOOPTIONS-}" ]; then
+	opt_args="_ _"
+else
+	opt_args="def_opts my_opts"
+fi
 if [ -n "${out_dir-}" ]; then
 	while [ "$out_dir" != "${out_dir%/}" ]; do
 		out_dir=${out_dir%/}
 	done
 	[ ! -e "$out_dir" -o -L "$out_dir" ] || ([ -d "$out_dir" ] && [ "`ls -a "$out_dir" | xargs`" = '. ..' ])
 fi
-require_tmp -d work_dir
 ports_tag > "$work_dir/tag"
 metainfo_dir="$(dirname "$(realpath "$0")")/../pkg"
 main () {

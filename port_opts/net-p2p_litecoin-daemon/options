@@ -2,4 +2,4 @@
 # Options for litecoin-daemon-0.8.6.1_2
 _OPTIONS_READ=litecoin-daemon-0.8.6.1_2
 _FILE_COMPLETE_OPTIONS_LIST=UPNP
-OPTIONS_FILE_SET+=UPNP
+OPTIONS_FILE_UNSET+=UPNP

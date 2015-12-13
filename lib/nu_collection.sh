@@ -76,6 +76,7 @@ collection_vars_init () {
 		finance/vanitygen
 		net-p2p/namecoin-daemon
 		net-p2p/litecoin-daemon
+		net-p2p/litecoin-utils
 		multimedia/ffmpeg
 		graphics/optipng
 		graphics/gifsicle
