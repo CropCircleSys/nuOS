@@ -42,7 +42,7 @@ install_vars_init () {
 	echo 'pool options    -o POOL_OPTS      ' ${POOL_OPTS="-O atime=off -O compression=lz4"}
 	echo 'pkg collection  -c PKG_COLLECTION ' $PKG_COLLECTION
 	echo 'port db dir        PORT_DBDIR     ' $PORT_DBDIR
-	echo 'swap size       -s SWAP_SIZE      ' ${SWAP_SIZE:=512M}
+	echo 'swap size       -s SWAP_SIZE      ' ${SWAP_SIZE:=1G}
 	echo 'new host name   -h NEW_HOST       ' ${NEW_HOST:=$POOL_NAME.${HOST#*.}}
 	echo 'make jobs          MAKE_JOBS      ' ${MAKE_JOBS:=$((2+`sysctl -n kern.smp.cpus`))}
 	echo 'target arch        TRGT_ARCH      ' $TRGT_ARCH
@@ -50,7 +50,7 @@ install_vars_init () {
 	echo 'target kern        TRGT_KERN      ' ${TRGT_KERN:=NUOS}
 	echo 'target optimize    TRGT_OPTZ      ' $TRGT_OPTZ
 	echo 'subversion server  SVN_SERVER     ' ${SVN_SERVER=svn.FreeBSD.org}
-	echo 'subversion path    SVN_PATH       ' ${SVN_PATH:=base/releng/9.3}
+	echo 'subversion path    SVN_PATH       ' ${SVN_PATH:=base/releng/11.0}
 	echo -n 'copy ports         COPY_PORTS      ' && [ -n "${COPY_PORTS-}" ] && echo set || echo null
 	echo -n 'copy all pkgs      COPY_DEV_PKGS   ' && [ -n "${COPY_DEV_PKGS-}" ] && echo set || echo null
 	echo -n 'copy src           COPY_SRC        ' && [ -n "${COPY_SRC-}" ] && echo set || echo null
