@@ -1,9 +1,9 @@
 #!/bin/sh
 set -e; set -u; set -C
 
-# nuOS 0.0.9.3b0.1 - bin/nu_restore - LICENSE: BSD_SMPL
+# nuOS 0.0.11.0b0.1 - bin/nu_restore - LICENSE: BSD_SMPL
 #
-# Copyright (c) 2008-2015 Chad Jacob Milios and Crop Circle Systems, Inc.
+# Copyright (c) 2008-2017 Chad Jacob Milios and Crop Circle Systems, Inc.
 # All rights reserved.
 #
 # This Source Code Form is subject to the terms of the Simplified BSD License.
@@ -14,7 +14,7 @@ set -e; set -u; set -C
 # Official updates and community support available at https://nuos.org .
 # Other licensing options and professional services available at https://ccsys.com .
 
-NUOS_VER=0.0.9.3b0.1
+NUOS_VER=0.0.11.0b0.1
 
 while getopts t:v OPT; do case $OPT in
 	t) TARGET_DS=$OPTARG;;
