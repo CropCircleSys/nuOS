@@ -30,10 +30,13 @@ esac; done; shift $(($OPTIND-1))
 . "$(dirname "$(realpath "$0")")/../lib/nu_system.sh"
 . "$(dirname "$(realpath "$0")")/../lib/nu_common.sh"
 
+baseos_init
 nuos_init
 
 echo -n 'ssl             -s OPT_SSL         ' && [ -n "${OPT_SSL-}" ] && echo set || echo null
-[ -n "${OPT_SSL-}" ] && echo -n 'old browsers       OPT_OBSOLETE    ' && [ -n "${OPT_OBSOLETE-}" ] && echo set || echo null
+if [ -n "${OPT_SSL-}" ]; then
+	echo -n 'old browsers       OPT_OBSOLETE    ' && [ -n "${OPT_OBSOLETE-}" ] && echo set || echo null
+fi
 if [ -n "${OPT_SSL-}" -a -n "${OPT_OBSOLETE-}" ]; then
 	cat <<EOF
     * ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** *
