@@ -30,7 +30,6 @@ collection_vars_init () {
 	
 	COLL_bare='
 		blank
-		sysutils/memtest86+
 		sysutils/jail2
 		sysutils/pefs-kmod
 		security/openssh-portable
@@ -66,9 +65,9 @@ collection_vars_init () {
 		net/openldap24-server
 		security/openvpn
 		ftp/pure-ftpd
-		net/isc-dhcp42-server
+		net/isc-dhcp43-server
 		net/netatalk3
-		net/samba36
+		net/samba46
 		security/tor
 		net-p2p/rtorrent
 		net-p2p/bitcoin-daemon
@@ -82,8 +81,8 @@ collection_vars_init () {
 		graphics/gifsicle
 		textproc/rubygem-compass
 		lang/expect
-		databases/postgresql94-server
-		databases/mysql56-server
+		databases/postgresql96-server
+		databases/mysql57-server
 		databases/mongodb
 		databases/redis
 		www/npm
@@ -97,8 +96,8 @@ collection_vars_init () {
 		graphics/povray-meta
 		graphics/graphviz
 		x11-fonts/webfonts
-		lang/php56-extensions
-		www/mod_php56
+		lang/php71-extensions
+		www/mod_php71
 		mail/roundcube-sieverules
 		irc/irssi
 	'

@@ -219,7 +219,7 @@ retire_tmp updt_deps
 retire_tmp updt_slvs
 
 if [ -n "${ports_svn-}" ]; then
-	(cd /var/empty && env TZ=UTC svn info /usr/ports) >| /usr/ports/.svn/info.txt
+	save_svn_info /usr/ports
 	new_tag=r`grep ^Revision: /usr/ports/.svn/info.txt | cut -w -f 2`
 	last_modified=$(date -j -f "%F %T" "$(sed -e '/^Last Changed Date: /!d;s///;s/ +0000 (.*$//' /usr/ports/.svn/info.txt)")
 else

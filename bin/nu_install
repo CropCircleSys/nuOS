@@ -149,6 +149,7 @@ EOF
 	zfs create -o mountpoint=none -o canmount=off $POOL_NAME/os/nuOS
 	zfs create -o mountpoint=none -o canmount=off $POOL_NAME/os/nuOS/$NUOS_VER
 	zfs clone -o mountpoint=/ -o canmount=noauto $POOL_NAME/os/$BASEOS_TYPE/$BASEOS_VER/$TRGT_MACH@pkg_ready $POOL_NAME/os/nuOS/$NUOS_VER/$TRGT_MACH
+	zfs mount $POOL_NAME/os/nuOS/$NUOS_VER/$TRGT_MACH
 	zfs clone $POOL_NAME/os/$BASEOS_TYPE/$BASEOS_VER/$TRGT_MACH/etc@pkg_ready $POOL_NAME/os/nuOS/$NUOS_VER/$TRGT_MACH/etc
 	zfs clone -o mountpoint=/usr/local/etc $POOL_NAME/os/$BASEOS_TYPE/$BASEOS_VER/$TRGT_MACH/etc/local@pkg_ready $POOL_NAME/os/nuOS/$NUOS_VER/$TRGT_MACH/etc/local
 	zfs clone $POOL_NAME/os/$BASEOS_TYPE/$BASEOS_VER/$TRGT_MACH/var@pkg_ready $POOL_NAME/os/nuOS/$NUOS_VER/$TRGT_MACH/var
@@ -175,14 +176,12 @@ sem_load="YES"
 accf_data_load="YES"
 accf_dns_load="YES"
 accf_http_load="YES"
-kern.maxfiles="32768"
 kern.ipc.shmmni="1024"
 kern.ipc.shmseg="1024"
 vfs.zfs.l2arc_write_max="419430400"
 vfs.zfs.l2arc_write_boost="419430400"
 vfs.zfs.l2arc_headroom="8"
 vfs.zfs.l2arc_norw="0"
-kern.vty="vt"
 EOF
 	
 	cat >> $POOL_MNT/etc/rc.conf <<'EOF'
@@ -444,10 +443,12 @@ HOSTOS_KERN=$TRGT_KERN
 HOSTOS_OPTZ=$TRGT_OPTZ
 EOF
 	
+	require_ports_tree
+	ports_tag
 	mount -t tmpfs -o nosuid tmpfs $POOL_MNT/tmp
 	require_tmp -c -C $POOL_MNT pkg_tree
 	mount -r -t nullfs /usr/ports $POOL_MNT/usr/ports
-	sister -C $POOL_MNT nu_pkg_tree -o dir /var/db/nuos/pkg -o txt "${pkg_tree#"$POOL_MNT"}" $PKG_COLLECTION
+	sister -C $POOL_MNT nu_pkg_tree ${OPT_VERBOSE:+-v} -o dir /var/db/nuos/pkg -o txt "${pkg_tree#"$POOL_MNT"}" $PKG_COLLECTION
 	umount $POOL_MNT/usr/ports
 	for tree_node in `cat "$pkg_tree"`; do
 		case $tree_node in
@@ -622,6 +623,7 @@ zfs create -o mountpoint=none -o canmount=off $POOL_NAME/sys
 zfs create -o mountpoint=none -o canmount=off $POOL_NAME/sys/factory
 
 zfs clone -o mountpoint=/ -o canmount=noauto $POOL_NAME/os/nuOS/$NUOS_VER/$TRGT_MACH@$PKG_COLLECTION $POOL_NAME/sys/factory/nuOS-$NUOS_VER-$TRGT_MACH
+zfs mount $POOL_NAME/sys/factory/nuOS-$NUOS_VER-$TRGT_MACH
 zfs clone $POOL_NAME/os/nuOS/$NUOS_VER/$TRGT_MACH/etc@$PKG_COLLECTION $POOL_NAME/sys/factory/nuOS-$NUOS_VER-$TRGT_MACH/etc
 zfs clone -o mountpoint=/usr/local/etc $POOL_NAME/os/nuOS/$NUOS_VER/$TRGT_MACH/etc/local@$PKG_COLLECTION $POOL_NAME/sys/factory/nuOS-$NUOS_VER-$TRGT_MACH/etc/local
 zfs clone $POOL_NAME/os/nuOS/$NUOS_VER/$TRGT_MACH/var@$PKG_COLLECTION $POOL_NAME/sys/factory/nuOS-$NUOS_VER-$TRGT_MACH/var
@@ -658,6 +660,7 @@ zfs set mountpoint=none $POOL_NAME/sys/factory/nuOS-$NUOS_VER-$TRGT_MACH
 zfs set canmount=off $POOL_NAME/sys/factory/nuOS-$NUOS_VER-$TRGT_MACH
 
 zfs clone -o mountpoint=/ -o canmount=noauto $POOL_NAME/sys/factory/nuOS-$NUOS_VER-$TRGT_MACH@pool_registered $POOL_NAME/sys/rescue
+zfs mount $POOL_NAME/sys/rescue
 zfs clone $POOL_NAME/sys/factory/nuOS-$NUOS_VER-$TRGT_MACH/etc@pool_registered $POOL_NAME/sys/rescue/etc
 zfs clone -o mountpoint=/usr/local/etc $POOL_NAME/sys/factory/nuOS-$NUOS_VER-$TRGT_MACH/etc/local@pool_registered $POOL_NAME/sys/rescue/etc/local
 zfs clone $POOL_NAME/sys/factory/nuOS-$NUOS_VER-$TRGT_MACH/var@pool_registered $POOL_NAME/sys/rescue/var
@@ -672,7 +675,7 @@ create_swap_vol_cmd="zfs create -o mountpoint=none -o canmount=off -o primarycac
 $create_swap_vol_cmd
 
 if [ -n "$SWAP_SIZE" -a "$SWAP_SIZE" != 0 ]; then
-	zfs create -V $SWAP_SIZE $POOL_NAME/swap/sw0
+	zfs create -V $SWAP_SIZE -b 4K $POOL_NAME/swap/sw0
 	zfs snapshot $POOL_NAME/swap/sw0@blank
 fi
 
