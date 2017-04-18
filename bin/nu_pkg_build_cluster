@@ -57,7 +57,7 @@ getwork () {
 					exit 1
 				fi
 			fi
-			sleep 1
+			sleep 0.2
 		fi
 	done
 	setvar $_retvar $_port
