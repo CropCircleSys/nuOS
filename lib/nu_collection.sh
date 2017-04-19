@@ -73,6 +73,7 @@ collection_vars_init () {
 		net-p2p/bitcoin-utils
 		finance/vanitygen
 		net-p2p/namecoin-daemon
+		net-p2p/namecoin-utils
 		net-p2p/litecoin-daemon
 		net-p2p/litecoin-utils
 		multimedia/ffmpeg
