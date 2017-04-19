@@ -458,7 +458,7 @@ EOF
 			[^/]*)
 				case $tree_node in
 					bare)
-						sister enable_svc -C $POOL_MNT jail2
+						sister enable_svc -C $POOL_MNT jail
 						;;
 				esac
 				if [ -f $POOL_MNT/etc/nuos/conf ]; then

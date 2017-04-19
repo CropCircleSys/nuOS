@@ -30,7 +30,6 @@ collection_vars_init () {
 	
 	COLL_bare='
 		blank
-		sysutils/jail2
 		sysutils/pefs-kmod
 		security/openssh-portable
 		security/gnupg
