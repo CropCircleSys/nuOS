@@ -102,8 +102,14 @@ collection_vars_init () {
 		irc/irssi
 	'
 	
-	COLL_desktop='
+	COLL_office='
 		server
+		print/gutenprint
+		print/hplip
+	'
+	
+	COLL_desktop='
+		office
 		graphics/gimp
 		x11/xorg
 		x11/kde4
