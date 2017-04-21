@@ -1,0 +1,379 @@
+# This is a shell archive.  Save it in a file, remove anything before
+# this line, and then unpack it by entering "sh file".  Note, it may
+# create directories; files and directories will be owned by you and
+# have default permissions.
+#
+# This archive contains:
+#
+#	namecoin-devel
+#	namecoin-devel/files
+#	namecoin-devel/files/namecoind.in
+#	namecoin-devel/files/patch-configure.ac
+#	namecoin-devel/files/patch-src_leveldb_helpers_memenv_memenv.cc
+#	namecoin-devel/Makefile
+#	namecoin-devel/distinfo
+#	namecoin-devel/pkg-descr
+#
+echo c - namecoin-devel
+mkdir -p namecoin-devel > /dev/null 2>&1
+echo c - namecoin-devel/files
+mkdir -p namecoin-devel/files > /dev/null 2>&1
+echo x - namecoin-devel/files/namecoind.in
+sed 's/^X//' >namecoin-devel/files/namecoind.in << '1159e6252e3512353f237eb2938ecd30'
+X#!/bin/sh
+X# $FreeBSD$
+X
+X# PROVIDE: namecoind
+X# REQUIRE: LOGIN cleanvar
+X# KEYWORD: shutdown
+X
+X#
+X# Add the following lines to /etc/rc.conf to enable :
+X# namecoind_enable (bool):	Set to "NO" by default.
+X#				Set it to "YES" to enable namecoind
+X# namecoind_user (str)		Set to "namecoin" by default.
+X# namecoind_group (str)		Set to "namecoin" by default.
+X# namecoind_conf (str)		Set to "%%PREFIX%%/etc/namecoind.conf" by default.
+X# namecoind_data (str)		Set to "/var/lib/namecoind" by default.
+X# namecoindlimits_enable (bool)	Set to "NO" by default.
+X#				Set it to "YES" to enable namecoindlimits
+X# namecoindlimits_args		Set to "-e -U ${namecoind_user}" by default
+X
+X
+X. /etc/rc.subr
+X
+Xname="namecoind"
+Xrcvar=namecoind_enable
+X
+Xstart_precmd="namecoind_precmd"
+Xstart_cmd="namecoind_start"
+Xrestart_precmd="namecoind_checkconfig"
+Xreload_precmd="namecoind_checkconfig"
+Xconfigtest_cmd="namecoind_checkconfig"
+Xstatus_cmd="namecoind_status"
+Xstop_cmd="namecoind_stop"
+Xstop_postcmd="namecoind_wait"
+Xcommand="%%PREFIX%%/bin/namecoind"
+Xcli_command="%%PREFIX%%/bin/namecoin-cli"
+Xdaemon_command="/usr/sbin/daemon"
+X#pidfile="/var/run/${name}.pid"
+Xextra_commands="configtest"
+X
+X
+X: ${namecoind_enable:="NO"}
+X: ${namecoindlimits_enable:="NO"}
+X
+Xload_rc_config ${name}
+X
+X: ${namecoind_user:="namecoin"}
+X: ${namecoind_group:="namecoin"}
+X: ${namecoind_data_dir:="/var/db/namecoind"}
+X: ${namecoind_config_file:="%%PREFIX%%/etc/namecoin.conf"}
+X: ${namecoindlimits_args:="-e -U ${namecoind_user}"}
+X
+X# set up dependant variables
+Xprocname="${command}"
+Xpidfile="${namecoind_data_dir}/namecoind.pid"
+Xrequired_files="${namecoind_config_file}"
+X
+X
+Xnamecoind_checkconfig()
+X{
+X  echo "Performing sanity check on namecoind configuration:"
+X  if [ ! -d "${namecoind_data_dir}" ]
+X  then
+X    echo "Missing data directory: ${namecoind_data_dir}"
+X    exit 1
+X  fi
+X  chown -R "${namecoind_user}:${namecoind_group}" "${namecoind_data_dir}"
+X
+X  if [ ! -f "${namecoind_config_file}" ]
+X  then
+X    echo "Missing configuration file: ${namecoind_config_file}"
+X    exit 1
+X  fi
+X  if [ ! -x "${command}" ]
+X  then
+X    echo "Missing executable: ${command}"
+X    exit 1
+X  fi
+X  return 0
+X}
+X
+Xnamecoind_cleanup()
+X{
+X  rm -f "${pidfile}"
+X}
+X
+Xnamecoind_precmd()
+X{
+X  namecoind_checkconfig
+X
+X  pid=$(check_pidfile "${pidfile}" "${procname}")
+X  if [ -z "${pid}" ]
+X  then
+X    echo "Namecoind is not running"
+X    rm -f "${pidfile}"
+X  fi
+X
+X  if checkyesno namecoindlimits_enable
+X  then
+X    eval $(/usr/bin/limits ${namecoindlimits_args}) 2>/dev/null
+X  else
+X    return 0
+X  fi
+X}
+X
+Xnamecoind_status()
+X{
+X  local pid
+X  pid=$(check_pidfile "${pidfile}" "${procname}")
+X  if [ -z "${pid}" ]
+X  then
+X    echo "Namecoind is not running"
+X    return 1
+X  else
+X    echo "Namecoind running, pid: ${pid}"
+X  fi
+X}
+X
+Xnamecoind_start()
+X{
+X  echo "Starting namecoind:"
+X  cd "${namecoind_data_dir}" || return 1
+X  ${daemon_command} -u "${namecoind_user}" -p "${pidfile}" \
+X    ${command} \
+X    -conf="${namecoind_config_file}" \
+X    -datadir="${namecoind_data_dir}" 2> /tmp/namecoind.stderr > /tmp/namecoind.stdout
+X}
+X
+Xnamecoind_stop()
+X{
+X  echo "Stopping namecoind:"
+X  pid=$(check_pidfile "${pidfile}" "${procname}")
+X  if [ -z "${pid}" ]
+X  then
+X    echo "Namecoind is not running"
+X    return 1
+X  else
+X    ${cli_command} -conf="${namecoind_config_file}" -datadir="${namecoind_data_dir}" stop
+X  fi
+X}
+X
+Xnamecoind_wait()
+X{
+X  local n=60
+X  echo "Waiting for namecoind shutdown:"
+X  while :
+X  do
+X    printf '.'
+X    pid=$(check_pidfile "${pidfile}" "${procname}")
+X    if [ -z "${pid}" ]
+X    then
+X      printf '\n'
+X      break
+X    fi
+X    sleep 1
+X    n=$((${n} - 1))
+X    if [ ${n} -eq 0 -a -f "${pidfile}" ]
+X    then
+X      printf "\nForce shutdown"
+X      kill -9 $(cat "${pidfile}")
+X      for n in 1 2 3
+X      do
+X        printf '.'
+X        sleep 1
+X      done
+X      printf '\n'
+X      break
+X    fi
+X  done
+X  rm -f "${pidfile}"
+X  echo "Shutdown complete"
+X}
+X
+Xrun_rc_command "$1"
+1159e6252e3512353f237eb2938ecd30
+echo x - namecoin-devel/files/patch-configure.ac
+sed 's/^X//' >namecoin-devel/files/patch-configure.ac << '4fc45b61bc1326da68d663622233e19a'
+X--- configure.ac.orig	2017-04-21 03:43:55 UTC
+X+++ configure.ac
+X@@ -2,9 +2,9 @@ dnl require autoconf 2.60 (AS_ECHO/AS_EC
+X AC_PREREQ([2.60])
+X define(_CLIENT_VERSION_MAJOR, 0)
+X define(_CLIENT_VERSION_MINOR, 13)
+X-define(_CLIENT_VERSION_REVISION, 2)
+X+define(_CLIENT_VERSION_REVISION, 99)
+X define(_CLIENT_VERSION_BUILD, 0)
+X-define(_CLIENT_VERSION_IS_RELEASE, true)
+X+define(_CLIENT_VERSION_IS_RELEASE, false)
+X define(_COPYRIGHT_YEAR, 2016)
+X define(_COPYRIGHT_HOLDERS,[The %s developers])
+X define(_COPYRIGHT_HOLDERS_SUBSTITUTION,[[Bitcoin Core and Namecoin]])
+4fc45b61bc1326da68d663622233e19a
+echo x - namecoin-devel/files/patch-src_leveldb_helpers_memenv_memenv.cc
+sed 's/^X//' >namecoin-devel/files/patch-src_leveldb_helpers_memenv_memenv.cc << '076937bc00999a50ce939f1b22fafe3a'
+X--- src/leveldb/helpers/memenv/memenv.cc.orig	2015-07-10 17:23:55 UTC
+X+++ src/leveldb/helpers/memenv/memenv.cc
+X@@ -2,6 +2,8 @@
+X // Use of this source code is governed by a BSD-style license that can be
+X // found in the LICENSE file. See the AUTHORS file for names of contributors.
+X 
+X+#define __STDC_LIMIT_MACROS
+X+
+X #include "helpers/memenv/memenv.h"
+X 
+X #include "leveldb/env.h"
+076937bc00999a50ce939f1b22fafe3a
+echo x - namecoin-devel/Makefile
+sed 's/^X//' >namecoin-devel/Makefile << '4ab4d0ea590a5c14b8331dc369e866e1'
+X# Created by: Chad J. Milios <milios@ccsys.com>
+X# $FreeBSD$
+X
+XPORTNAME=	namecoin
+XPORTVERSION=	0.13.99b1
+XPORTEPOCH=	1
+XPKGNAMESUFFIX?=	-devel
+XCATEGORIES=	net-p2p dns
+X
+XMAINTAINER=	milios@ccsys.com
+XCOMMENT?=	Decentralized, open DNS and general purpose key/value store
+X
+XCONFLICTS_INSTALL=	namecoin-[0-9]* namecoin-daemon-[0-9]* namecoin-utils-[0-9]*
+X
+XLICENSE=	MIT
+X
+XLIB_DEPENDS=	libboost_date_time.so:devel/boost-libs \
+X		libevent.so:devel/libevent
+X
+XUSE_GITHUB=	yes
+XGH_ACCOUNT=	indolering:graphics
+XGH_PROJECT=	namecoin-core namecoin-core:rel namecoin-graphics:graphics
+XGH_TAGNAME=	5d526c4 ab08f76:rel a13a73b:graphics
+X
+XUSES=		autoreconf compiler:c++11-lib gmake libtool pkgconfig shebangfix ssl
+XSHEBANG_FILES=	src/test/*.py
+XGNU_CONFIGURE=	yes
+X
+XSLAVE_PORT?=	no
+X
+X.if defined(SLAVE_PORT) && ${SLAVE_PORT} == "no"
+XUSES+=		desktop-file-utils
+XUSE_QT5=	core gui linguisttools_build network qmake_build
+X
+XBUILD_DEPENDS+=	protoc:devel/protobuf \
+X		svg2png:graphics/svg2png
+XLIB_DEPENDS+=	libprotobuf.so:devel/protobuf
+X
+XTESTS_USE=		QT5=testlib
+XTESTS_PLIST_FILES=	bin/test_namecoin-qt \
+X			bin/test_namecoin
+X.endif
+X
+XOPTIONS_DEFINE?=	DBUS DEBUG HARDENING QRCODES TESTS UPNP WALLET ZMQ
+XOPTIONS_DEFAULT?=	DBUS HARDENING QRCODES UPNP WALLET
+XOPTIONS_SUB=		yes
+X
+XHARDENING_DESC=	Attempt to harden binaries (PIE for ASLR, NX Stack)
+XQRCODES_DESC=	Display QR Codes
+XTESTS_DESC=	Build test binary and unit tests
+XWALLET_DESC=	Wallet Management Support
+XZMQ_DESC=	Block and transaction broadcasting with ZeroMQ
+X
+XDBUS_CONFIGURE_WITH=	qtdbus
+XDBUS_USE=		QT5=dbus
+X
+XDEBUG_CONFIGURE_ENABLE=		debug
+XDEBUG_INSTALL_TARGET_OFF=	install-strip
+X
+XHARDENING_CONFIGURE_ENABLE=	hardening
+X
+XTESTS_CONFIGURE_ENABLE=	tests bench
+X.if defined(SLAVE_PORT) && ${SLAVE_PORT} == "yes"
+XTESTS_PLIST_FILES=	bin/test_namecoin
+X.endif
+XTESTS_PLIST_FILES+=	bin/bench_namecoin
+X
+XUPNP_CONFIGURE_WITH=	miniupnpc
+XUPNP_LIB_DEPENDS=	libminiupnpc.so:net/miniupnpc
+XUPNP_CPPFLAGS=		-I${LOCALBASE}/include
+XUPNP_LIBS=		-L${LOCALBASE}/lib
+X
+XQRCODES_CONFIGURE_WITH=	qrencode
+XQRCODES_LIB_DEPENDS=	libqrencode.so:graphics/libqrencode
+X
+XWALLET_CONFIGURE_ENABLE=	wallet
+XWALLET_CXXFLAGS=		-I${BDB_INCLUDE_DIR}
+XWALLET_LIBS=			-L${BDB_LIB_DIR}
+XWALLET_USES=			bdb:48
+X
+XZMQ_CONFIGURE_ENABLE=	zmq
+XZMQ_BUILD_DEPENDS=	libzmq4>0:net/libzmq4
+XZMQ_RUN_DEPENDS=	libzmq4>0:net/libzmq4
+X
+XCONFIGURE_ARGS?=	--without-libs \
+X			--with-gui=qt5 \
+X			--without-daemon \
+X			--without-utils
+X
+XCONFIGURE_ENV=	CRYPTO_CFLAGS="-I${OPENSSLINC}" CRYPTO_LIBS="-L${OPENSSLLIB} -lcrypto" \
+X		SSL_CFLAGS="-I${OPENSSLINC}" SSL_LIBS="-L${OPENSSLLIB} -lssl" \
+X		OBJCXX="${CXX}" OBJCXXFLAGS="${CXXFLAGS}"
+XMAKE_ENV+=	V=1
+X
+XPLIST_FILES?=	bin/namecoin-qt share/applications/namecoin-qt.desktop \
+X		share/pixmaps/namecoin128.png
+X
+Xpre-patch:
+X	${MV} ${WRKSRC_rel}/configure.ac ${WRKSRC}/
+X
+X.if defined(SLAVE_PORT) && ${SLAVE_PORT} == "no"
+X
+Xpost-install:
+X	${REINPLACE_CMD} -e 's/bitcoin/namecoin/g;s/Bitcoin/Namecoin/g' \
+X		${WRKSRC}/contrib/debian/bitcoin-qt.desktop
+X	${INSTALL} ${WRKSRC}/contrib/debian/bitcoin-qt.desktop \
+X		${STAGEDIR}${PREFIX}/share/applications/namecoin-qt.desktop
+X	${LOCALBASE}/bin/svg2png -w128 -h128 ${WRKSRC_graphics}/svg/namecoin-logo.svg ${STAGEDIR}${PREFIX}/share/pixmaps/namecoin128.png
+X
+X.endif
+X
+Xregression-test: build
+X	# To use this sucessfully, remove --without-daemon and --without-utils
+X	# from CONFIGURE_ARGS above.
+X
+X	@cd ${WRKSRC} && ${GMAKE} check
+X
+X.include <bsd.port.mk>
+X
+4ab4d0ea590a5c14b8331dc369e866e1
+echo x - namecoin-devel/distinfo
+sed 's/^X//' >namecoin-devel/distinfo << '07a7c1020151e0b15c77fa9122dd7767'
+XTIMESTAMP = 1492747937
+XSHA256 (namecoin-namecoin-core-0.13.99b1-5d526c4_GH0.tar.gz) = dfc33351af8b9dd99489e087ed7f5398092f0e17369a3824b9f0a13f8f4f376b
+XSIZE (namecoin-namecoin-core-0.13.99b1-5d526c4_GH0.tar.gz) = 5727952
+XSHA256 (indolering-namecoin-graphics-a13a73b_GH0.tar.gz) = 82f308a3527d96a202099feb96a754d036bbdaa875156ad002ba2747d75000c7
+XSIZE (indolering-namecoin-graphics-a13a73b_GH0.tar.gz) = 7364908
+XSHA256 (namecoin-namecoin-core-ab08f76_GH0.tar.gz) = 3974eb9ab145c845c23cd6940ab2aca134eab91b0ec619d3a157cc1f7c311192
+XSIZE (namecoin-namecoin-core-ab08f76_GH0.tar.gz) = 5917889
+07a7c1020151e0b15c77fa9122dd7767
+echo x - namecoin-devel/pkg-descr
+sed 's/^X//' >namecoin-devel/pkg-descr << '010523eaaefb8b3c1fa7e503ad5a2a49'
+XNamecoin is an open source decentralized key/value registration and transfer
+Xsystem based on Bitcoin technology (a decentralized cryptocurrency).
+X
+XIt allows you to:
+X
+X    * Securely register and transfer arbitrary names (keys), no possible
+X      censorship!
+X    * Attach values (data) to the names (currently up to 520 bytes, will be
+X      extended)
+X    * Trade and transact namecoins, the digital currency NMC
+X
+XTo register a name, you must own some namecoins (NMC, the internal
+Xcryptocurrency used by the software).
+X
+XWWW: http://namecoin.info/
+010523eaaefb8b3c1fa7e503ad5a2a49
+exit
+

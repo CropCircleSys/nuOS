@@ -1,0 +1,45 @@
+# This is a shell archive.  Save it in a file, remove anything before
+# this line, and then unpack it by entering "sh file".  Note, it may
+# create directories; files and directories will be owned by you and
+# have default permissions.
+#
+# This archive contains:
+#
+#	namecoin-devel-daemon
+#	namecoin-devel-daemon/Makefile
+#
+echo c - namecoin-devel-daemon
+mkdir -p namecoin-devel-daemon > /dev/null 2>&1
+echo x - namecoin-devel-daemon/Makefile
+sed 's/^X//' >namecoin-devel-daemon/Makefile << 'f1779d1380c01bf475eaa197fdbc9f91'
+X# $FreeBSD$
+X
+XMASTERDIR=	${.CURDIR}/../namecoin-devel
+X
+XPKGNAMESUFFIX=	-devel-daemon
+X
+XCOMMENT=	Decentralized, open DNS and more (Daemon)
+XSLAVE_PORT=	yes
+X
+XCONFLICTS_INSTALL=	namecoin-[0-9]* namecoin-daemon-[0-9]* namecoin-utils-[0-9]*
+X
+XONLY_FOR_ARCHS=	amd64 i386 ia64
+XONLY_FOR_ARCHS_REASON=	does not support big-endian architectures
+X
+XOPTIONS_DEFINE=		DEBUG HARDENING TESTS UPNP WALLET ZMQ
+XOPTIONS_DEFAULT=	HARDENING UPNP WALLET
+X
+XCONFIGURE_ARGS=	--with-daemon \
+X		--without-gui \
+X		--without-libs \
+X		--without-qrencode \
+X		--without-utils
+X
+XPLIST_FILES=	bin/namecoind
+X
+XUSE_RC_SUBR=	namecoind
+X
+X.include "${MASTERDIR}/Makefile"
+f1779d1380c01bf475eaa197fdbc9f91
+exit
+
