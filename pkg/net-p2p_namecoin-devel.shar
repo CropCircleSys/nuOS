@@ -129,7 +129,8 @@ X	${REINPLACE_CMD} -e 's/bitcoin/namecoin/g;s/Bitcoin/Namecoin/g' \
 X		${WRKSRC}/contrib/debian/bitcoin-qt.desktop
 X	${INSTALL} ${WRKSRC}/contrib/debian/bitcoin-qt.desktop \
 X		${STAGEDIR}${PREFIX}/share/applications/namecoin-qt.desktop
-X	${LOCALBASE}/bin/svg2png -w128 -h128 ${WRKSRC_graphics}/svg/namecoin-logo.svg ${STAGEDIR}${PREFIX}/share/pixmaps/namecoin128.png
+X	${LOCALBASE}/bin/svg2png -w128 -h128 ${WRKSRC_graphics}/svg/namecoin-logo.svg \
+X		${STAGEDIR}${PREFIX}/share/pixmaps/namecoin128.png
 X
 X.endif
 X
