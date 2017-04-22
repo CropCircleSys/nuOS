@@ -110,6 +110,7 @@ collection_vars_init () {
 	
 	COLL_desktop='
 		office
+		editors/libreoffice
 		graphics/gimp
 		x11/xorg
 		x11/kde4
