@@ -72,8 +72,8 @@ collection_vars_init () {
 		net-p2p/bitcoin-daemon
 		net-p2p/bitcoin-utils
 		finance/vanitygen
-		net-p2p/namecoin-devel-daemon
-		net-p2p/namecoin-devel-utils
+		net-p2p/namecoin-stable-daemon
+		net-p2p/namecoin-stable-utils
 		net-p2p/litecoin-daemon
 		net-p2p/litecoin-utils
 		multimedia/ffmpeg
@@ -116,7 +116,7 @@ collection_vars_init () {
 		x11/kde4
 		databases/virtuoso
 		net-p2p/bitcoin
-		net-p2p/namecoin-devel
+		net-p2p/namecoin-stable
 		net-p2p/litecoin
 		net-p2p/retroshare
 		net/x11vnc

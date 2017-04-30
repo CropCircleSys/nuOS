@@ -78,9 +78,14 @@ require_ports_tree () {
 	local port_shars="`cd "$pkg_meta" && ls *.shar 2> /dev/null`"
 	for port_shar in $port_shars; do
 		local port=`echo $port_shar | sed -e 's|_|/|;s/\.shar$//'`
+		if [ $port != ${port%.ALWAYS_REPLACE} ]; then
+			port="${port%.ALWAYS_REPLACE}"
+			mv -nhv /usr/ports/$port /usr/ports/$port.bak 2> /dev/null || true
+		fi
 		if [ ! -e /usr/ports/$port ]; then
 			local category=${port%/*}
 			(cd /usr/ports/$category && sh "$pkg_meta"/$port_shar)
+			rm -rv /usr/ports/$port.bak 2> /dev/null || true
 		fi
 	done
 	local port_diffs="`cd "$pkg_meta" && ls *.diff 2> /dev/null`"
