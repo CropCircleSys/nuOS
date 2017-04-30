@@ -68,7 +68,7 @@ while getwork port; do
 	worker=
 	while [ -z "$worker" ]; do
 		worker=`find "$workers" -depth 1 -empty | head -n 1`
-		[ -n "$worker" ] || sleep 1
+		[ -n "$worker" ] || sleep 0.2
 	done
 	mv "$data_graph/$port_" "$worker/"
 	(
