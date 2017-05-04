@@ -77,15 +77,23 @@ require_ports_tree () {
 	local pkg_meta="$(dirname "$(realpath "$0")")/../pkg"
 	local port_shars="`cd "$pkg_meta" && ls *.shar 2> /dev/null`"
 	for port_shar in $port_shars; do
-		local port=`echo $port_shar | sed -e 's|_|/|;s/\.shar$//'`
-		if [ $port != ${port%.ALWAYS_REPLACE} ]; then
-			port="${port%.ALWAYS_REPLACE}"
-			mv -nhv /usr/ports/$port /usr/ports/$port.bak 2> /dev/null || true
+		local shar_ver= port=`echo $port_shar | sed -e 's|_|/|;s/\.shar$//'`
+		if [ $port != ${port%.REPLACE_v*} ]; then
+			shar_ver="${port##*.REPLACE_v}"
+			port="${port%.REPLACE_v$shar_ver}"
+			if [ "`cat /usr/ports/$port/.nuOS_shar_ver 2> /dev/null`" != $shar_ver ]; then
+				mv -nhv /usr/ports/$port /usr/ports/$port.$$.bak 2> /dev/null || true
+				# TODO: fix race condition here
+				# XXX: only reach here through nu_pkg_tree or nu_update, not nu_install_pkg
+			fi
 		fi
 		if [ ! -e /usr/ports/$port ]; then
 			local category=${port%/*}
 			(cd /usr/ports/$category && sh "$pkg_meta"/$port_shar)
-			rm -rv /usr/ports/$port.bak 2> /dev/null || true
+			if [ -n "$shar_ver" ]; then
+				echo $shar_ver > /usr/ports/$port/.nuOS_shar_ver
+				rm -rv /usr/ports/$port.$$.bak 2> /dev/null || true
+			fi
 		fi
 	done
 	local port_diffs="`cd "$pkg_meta" && ls *.diff 2> /dev/null`"
