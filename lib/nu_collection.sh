@@ -91,6 +91,7 @@ collection_vars_init () {
 		mail/cyrus-imapd25
 		security/cyrus-sasl2-saslauthd
 		net-im/ejabberd
+		lang/phantomjs
 		textproc/rubygem-sass
 		emulators/virtualbox-ose
 		graphics/povray-meta
