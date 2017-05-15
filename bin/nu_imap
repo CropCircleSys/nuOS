@@ -66,7 +66,7 @@ if [ -n "${OPT_SSL-}" ]; then
 	${CHROOTDIR:+chroot "$CHROOTDIR"} chown cyrus /usr/local/etc/cyrus/ssl/private
 	if zfs list $POOL_NAME-pvt > /dev/null 2>&1; then # this check will need to be refined if ever we support CHROOTDIR
 		chflags schg "${CHROOTDIR-}/usr/local/etc/cyrus/ssl/private"
-		zfs create -o mountpoint=/usr/local/etc/cyrus/ssl/private $POOL__NAME-pvt/sys/host/imap-ssl
+		zfs create -o mountpoint=/usr/local/etc/cyrus/ssl/private $POOL_NAME-pvt/sys/host/imap-ssl
 		chmod go-rx "${CHROOTDIR-}/usr/local/etc/cyrus/ssl/private"
 		${CHROOTDIR:+chroot "$CHROOTDIR"} chown cyrus /usr/local/etc/cyrus/ssl/private
 	fi
