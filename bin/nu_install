@@ -188,7 +188,6 @@ EOF
 	cat >> $POOL_MNT/etc/rc.conf <<'EOF'
 #linux_enable="YES"
 entropy_file="/var/db/entropy/seed"
-geli_swap_flags="-e aes-cbc -l 256 -s 4096 -d"
 firewall_enable="YES"
 firewall_type="open"
 firewall_nat_flags="same_ports reset"
@@ -668,7 +667,7 @@ zfs clone $POOL_NAME/sys/factory/nuOS-$NUOS_VER-$TRGT_MACH/var@pool_registered $
 zfs clone $POOL_NAME/sys/factory/nuOS-$NUOS_VER-$TRGT_MACH/var/db@pool_registered $POOL_NAME/sys/rescue/var/db
 
 if [ -n "${OPT_ELI-}" ]; then
-	swap_fstab_entry="/dev/zvol/$POOL_NAME/swap/sw0.eli none swap sw 0 0"
+	swap_fstab_entry="/dev/zvol/$POOL_NAME/swap/sw0.eli none swap sw,ealgo=aes-cbc,keylen=256,sectorsize=4096 0 0"
 else
 	swap_prop_args="-o org.freebsd:swap=on"
 fi
