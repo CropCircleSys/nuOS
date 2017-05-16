@@ -87,14 +87,13 @@ EOF
 	
 	unbound)
 		
-		[ ! -e "${CHROOTDIR-}/usr/local/etc/unbound/unbound.conf" ]
+		diff -q "${CHROOTDIR-}/usr/local/etc/unbound/unbound.conf.sample" "${CHROOTDIR-}/usr/local/etc/unbound/unbound.conf" && [ ! -s "${CHROOTDIR-}/etc/resolvconf.conf" ]
 		[ -z "${OPT_NOVERIFY-}" -o -n "${OPT_FORCE-}" ]
 		
 		cat >> "${CHROOTDIR-}/etc/resolvconf.conf" <<'EOF'
 resolv_conf="/dev/null"
 EOF
 
-		cp "${CHROOTDIR-}/usr/local/etc/unbound/unbound.conf.sample" "${CHROOTDIR-}/usr/local/etc/unbound/unbound.conf"
 		
 		if [ -n "${OPT_NOVERIFY-}" ]; then
 			sed -i '' -Ee '
