@@ -96,13 +96,20 @@ require_ports_tree () {
 			fi
 		fi
 	done
-	local port_diffs="`cd "$pkg_meta" && ls *.diff 2> /dev/null`"
+	local port_diff= port_diffs=
+	port_diffs="`cd "$pkg_meta" && ls *.1.diff 2> /dev/null`"
 	for port_diff in $port_diffs; do
-		local port=`echo $port_diff | sed -e 's|_|/|;s/\.diff$//'`
-		local category=${port%/*}
-		if (cd /usr/ports/$port && . "$pkg_meta"/$port_diff.test); then
-			patch -s -C -F 0 -E -t -N -d /usr/ports/$port -i "$pkg_meta"/$port_diff
-			patch -F 0 -E -t -N -d /usr/ports/$port -i "$pkg_meta"/$port_diff
+		local i= port_= port= targ=
+		port_=${port_diff%.1.diff}
+		port=`echo $port_ | sed -e 's|_|/|'`
+		if (cd /usr/ports/$port && . "$pkg_meta"/$port_.diff.test); then
+			i=1
+			while [ -f "$pkg_meta"/$port_.$i.diff ]; do
+				targ=`head -n 2 "$pkg_meta"/$port_.$i.diff | tail -n 1 | cut -w -f 2`
+				patch -s -C -F 0 -E -t -N -d /usr/ports/$port -i "$pkg_meta"/$port_.$i.diff $targ
+				patch -F 0 -E -t -N -d /usr/ports/$port -i "$pkg_meta"/$port_.$i.diff $targ
+				i=$(($i+1))
+			done
 		fi
 	done
 }

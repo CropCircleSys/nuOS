@@ -1,4 +1,3 @@
-diff -ruN ../openssh-portable.orig/files/openssh.in ./files/openssh.in
 --- ../openssh-portable.orig/files/openssh.in	2015-09-24 22:58:35.028730000 +0000
 +++ ./files/openssh.in	2015-09-24 23:36:37.930724960 +0000
 @@ -24,6 +24,15 @@
