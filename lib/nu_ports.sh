@@ -31,8 +31,7 @@ fi
 
 save_svn_info () {
 	local code_dir="$1"
-	which svn > /dev/null 2>&1
-	(cd /var/empty && env TZ=UTC svn info "$code_dir") >| "$code_dir/.svn/info.txt"
+	(cd /var/empty && env TZ=UTC svn`which svn  > /dev/null 2>&1 || echo lite` info "$code_dir") >| "$code_dir/.svn/info.txt"
 }
 
 ports_tag () {
