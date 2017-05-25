@@ -183,7 +183,7 @@ main () {
 				[^/]*)
 					eval local deps=\"\$COLL_$arg\"
 					dep_type=collection
-					echo $deps >> "$work_dir/$arg_/dependencies/$dep_type"
+					echo $deps | xargs -n 1 >> "$work_dir/$arg_/dependencies/$dep_type"
 					for dep in $deps; do
 						mark_as_dependant
 					done
