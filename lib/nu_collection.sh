@@ -61,6 +61,7 @@ collection_vars_init () {
 		mail/postfix
 		dns/djbdns
 		dns/knot2
+		security/acme.sh
 		net/openldap24-server
 		security/openvpn
 		ftp/pure-ftpd
@@ -83,7 +84,7 @@ collection_vars_init () {
 		lang/expect
 		databases/postgresql96-server
 		databases/mysql57-server
-		databases/mongodb
+		databases/mongodb34
 		databases/redis
 		www/npm
 		www/apache24
@@ -101,6 +102,7 @@ collection_vars_init () {
 		www/mod_php71
 		mail/roundcube-sieverules
 		irc/irssi
+		sysutils/lsof
 	'
 	
 	COLL_office='
@@ -119,6 +121,7 @@ collection_vars_init () {
 		net-p2p/bitcoin
 		net-p2p/namecoin-stable
 		net-p2p/litecoin
+		net-p2p/bitmessage
 		net-p2p/retroshare
 		net/x11vnc
 		net/tightvnc
