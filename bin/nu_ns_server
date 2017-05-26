@@ -18,11 +18,20 @@ NUOS_VER=0.0.11.0b0.1
 
 . "$(dirname "$(realpath "$0")")/../lib/nu_system.sh"
 
-while getopts C:h:i:v OPT; do case $OPT in
+while getopts C:dh:i:k:m:s:t:vz: OPT; do case $OPT in
 	C) CHROOTDIR=$OPTARG;;
+	d) OPT_DNSSEC=y;;
 	h) HOST_NAME=$OPTARG;;
 	i) push PUB_IPS $OPTARG;;
+	k) KSK_BITS=$OPTARG;;
+	m) push MASTERS $OPTARG;;
+	M) MODE=$OPTARG; case $MODE in
+		master|slave) ;; *) exit 22; esac;;
+	s) push SLAVES $OPTARG;;
+	t) SOFTWARE=$OPTARG; case $SOFTWARE in
+		djb|knot) ;; *) exit 22; esac;;
 	v) OPT_VERBOSE=y;;
+	z) ZSK_BITS=$OPTARG;;
 esac; done; shift $(($OPTIND-1))
 [ $# = 0 ]
 
@@ -30,32 +39,204 @@ esac; done; shift $(($OPTIND-1))
 
 nuos_init
 
-echo 'host name       -h HOST_NAME      ' ${HOST_NAME:=$HOST}
+: ${SOFTWARE:=knot}
+echo 'software        -t SOFTWARE       ' $SOFTWARE
 echo 'public ips      -i PUB_IPS        ' $PUB_IPS
+
+case $SOFTWARE in
+	
+	djb)
+		echo 'host name       -h HOST_NAME      ' ${HOST_NAME:=$HOST}
+	;;
+	
+	knot)
+		[ -z "${MASTERS-}" -o -z "${SLAVES-}" ] # we dont support configuring complex propagation hierarchies yet
+		if [ -n "${MASTERS-}" ]; then
+			: ${MODE:=slave}
+		else
+			: ${MODE:=master}
+		fi
+		[ -z "${MASTERS-}" -o $MODE = slave ] # so then, if we have no masters then we must be a master
+		[ -z "${SLAVES-}" -o $MODE = master ] # and vice versa
+		[ -z "${OPT_DNSSEC-}" -o $MODE = master ] # only the master signs
+		echo 'mode            -M MODE           ' $MODE
+		echo 'master ips      -m MASTERS        ' ${MASTERS-<none>}
+		echo 'slave ips       -s SLAVES         ' ${SLAVES-<none>}
+		echo -n 'dnssec          -d OPT_DNSSEC      ' && [ -n "${OPT_DNSSEC-}" ] && echo set || echo null
+		if [ -n "${OPT_DNSSEC-}" ]; then
+			echo 'keykey size     -k KSK_BITS       ' ${KSK_BITS:=2048}
+			echo 'zonekey size    -z ZSK_BITS       ' ${ZSK_BITS:=1024}
+		fi
+	;;
+	
+esac
+
 echo
 
 maybe_yell
 
-mkdir -p "${CHROOTDIR-}/var/service"
-
-for ip in $PUB_IPS; do
-	[ ! -e "${CHROOTDIR-}/var/service/tinydns-$ip" ]
-	${CHROOTDIR:+chroot "$CHROOTDIR"} tinydns-conf tinydns dnslog /var/service/tinydns-$ip $ip
-	(
-		cd "${CHROOTDIR-}/var/service/tinydns-$ip/root"
-		rdns=`echo $ip | awk 'FS=OFS="."{print $4,$3,$2,$1,"in-addr.arpa"}'`
-		for ip_ in $PUB_IPS; do
-			./add-ns $HOST_NAME $ip_
-			./add-ns $rdns $ip_
+case $SOFTWARE in
+	
+	djb)
+		
+		mkdir -p "${CHROOTDIR-}/var/service"
+		
+		for ip in $PUB_IPS; do
+			[ ! -e "${CHROOTDIR-}/var/service/tinydns-$ip" ]
+			${CHROOTDIR:+chroot "$CHROOTDIR"} tinydns-conf tinydns dnslog /var/service/tinydns-$ip $ip
+			(
+				cd "${CHROOTDIR-}/var/service/tinydns-$ip/root"
+				rdns=`echo $ip | awk 'FS=OFS="."{print $4,$3,$2,$1,"in-addr.arpa"}'`
+				for ip_ in $PUB_IPS; do
+					./add-ns $HOST_NAME $ip_
+					./add-ns $rdns $ip_
+				done
+				./add-mx $HOST_NAME $ip
+				./add-host $HOST_NAME $ip
+				./add-alias www.$HOST_NAME $ip
+				make
+			)
 		done
-		./add-mx $HOST_NAME $ip
-		./add-host $HOST_NAME $ip
-		./add-alias www.$HOST_NAME $ip
-		make
-	)
-done
+		
+		sister enable_svc ${CHROOTDIR:+-C "$CHROOTDIR"} svscan
+	;;
+	
+	knot)
+		
+		[ ! -e "${CHROOTDIR-}/usr/local/etc/knot/knot.conf" -a -f "${CHROOTDIR-}/usr/local/etc/knot/knot.conf.sample" ] || diff -q "${CHROOTDIR-}/usr/local/etc/knot/knot.conf.sample" "${CHROOTDIR-}/usr/local/etc/knot/knot.conf"
+		
+		case $MODE in
+			master)
+				other_mode=slave
+				action=transfer
+			;;
+			slave)
+				other_mode=master
+				action=notify
+			;;
+		esac
+		
+		sed -nEe '
+			/^server:/,/^$/{
+				s/^([[:blank:]]*)# user:.*$/\1user: knot:knot/
+				p
+			}
+			/^log:/,/^$/p' "${CHROOTDIR-}/usr/local/etc/knot/knot.conf.sample" >| "${CHROOTDIR-}/usr/local/etc/knot/knot.conf"
+		
+		if [ -n "${MASTERS-}${SLAVES-}" ]; then
+			cat >> "${CHROOTDIR-}/usr/local/etc/knot/knot.conf" <<EOF
+remote:
+  - id: $other_mode
+    address: ${MASTERS-}${SLAVES-}@53
 
+acl:
+  - id: acl_$other_mode
+    address: ${MASTERS-}${SLAVES-}
+    action: $action
 
-sister enable_svc ${CHROOTDIR:+-C "$CHROOTDIR"} svscan
+EOF
+		fi
+		
+		if [ -n "${OPT_DNSSEC-}" ]; then
+			cat >> "${CHROOTDIR-}/usr/local/etc/knot/knot.conf" <<EOF
+policy:
+  - id: rsa
+    algorithm: RSASHA256
+    ksk-size: $KSK_BITS
+    zsk-size: $ZSK_BITS
+
+EOF
+		fi
+		
+		cat >> "${CHROOTDIR-}/usr/local/etc/knot/knot.conf" <<EOF
+template:
+  - id: default
+    semantic-checks: on
+${MASTERS+    master: master
+    acl: acl_master
+}${SLAVES+    notify: slave
+    acl: acl_slave
+}${OPT_DNSSEC+    dnssec-signing: on
+    dnssec-policy: rsa
+    kasp-db: kasp
+}
+zone:
+EOF
+		
+		mv -n -h "${CHROOTDIR-}/usr/local/etc/knot/example.com.zone" "${CHROOTDIR-}/usr/local/etc/knot/example.com.zone.sample" || true
+		
+		sed -nEe '/^\$/,/^$/p;/^@/,/^$/{s/\<dns1\>/ns1/;p;}' "${CHROOTDIR-}/usr/local/etc/knot/example.com.zone.sample" >| "${CHROOTDIR-}/usr/local/etc/knot/example.com.zone"
+		
+		i=1
+		for ip in $PUB_IPS; do
+			cat >> "${CHROOTDIR-}/usr/local/etc/knot/example.com.zone" <<EOF
+	NS	ns$i
+EOF
+			i=$(($i + 1))
+		done
+		
+		sed -Ee 's/\<example\.com\>/example.in-addr.arpa/g' "${CHROOTDIR-}/usr/local/etc/knot/example.com.zone" >| "${CHROOTDIR-}/usr/local/etc/knot/example.in-addr.arpa.zone"
+		
+		i=1
+		for ip in $PUB_IPS; do
+			case $i in
+				1) order=0;;
+				*) order=10;;
+			esac
+			cat >> "${CHROOTDIR-}/usr/local/etc/knot/example.com.zone" <<EOF
+	MX	$order mx$i
+EOF
+			i=$(($i + 1))
+		done
+		
+		echo | tee -a "${CHROOTDIR-}/usr/local/etc/knot/example.com.zone" >> "${CHROOTDIR-}/usr/local/etc/knot/example.in-addr.arpa.zone"
+		
+		i=1
+		for ip in $PUB_IPS; do
+			tee -a "${CHROOTDIR-}/usr/local/etc/knot/example.com.zone" >> "${CHROOTDIR-}/usr/local/etc/knot/example.in-addr.arpa.zone" <<EOF
+ns$i	A	$ip
+
+EOF
+			i=$(($i + 1))
+		done
+		
+		i=1
+		for ip in $PUB_IPS; do
+			cat >> "${CHROOTDIR-}/usr/local/etc/knot/example.com.zone" <<EOF
+mx$i	A	$ip
+
+EOF
+			i=$(($i + 1))
+		done
+		
+		i=1
+		for ip in $PUB_IPS; do
+			cat >> "${CHROOTDIR-}/usr/local/etc/knot/example.com.zone" <<EOF
+`[ $i -gt 1 ] || echo @`	A	$ip
+EOF
+			i=$(($i + 1))
+		done
+
+		echo >> "${CHROOTDIR-}/usr/local/etc/knot/example.com.zone"
+		
+		i=1
+		for ip in $PUB_IPS; do
+			cat >> "${CHROOTDIR-}/usr/local/etc/knot/example.com.zone" <<EOF
+`[ $i -gt 1 ] || echo www`	A	$ip
+EOF
+			i=$(($i + 1))
+		done
+		
+		cat >> "${CHROOTDIR-}/usr/local/etc/knot/example.in-addr.arpa.zone" <<EOF
+@	PTR	example.com.
+EOF
+		
+		
+		sister enable_svc ${CHROOTDIR:+-C "$CHROOTDIR"} knot
+		
+	;;
+	
+esac
+
 
 echo "Configured name servers."
