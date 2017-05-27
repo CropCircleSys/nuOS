@@ -456,11 +456,6 @@ EOF
 				sister nu_install_pkg -C $POOL_MNT -R $tree_node
 				;;
 			[^/]*)
-				case $tree_node in
-					bare)
-						sister enable_svc -C $POOL_MNT jail
-						;;
-				esac
 				if [ -f $POOL_MNT/etc/nuos/conf ]; then
 					sed -i '' -e /^HOSTOS_PKG_COLLECTION=/d $POOL_MNT/etc/nuos/conf
 				fi
