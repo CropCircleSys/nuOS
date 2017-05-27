@@ -8,7 +8,7 @@ set -e; set -u; set -C
 #
 # This Source Code Form is subject to the terms of the Simplified BSD License.
 # If a copy of the Simplified BSD License was not distributed alongside this file, you can
-# obtain one at http://www.freebsd.org/copyright/freebsd-license.html . This software
+# obtain one at https://www.freebsd.org/copyright/freebsd-license.html . This software
 # project is not affiliated with the FreeBSD Project.
 #
 # Official updates and community support available at https://nuos.org .

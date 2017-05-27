@@ -8,8 +8,8 @@ set -e; set -u; set -C
 #
 # This Source Code Form is subject to the terms of the Mozilla Public License, v2.0.
 # If a copy of the MPL was not distributed alongside this file, you can obtain one at
-# http://mozilla.org/MPL/2.0/ . This software project is not affiliated with the Mozilla
-# Foundation.
+# https://www.mozilla.org/MPL/2.0 . This software project is not affiliated with the
+# Mozilla Foundation.
 #
 # Official updates and community support available at https://nuos.org .
 # Other licensing options and professional services available at https://ccsys.com .
