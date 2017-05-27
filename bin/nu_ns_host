@@ -18,7 +18,7 @@ NUOS_VER=0.0.11.0b0.1
 
 . "$(dirname "$(realpath "$0")")/../lib/nu_system.sh"
 
-while getopts A:C:h:i:klM:r:t:v OPT; do case $OPT in
+while getopts A:C:h:i:klM:o:r:t:v OPT; do case $OPT in
 	A) ALTERNATE=$OPTARG;;
 	C) CHROOTDIR=$OPTARG;;
 	h) HOST_NAME=$OPTARG;;
@@ -27,6 +27,10 @@ while getopts A:C:h:i:klM:r:t:v OPT; do case $OPT in
 	l) OPT_LITE=y;;
 	M) MODE=$OPTARG; case $MODE in
 		master|slave) ;; *) exit 22; esac;;
+	o) type=$OPTARG; eval file=\"\$$OPTIND\"; case $type in
+		parent_zone)
+			setvar out_$type "$file";;
+		*) exit 22; esac; shift $OPTIND;;
 	r) REC_TYPE="`echo "$OPTARG" | tr '[:lower:]' '[:upper:]'`"; OPT_LITE=y;;
 	t) SOFTWARE=$OPTARG; case $SOFTWARE in
 		djb|knot) ;; *) exit 22; esac;;
@@ -84,6 +88,8 @@ echo -n 'lightweight     -l OPT_LITE        ' && [ -n "${OPT_LITE-}" ] && echo s
 echo
 
 maybe_yell
+
+[ -z "${out_parent_zone-}" ] || [ -f "$out_parent_zone" -a -w "$out_parent_zone" -a ! -s "$out_parent_zone" ]
 
 case $SOFTWARE in
 	djb)
@@ -155,6 +161,8 @@ EOF
 		fi
 	;;
 esac
+
+[ -z "${out_parent_zone-}" ] || echo ${zone:-$HOST_NAME} >| "$out_parent_zone"
 
 
 echo "Configured host $HOST_NAME in name server."
