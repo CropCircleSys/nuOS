@@ -39,12 +39,15 @@ echo
 
 maybe_yell
 
-pghome=`${CHROOTDIR:+chroot "$CHROOTDIR"} pw usershow pgsql | cut -d : -f 9`
-[ ! -e "${CHROOTDIR-}$pghome/data" ]
+: ${SHORT_VER:=96} # currently supporting PostgreSQL 9.6
+
+pghome=`${CHROOTDIR:+chroot "$CHROOTDIR"} pw usershow postgres | cut -d : -f 9`
+[ -e "${CHROOTDIR-}$pghome" ]
+[ ! -e "${CHROOTDIR-}$pghome/data$SHORT_VER" ]
 which expect
 
 sister enable_svc ${CHROOTDIR:+-C "$CHROOTDIR"} postgresql
-echo 'postgresql_initdb_flags="--encoding=utf-8 --lc-collate=C -A md5 -W"' >> "${CHROOTDIR-}/etc/rc.conf.d/postgresql"
+echo 'postgresql_initdb_flags="-E utf-8 --lc-collate=C -A md5 -W"' >> "${CHROOTDIR-}/etc/rc.conf.d/postgresql"
 
 rand_token=`sister nu_randpw`
 ${CHROOTDIR:+chroot "$CHROOTDIR"} expect -n -c '
@@ -61,35 +64,35 @@ ${CHROOTDIR:+chroot "$CHROOTDIR"} expect -n -c '
 ' <<EOF
 $rand_token
 EOF
-[ -f "${CHROOTDIR-}$pghome/data/PG_VERSION" ]
+[ -f "${CHROOTDIR-}$pghome/data$SHORT_VER/PG_VERSION" ]
 (umask 77 && cat > "${CHROOTDIR-}$pghome/.pgpass") <<EOF
-localhost:*:*:pgsql:$rand_token
+localhost:*:*:postgres:$rand_token
 EOF
-chown pgsql:pgsql "${CHROOTDIR-}$pghome/.pgpass"
+chown postgres:postgres "${CHROOTDIR-}$pghome/.pgpass"
 
 if [ -n "${OPT_NETWORK-}" ]; then
-	cat >> "${CHROOTDIR-}$pghome/data/postgresql.conf" <<'EOF'
+	cat >> "${CHROOTDIR-}$pghome/data$SHORT_VER/postgresql.conf" <<'EOF'
 listen_addresses = '*'
 EOF
 	if [ -n "${OPT_SSL-}" ]; then
-		mkdir "${CHROOTDIR-}$pghome/data/ssl"
-		${CHROOTDIR:+chroot "$CHROOTDIR"} chown pgsql $pghome/data/ssl
-		(umask 77 && mkdir "${CHROOTDIR-}$pghome/data/ssl/private")
-		${CHROOTDIR:+chroot "$CHROOTDIR"} chown pgsql $pghome/data/ssl/private
+		mkdir "${CHROOTDIR-}$pghome/data$SHORT_VER/ssl"
+		${CHROOTDIR:+chroot "$CHROOTDIR"} chown postgres $pghome/data$SHORT_VER/ssl
+		(umask 77 && mkdir "${CHROOTDIR-}$pghome/data$SHORT_VER/ssl/private")
+		${CHROOTDIR:+chroot "$CHROOTDIR"} chown postgres $pghome/data$SHORT_VER/ssl/private
 		if zfs list $POOL_BOOT_NAME-pvt > /dev/null 2>&1; then # this check will need to be refined if ever we support CHROOTDIR
-			chflags schg "${CHROOTDIR-}$pghome/data/ssl/private"
-			zfs create -o mountpoint=$pghome/data/ssl/private $POOL_BOOT_NAME-pvt/sys/host/pgsql-ssl
-			chmod go-rx "${CHROOTDIR-}$pghome/data/ssl/private"
-			${CHROOTDIR:+chroot "$CHROOTDIR"} chown pgsql:pgsql $pghome/data/ssl/private
+			chflags schg "${CHROOTDIR-}$pghome/data$SHORT_VER/ssl/private"
+			zfs create -o mountpoint=$pghome/data$SHORT_VER/ssl/private $POOL_BOOT_NAME-pvt/sys/host/pgsql-ssl
+			chmod go-rx "${CHROOTDIR-}$pghome/data$SHORT_VER/ssl/private"
+			${CHROOTDIR:+chroot "$CHROOTDIR"} chown postgres:postgres $pghome/data$SHORT_VER/ssl/private
 		fi
-		cp "${CHROOTDIR-}/etc/ssl/certs/$HOST_NAME.crt" "${CHROOTDIR-}$pghome/data/ssl/"
-		${CHROOTDIR:+chroot "$CHROOTDIR"} chown pgsql $pghome/data/ssl/$HOST_NAME.crt
-		cp "${CHROOTDIR-}/etc/ssl/private/$HOST_NAME.key" "${CHROOTDIR-}$pghome/data/ssl/private/"
-		${CHROOTDIR:+chroot "$CHROOTDIR"} chown pgsql $pghome/data/ssl/private/$HOST_NAME.key
+		cp "${CHROOTDIR-}/etc/ssl/certs/$HOST_NAME.crt" "${CHROOTDIR-}$pghome/data$SHORT_VER/ssl/"
+		${CHROOTDIR:+chroot "$CHROOTDIR"} chown postgres $pghome/data$SHORT_VER/ssl/$HOST_NAME.crt
+		cp "${CHROOTDIR-}/etc/ssl/private/$HOST_NAME.key" "${CHROOTDIR-}$pghome/data$SHORT_VER/ssl/private/"
+		${CHROOTDIR:+chroot "$CHROOTDIR"} chown postgres $pghome/data$SHORT_VER/ssl/private/$HOST_NAME.key
 		if [ -f "${CHROOTDIR-}/etc/ssl/certs/$HOST_NAME.ca.crt" ]; then
-			cat "${CHROOTDIR-}/etc/ssl/certs/$HOST_NAME.ca.crt" >> "${CHROOTDIR-}$pghome/data/ssl/$HOST_NAME.crt"
+			cat "${CHROOTDIR-}/etc/ssl/certs/$HOST_NAME.ca.crt" >> "${CHROOTDIR-}$pghome/data$SHORT_VER/ssl/$HOST_NAME.crt"
 		fi
-		cat >> "${CHROOTDIR-}$pghome/data/postgresql.conf" <<EOF
+		cat >> "${CHROOTDIR-}$pghome/data$SHORT_VER/postgresql.conf" <<EOF
 ssl = on
 ssl_cert_file = 'ssl/$HOST_NAME.crt'
 ssl_key_file = 'ssl/private/$HOST_NAME.key'
