@@ -205,3 +205,7 @@ sets_intrsctn () {
 	esac
 	setvar $ret_var "$ret_tmp"
 }
+
+rev_zone () {
+	echo $1 | awk 'FS=OFS="."{print $4,$3,$2,$1,"in-addr.arpa"}'
+}

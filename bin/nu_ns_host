@@ -18,11 +18,12 @@ NUOS_VER=0.0.11.0b0.1
 
 . "$(dirname "$(realpath "$0")")/../lib/nu_system.sh"
 
-while getopts A:C:h:i:lM:t:v OPT; do case $OPT in
+while getopts A:C:h:i:klM:t:v OPT; do case $OPT in
 	A) ALTERNATE=$OPTARG;;
 	C) CHROOTDIR=$OPTARG;;
 	h) HOST_NAME=$OPTARG;;
 	i) push PUB_IPS $OPTARG;;
+	k) OPT_EXPORT_KEY_FINGERPRINTS=y;;
 	l) OPT_LITE=y;;
 	M) MODE=$OPTARG; case $MODE in
 		master|slave) ;; *) exit 22; esac;;
@@ -33,6 +34,17 @@ esac; done; shift $(($OPTIND-1))
 [ $# = 0 ]
 
 . "$(dirname "$(realpath "$0")")/../lib/nu_common.sh"
+
+if [ -n "${OPT_EXPORT_KEY_FINGERPRINTS-}" ]; then
+	ex=1
+	for k in `keymgr zone key list $HOST_NAME | cut -w -f 3`; do
+		if [ 257 = `keymgr zone key show $HOST_NAME $k | grep '^flags' | cut -w -f 2` ]; then
+			ex=0
+			keymgr zone key ds $HOST_NAME $k
+		fi
+	done
+	exit $ex
+fi
 
 nuos_init
 
@@ -45,7 +57,14 @@ if [ -z "${PUB_IPS-}" ]; then
 			done
 		;;
 		knot)
-			echo 'mode            -M MODE           ' ${MODE:=master}
+			[ -f "${CHROOTDIR-}/usr/local/etc/knot/knot${ALTERNATE:+_${ALTERNATE}}.conf" ]
+			master_refs=`sed -n -E -e '/^template:/,/^[^[:blank:]]/p' "${CHROOTDIR-}/usr/local/etc/knot/knot${ALTERNATE:+_${ALTERNATE}}.conf" | sed -e '1d;$d' | sed -n -E -e '/^[[:blank:]]*- id: default$/,/^[[:blank:]]*- id: /p' | sed -n -E -e '1d;$d;/^[[:blank:]]*master:[[:blank:]]*.+/=' | wc -l | xargs`
+			if [ $master_refs -ge 1 ]; then
+				default_mode=slave
+			else
+				default_mode=master
+			fi
+			echo 'mode            -M MODE           ' ${MODE:=$default_mode}
 			PUB_IPS="`sed -n -E -e '/^@	A+\>/,/^[^@[:blank:]]/{/^(@	A+\>|	A+\>)/p;}' "${CHROOTDIR-}/usr/local/etc/knot/example${ALTERNATE:+_${ALTERNATE}}.com.zone" | cut -f 3 | xargs`"
 		;;
 	esac
@@ -76,6 +95,7 @@ case $SOFTWARE in
 		done
 	;;
 	knot)
+		[ $MODE = $default_mode ]
 		[ 1 = `echo "$(sed -n -E -e '/^zone:/,${/^([[:blank:]]|$)/d;p;}' "${CHROOTDIR-}/usr/local/etc/knot/knot${ALTERNATE:+_${ALTERNATE}}.conf")" | wc -l | xargs` ]
 		zone=$HOST_NAME
 		case $MODE in
@@ -108,6 +128,13 @@ EOF
 				else
 					sed -E -e "s/\<example\\.com\>/$zone/g;/\<serial[[:blank:]]*$/s/[[:digit:]]+/$new_serial/" "${CHROOTDIR-}/usr/local/etc/knot/example${ALTERNATE:+_${ALTERNATE}}.com.zone" > "${CHROOTDIR-}/var/db/knot${ALTERNATE:+_${ALTERNATE}}/$zone.zone"
 				fi
+				for ip in $PUB_IPS; do
+					rz=`rev_zone $ip`
+					if [ ! -f "${CHROOTDIR-}/var/db/knot${ALTERNATE:+_${ALTERNATE}}/$rz.zone" ]; then
+						sed -E -e "s/\<example\\.in-addr\\.arpa\>/$rz/;s/\<example\\.in-addr\\.arpa\>/$HOST_NAME/;/\<serial[[:blank:]]*$/s/[[:digit:]]+/$new_serial/;s/\<example\\.com\>/$HOST_NAME/" "${CHROOTDIR-}/usr/local/etc/knot/example${ALTERNATE:+_${ALTERNATE}}.in-addr.arpa.zone" > "${CHROOTDIR-}/var/db/knot${ALTERNATE:+_${ALTERNATE}}/$rz.zone"
+						echo "  - domain: $rz" >> "${CHROOTDIR-}/usr/local/etc/knot/knot${ALTERNATE:+_${ALTERNATE}}.conf"
+					fi
+				done
 			;;
 			slave)
 				[ -z "${OPT_LITE-}" ]

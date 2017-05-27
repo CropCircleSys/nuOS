@@ -87,7 +87,7 @@ case $SOFTWARE in
 			${CHROOTDIR:+chroot "$CHROOTDIR"} tinydns-conf tinydns dnslog /var/service/tinydns-$ip $ip
 			(
 				cd "${CHROOTDIR-}/var/service/tinydns-$ip/root"
-				rdns=`echo $ip | awk 'FS=OFS="."{print $4,$3,$2,$1,"in-addr.arpa"}'`
+				rdns=`rev_zone $ip`
 				for ip_ in $PUB_IPS; do
 					./add-ns $HOST_NAME $ip_
 					./add-ns $rdns $ip_
@@ -104,6 +104,9 @@ case $SOFTWARE in
 	
 	knot)
 		
+		if [ ! -f "${CHROOTDIR-}/usr/local/etc/knot/example.com.zone.sample" ]; then
+			mv -n -h "${CHROOTDIR-}/usr/local/etc/knot/example.com.zone" "${CHROOTDIR-}/usr/local/etc/knot/example.com.zone.sample"
+		fi
 		[ ! -e "${CHROOTDIR-}/usr/local/etc/knot/knot${ALTERNATE:+_${ALTERNATE}}.conf" -a -f "${CHROOTDIR-}/usr/local/etc/knot/knot.conf.sample" ] || diff -q "${CHROOTDIR-}/usr/local/etc/knot/knot.conf.sample" "${CHROOTDIR-}/usr/local/etc/knot/knot${ALTERNATE:+_${ALTERNATE}}.conf"
 		
 		case $MODE in
@@ -163,9 +166,6 @@ ${MASTERS+    master: master
 }
 zone:
 EOF
-		if [ ! -f "${CHROOTDIR-}/usr/local/etc/knot/example.com.zone.sample" ]; then
-			mv -n -h "${CHROOTDIR-}/usr/local/etc/knot/example.com.zone" "${CHROOTDIR-}/usr/local/etc/knot/example.com.zone.sample"
-		fi
 		
 		sed -nEe '/^\$/,/^$/p;/^@/,/^$/{s/\<dns1\>/ns1/;p;}' "${CHROOTDIR-}/usr/local/etc/knot/example.com.zone.sample" >| "${CHROOTDIR-}/usr/local/etc/knot/example${ALTERNATE:+_${ALTERNATE}}.com.zone"
 		
@@ -233,6 +233,11 @@ EOF
 @	PTR	example.com.
 EOF
 		
+		if [ $MODE = slave ]; then
+			for ip in $PUB_IPS; do
+				echo "  - domain: `rev_zone $ip`" >> "${CHROOTDIR-}/usr/local/etc/knot/knot${ALTERNATE:+_${ALTERNATE}}.conf"
+			done
+		fi
 		
 		sister enable_svc ${CHROOTDIR:+-C "$CHROOTDIR"} knot
 		
