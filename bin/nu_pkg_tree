@@ -192,7 +192,7 @@ main () {
 				*) exit 22
 			esac
 			echo $arg
-			[ -z "${out_txt-}" ] || echo "`printf %${depth}s | tr ' ' '\t'`$arg"  >> "$tmp_txt"
+			[ -z "${out_txt-}" ] || echo "`printf %${depth}s | tr ' ' '\t'`$arg" >> "$tmp_txt"
 		fi
 	done
 }
