@@ -18,7 +18,8 @@ NUOS_VER=0.0.11.0b0.1
 
 . "$(dirname "$(realpath "$0")")/../lib/nu_system.sh"
 
-while getopts C:dh:i:k:m:s:t:vz: OPT; do case $OPT in
+while getopts A:C:dh:i:k:m:s:t:vz: OPT; do case $OPT in
+	A) ALTERNATE=$OPTARG;;
 	C) CHROOTDIR=$OPTARG;;
 	d) OPT_DNSSEC=y;;
 	h) HOST_NAME=$OPTARG;;
@@ -103,7 +104,7 @@ case $SOFTWARE in
 	
 	knot)
 		
-		[ ! -e "${CHROOTDIR-}/usr/local/etc/knot/knot.conf" -a -f "${CHROOTDIR-}/usr/local/etc/knot/knot.conf.sample" ] || diff -q "${CHROOTDIR-}/usr/local/etc/knot/knot.conf.sample" "${CHROOTDIR-}/usr/local/etc/knot/knot.conf"
+		[ ! -e "${CHROOTDIR-}/usr/local/etc/knot/knot${ALTERNATE:+_${ALTERNATE}}.conf" -a -f "${CHROOTDIR-}/usr/local/etc/knot/knot.conf.sample" ] || diff -q "${CHROOTDIR-}/usr/local/etc/knot/knot.conf.sample" "${CHROOTDIR-}/usr/local/etc/knot/knot${ALTERNATE:+_${ALTERNATE}}.conf"
 		
 		case $MODE in
 			master)
@@ -121,10 +122,10 @@ case $SOFTWARE in
 				s/^([[:blank:]]*)# user:.*$/\1user: knot:knot/
 				p
 			}
-			/^log:/,/^$/p' "${CHROOTDIR-}/usr/local/etc/knot/knot.conf.sample" >| "${CHROOTDIR-}/usr/local/etc/knot/knot.conf"
+			/^log:/,/^$/p' "${CHROOTDIR-}/usr/local/etc/knot/knot.conf.sample" >| "${CHROOTDIR-}/usr/local/etc/knot/knot${ALTERNATE:+_${ALTERNATE}}.conf"
 		
 		if [ -n "${MASTERS-}${SLAVES-}" ]; then
-			cat >> "${CHROOTDIR-}/usr/local/etc/knot/knot.conf" <<EOF
+			cat >> "${CHROOTDIR-}/usr/local/etc/knot/knot${ALTERNATE:+_${ALTERNATE}}.conf" <<EOF
 remote:
   - id: $other_mode
     address: ${MASTERS-}${SLAVES-}@53
@@ -138,7 +139,7 @@ EOF
 		fi
 		
 		if [ -n "${OPT_DNSSEC-}" ]; then
-			cat >> "${CHROOTDIR-}/usr/local/etc/knot/knot.conf" <<EOF
+			cat >> "${CHROOTDIR-}/usr/local/etc/knot/knot${ALTERNATE:+_${ALTERNATE}}.conf" <<EOF
 policy:
   - id: rsa
     algorithm: RSASHA256
@@ -148,7 +149,7 @@ policy:
 EOF
 		fi
 		
-		cat >> "${CHROOTDIR-}/usr/local/etc/knot/knot.conf" <<EOF
+		cat >> "${CHROOTDIR-}/usr/local/etc/knot/knot${ALTERNATE:+_${ALTERNATE}}.conf" <<EOF
 template:
   - id: default
     semantic-checks: on
@@ -162,20 +163,21 @@ ${MASTERS+    master: master
 }
 zone:
 EOF
+		if [ ! -f "${CHROOTDIR-}/usr/local/etc/knot/example.com.zone.sample" ]; then
+			mv -n -h "${CHROOTDIR-}/usr/local/etc/knot/example.com.zone" "${CHROOTDIR-}/usr/local/etc/knot/example.com.zone.sample"
+		fi
 		
-		mv -n -h "${CHROOTDIR-}/usr/local/etc/knot/example.com.zone" "${CHROOTDIR-}/usr/local/etc/knot/example.com.zone.sample" || true
-		
-		sed -nEe '/^\$/,/^$/p;/^@/,/^$/{s/\<dns1\>/ns1/;p;}' "${CHROOTDIR-}/usr/local/etc/knot/example.com.zone.sample" >| "${CHROOTDIR-}/usr/local/etc/knot/example.com.zone"
+		sed -nEe '/^\$/,/^$/p;/^@/,/^$/{s/\<dns1\>/ns1/;p;}' "${CHROOTDIR-}/usr/local/etc/knot/example.com.zone.sample" >| "${CHROOTDIR-}/usr/local/etc/knot/example${ALTERNATE:+_${ALTERNATE}}.com.zone"
 		
 		i=1
 		for ip in $PUB_IPS; do
-			cat >> "${CHROOTDIR-}/usr/local/etc/knot/example.com.zone" <<EOF
+			cat >> "${CHROOTDIR-}/usr/local/etc/knot/example${ALTERNATE:+_${ALTERNATE}}.com.zone" <<EOF
 	NS	ns$i
 EOF
 			i=$(($i + 1))
 		done
 		
-		sed -Ee 's/\<example\.com\>/example.in-addr.arpa/g' "${CHROOTDIR-}/usr/local/etc/knot/example.com.zone" >| "${CHROOTDIR-}/usr/local/etc/knot/example.in-addr.arpa.zone"
+		sed -Ee 's/\<example\.com\>/example.in-addr.arpa/g' "${CHROOTDIR-}/usr/local/etc/knot/example${ALTERNATE:+_${ALTERNATE}}.com.zone" >| "${CHROOTDIR-}/usr/local/etc/knot/example${ALTERNATE:+_${ALTERNATE}}.in-addr.arpa.zone"
 		
 		i=1
 		for ip in $PUB_IPS; do
@@ -183,17 +185,17 @@ EOF
 				1) order=0;;
 				*) order=10;;
 			esac
-			cat >> "${CHROOTDIR-}/usr/local/etc/knot/example.com.zone" <<EOF
+			cat >> "${CHROOTDIR-}/usr/local/etc/knot/example${ALTERNATE:+_${ALTERNATE}}.com.zone" <<EOF
 	MX	$order mx$i
 EOF
 			i=$(($i + 1))
 		done
 		
-		echo | tee -a "${CHROOTDIR-}/usr/local/etc/knot/example.com.zone" >> "${CHROOTDIR-}/usr/local/etc/knot/example.in-addr.arpa.zone"
+		echo | tee -a "${CHROOTDIR-}/usr/local/etc/knot/example${ALTERNATE:+_${ALTERNATE}}.com.zone" >> "${CHROOTDIR-}/usr/local/etc/knot/example${ALTERNATE:+_${ALTERNATE}}.in-addr.arpa.zone"
 		
 		i=1
 		for ip in $PUB_IPS; do
-			tee -a "${CHROOTDIR-}/usr/local/etc/knot/example.com.zone" >> "${CHROOTDIR-}/usr/local/etc/knot/example.in-addr.arpa.zone" <<EOF
+			tee -a "${CHROOTDIR-}/usr/local/etc/knot/example${ALTERNATE:+_${ALTERNATE}}.com.zone" >> "${CHROOTDIR-}/usr/local/etc/knot/example${ALTERNATE:+_${ALTERNATE}}.in-addr.arpa.zone" <<EOF
 ns$i	A	$ip
 
 EOF
@@ -202,7 +204,7 @@ EOF
 		
 		i=1
 		for ip in $PUB_IPS; do
-			cat >> "${CHROOTDIR-}/usr/local/etc/knot/example.com.zone" <<EOF
+			cat >> "${CHROOTDIR-}/usr/local/etc/knot/example${ALTERNATE:+_${ALTERNATE}}.com.zone" <<EOF
 mx$i	A	$ip
 
 EOF
@@ -211,23 +213,23 @@ EOF
 		
 		i=1
 		for ip in $PUB_IPS; do
-			cat >> "${CHROOTDIR-}/usr/local/etc/knot/example.com.zone" <<EOF
+			cat >> "${CHROOTDIR-}/usr/local/etc/knot/example${ALTERNATE:+_${ALTERNATE}}.com.zone" <<EOF
 `[ $i -gt 1 ] || echo @`	A	$ip
 EOF
 			i=$(($i + 1))
 		done
 
-		echo >> "${CHROOTDIR-}/usr/local/etc/knot/example.com.zone"
+		echo >> "${CHROOTDIR-}/usr/local/etc/knot/example${ALTERNATE:+_${ALTERNATE}}.com.zone"
 		
 		i=1
 		for ip in $PUB_IPS; do
-			cat >> "${CHROOTDIR-}/usr/local/etc/knot/example.com.zone" <<EOF
+			cat >> "${CHROOTDIR-}/usr/local/etc/knot/example${ALTERNATE:+_${ALTERNATE}}.com.zone" <<EOF
 `[ $i -gt 1 ] || echo www`	A	$ip
 EOF
 			i=$(($i + 1))
 		done
 		
-		cat >> "${CHROOTDIR-}/usr/local/etc/knot/example.in-addr.arpa.zone" <<EOF
+		cat >> "${CHROOTDIR-}/usr/local/etc/knot/example${ALTERNATE:+_${ALTERNATE}}.in-addr.arpa.zone" <<EOF
 @	PTR	example.com.
 EOF
 		
