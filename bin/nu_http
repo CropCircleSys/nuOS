@@ -74,14 +74,15 @@ EOF
 
 if [ -n "${OPT_SSL-}" ]; then
 	sister nu_ssl ${CHROOTDIR:+-C "$CHROOTDIR"} -s -S -b 1024 -e 29200 -n XX -p Void -h dummy.void
-	mv "${CHROOTDIR-}/etc/ssl/private/dummy.void.key" "${CHROOTDIR-}/usr/local/etc/apache24/ssl/private/"
-	mv "${CHROOTDIR-}/etc/ssl/certs/dummy.void.crt" "${CHROOTDIR-}/usr/local/etc/apache24/ssl/"
+	mkdir -p "${CHROOTDIR-}/usr/local/etc/$service/ssl/private/"
+	mv "${CHROOTDIR-}/etc/ssl/private/dummy.void.key" "${CHROOTDIR-}/usr/local/etc/$service/ssl/private/"
+	mv "${CHROOTDIR-}/etc/ssl/certs/dummy.void.crt" "${CHROOTDIR-}/usr/local/etc/$service/ssl/"
 	cat >> "${CHROOTDIR-}/usr/local/etc/$service/extra/httpd-vhosts.conf" <<EOF
 <VirtualHost *:443>
 	DocumentRoot "/usr/local/www/$service/data"
 	SSLEngine on
-	SSLCertificateFile "/usr/local/etc/apache24/ssl/dummy.void.crt"
-	SSLCertificateKeyFile "/usr/local/etc/apache24/ssl/private/dummy.void.key"
+	SSLCertificateFile "/usr/local/etc/$service/ssl/dummy.void.crt"
+	SSLCertificateKeyFile "/usr/local/etc/$service/ssl/private/dummy.void.key"
 </VirtualHost>
 EOF
 fi
