@@ -71,6 +71,8 @@ if [ -z "${PUB_IPS-}" ]; then
 	esac
 fi
 
+[ -n "${PUB_IPS-}" ] || unset PUB_IPS
+
 echo 'host name       -h HOST_NAME      ' $HOST_NAME
 echo 'public ips      -i PUB_IPS        ' $PUB_IPS
 echo -n 'lightweight     -l OPT_LITE        ' && [ -n "${OPT_LITE-}" ] && echo set || echo null
