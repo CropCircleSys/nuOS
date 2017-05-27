@@ -60,6 +60,8 @@ maybe_yell
 
 [ -n "${OPT_SSL-}" ] || [ -z "${OPT_STRICT-}" ]
 
+service=apache24
+
 mkdir -p "${CHROOTDIR-}/var/log/httpd-vhost"
 
 user_home=`pw -V "${CHROOTDIR-}/etc" usershow $USER_NAME | cut -d : -f 9`
@@ -67,14 +69,14 @@ user_home=`pw -V "${CHROOTDIR-}/etc" usershow $USER_NAME | cut -d : -f 9`
 ${CHROOTDIR:+chroot "$CHROOTDIR"} su -m $USER_NAME -c "mkdir -p \"$user_home/$HOST_NAME/www/public\""
 
 if [ -n "${OPT_SSL-}" ]; then
-	cp "${CHROOTDIR-}/etc/ssl/certs/$HOST_NAME.crt" "${CHROOTDIR-}/usr/local/etc/apache24/ssl/"
-	cp "${CHROOTDIR-}/etc/ssl/private/$HOST_NAME.key" "${CHROOTDIR-}/usr/local/etc/apache24/ssl/private/"
+	cp "${CHROOTDIR-}/etc/ssl/certs/$HOST_NAME.crt" "${CHROOTDIR-}/usr/local/etc/$service/ssl/"
+	cp "${CHROOTDIR-}/etc/ssl/private/$HOST_NAME.key" "${CHROOTDIR-}/usr/local/etc/$service/ssl/private/"
 	if [ -f "${CHROOTDIR-}/etc/ssl/certs/$HOST_NAME.ca.crt" ]; then
-		cp "${CHROOTDIR-}/etc/ssl/certs/$HOST_NAME.ca.crt" "${CHROOTDIR-}/usr/local/etc/apache24/ssl/"
+		cp "${CHROOTDIR-}/etc/ssl/certs/$HOST_NAME.ca.crt" "${CHROOTDIR-}/usr/local/etc/$service/ssl/"
 	else
 		self_signed=y
 	fi
-	cat > "${CHROOTDIR-}/usr/local/etc/apache24/Includes/$HOST_NAME.conf" <<EOF
+	cat > "${CHROOTDIR-}/usr/local/etc/$service/Includes/$HOST_NAME.conf" <<EOF
 <VirtualHost _default_:443>
 	DocumentRoot "$user_home/$HOST_NAME/www/public"
 	ServerName $HOST_NAME:443
@@ -82,10 +84,10 @@ if [ -n "${OPT_SSL-}" ]; then
 	ErrorLog "/var/log/httpd-vhost/$HOST_NAME-error.log"
 	CustomLog "/var/log/httpd-vhost/$HOST_NAME-access.log" common
 	SSLEngine On
-	SSLCertificateFile "/usr/local/etc/apache24/ssl/$HOST_NAME.crt"
-	SSLCertificateKeyFile "/usr/local/etc/apache24/ssl/private/$HOST_NAME.key"
+	SSLCertificateFile "/usr/local/etc/$service/ssl/$HOST_NAME.crt"
+	SSLCertificateKeyFile "/usr/local/etc/$service/ssl/private/$HOST_NAME.key"
 ${self_signed:+	SSLUseStapling off
-#}	SSLCertificateChainFile "/usr/local/etc/apache24/ssl/$HOST_NAME.ca.crt"
+#}	SSLCertificateChainFile "/usr/local/etc/$service/ssl/$HOST_NAME.ca.crt"
 ${OPT_STRICT:+	Header always set Strict-Transport-Security "max-age=$((5*365*24*60*60)); includeSubdomains; preload"
 }	Header always setifempty X-Frame-Options SAMEORIGIN
 	CustomLog "/var/log/httpd-vhost/$HOST_NAME-ssl_request.log" "%t %h %{SSL_PROTOCOL}x %{SSL_CIPHER}x \"%r\" %b"
@@ -93,10 +95,10 @@ ${OPT_STRICT:+	Header always set Strict-Transport-Security "max-age=$((5*365*24*
 <VirtualHost _default_:443>
 	ServerName www.$HOST_NAME:443
 	SSLEngine On
-	SSLCertificateFile "/usr/local/etc/apache24/ssl/$HOST_NAME.crt"
-	SSLCertificateKeyFile "/usr/local/etc/apache24/ssl/private/$HOST_NAME.key"
+	SSLCertificateFile "/usr/local/etc/$service/ssl/$HOST_NAME.crt"
+	SSLCertificateKeyFile "/usr/local/etc/$service/ssl/private/$HOST_NAME.key"
 ${self_signed:+	SSLUseStapling off
-#}	SSLCertificateChainFile "/usr/local/etc/apache24/ssl/$HOST_NAME.ca.crt"
+#}	SSLCertificateChainFile "/usr/local/etc/$service/ssl/$HOST_NAME.ca.crt"
 ${OPT_STRICT:+	Header always set Strict-Transport-Security "max-age=$((5*365*24*60*60)); includeSubdomains; preload"
 }	Header always setifempty X-Frame-Options SAMEORIGIN
 	Redirect permanent / https://$HOST_NAME/
@@ -109,7 +111,7 @@ ${OPT_STRICT:+	Header always set Strict-Transport-Security "max-age=$((5*365*24*
 </VirtualHost>
 EOF
 else
-	cat > "${CHROOTDIR-}/usr/local/etc/apache24/Includes/$HOST_NAME.conf" <<EOF
+	cat > "${CHROOTDIR-}/usr/local/etc/$service/Includes/$HOST_NAME.conf" <<EOF
 <VirtualHost *:80>
 	DocumentRoot "$user_home/$HOST_NAME/www/public"
 	ServerName $HOST_NAME
@@ -126,7 +128,7 @@ else
 EOF
 fi
 
-cat >> "${CHROOTDIR-}/usr/local/etc/apache24/Includes/$HOST_NAME.conf" <<EOF
+cat >> "${CHROOTDIR-}/usr/local/etc/$service/Includes/$HOST_NAME.conf" <<EOF
 <Directory "$user_home/$HOST_NAME/www/public">
 	Options Indexes FollowSymLinks
 	AllowOverride None
