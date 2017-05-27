@@ -68,7 +68,7 @@ if [ -z "${CERT_FILE-}" -a -z "${OPT_LETS_ENCRYPT-}" ]; then
 	echo 'email           -m EMAIL          ' $EMAIL
 	echo -n 'self signed     -s OPT_SELF_SIGNED ' && [ -n "${OPT_SELF_SIGNED-}" ] && echo set || echo null
 	echo -n 'unsecure        -S OPT_UNSECURE    ' && [ -n "${OPT_UNSECURE-}" ] && echo set || echo null
-else
+elif [ -z "${OPT_LETS_ENCRYPT-}" ]; then
 	echo 'cert file       -c CERT_FILE      ' $CERT_FILE
 	echo -n 'authority file  -a AUTH_FILE       ' && [ -n "${AUTH_FILE-}" ] && echo $AUTH_FILE || echo undefined
 fi
