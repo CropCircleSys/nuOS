@@ -16,11 +16,11 @@ set -e; set -u; set -C
 
 NUOS_VER=0.0.11.0b0.1
 
-while getopts c:C:h:i:k:s:v OPT; do case $OPT in
+while getopts A:c:C:h:k:s:v OPT; do case $OPT in
+	A) ALTERNATE=$OPTARG;;
 	c) CERT_FILE=$OPTARG; grep -q -- '-BEGIN CERTIFICATE-' "$CERT_FILE";;
 	C) CHROOTDIR=$OPTARG;;
 	h) HOST_NAME=$OPTARG;;
-	i) IDENTIFIER=$OPTARG;;
 	k) KEY_FILE=$OPTARG; grep -q -- '-BEGIN .* PRIVATE KEY-' "$KEY_FILE";;
 	s) SERVER_HOST=$OPTARG;;
 	v) OPT_VERBOSE=y;;
@@ -35,24 +35,24 @@ nuos_ssl_init
 
 maybe_yell
 
-: ${SERVER_HOST:=`$SSL_CMD x509 -noout -subject -nameopt sep_multiline -in "${CHROOTDIR-}/usr/local/etc/openvpn/${IDENTIFIER:+${IDENTIFIER}_}server.crt" | sed -Ee '/^[[:blank:]]*CN=/!d;s/^[[:blank:]]*CN=//'`}
+: ${SERVER_HOST:=`$SSL_CMD x509 -noout -subject -nameopt sep_multiline -in "${CHROOTDIR-}/usr/local/etc/openvpn/${ALTERNATE:+${ALTERNATE}_}server.crt" | sed -Ee '/^[[:blank:]]*CN=/!d;s/^[[:blank:]]*CN=//'`}
 : ${HOST_NAME:=$HOST}
 : ${CERT_FILE:="${CHROOTDIR-}/etc/ssl/certs/$HOST_NAME.internal.crt"}
 : ${KEY_FILE:="${CHROOTDIR-}/etc/ssl/private/$HOST_NAME.key"}
 
-[ -r "${CHROOTDIR-}/usr/local/etc/openvpn/${IDENTIFIER:+${IDENTIFIER}_}ca.crt" ]
-[ -r "${CHROOTDIR-}/usr/local/etc/openvpn/${IDENTIFIER:+${IDENTIFIER}_}dh"*".pem" ]
-[ -r "${CHROOTDIR-}/usr/local/etc/openvpn/private/${IDENTIFIER:+${IDENTIFIER}_}ta.key" ]
+[ -r "${CHROOTDIR-}/usr/local/etc/openvpn/${ALTERNATE:+${ALTERNATE}_}ca.crt" ]
+[ -r "${CHROOTDIR-}/usr/local/etc/openvpn/${ALTERNATE:+${ALTERNATE}_}dh"*".pem" ]
+[ -r "${CHROOTDIR-}/usr/local/etc/openvpn/private/${ALTERNATE:+${ALTERNATE}_}ta.key" ]
 
 cat <<EOF
-`grep '^dev ' "${CHROOTDIR-}/usr/local/etc/openvpn/openvpn${IDENTIFIER:+_$IDENTIFIER}.conf"`
-`grep '^topology ' "${CHROOTDIR-}/usr/local/etc/openvpn/openvpn${IDENTIFIER:+_$IDENTIFIER}.conf"`
+`grep '^dev ' "${CHROOTDIR-}/usr/local/etc/openvpn/openvpn${ALTERNATE:+_$ALTERNATE}.conf"`
+`grep '^topology ' "${CHROOTDIR-}/usr/local/etc/openvpn/openvpn${ALTERNATE:+_$ALTERNATE}.conf"`
 client
 remote $SERVER_HOST
 verify-x509-name $SERVER_HOST name
 float
-`grep '^cipher ' "${CHROOTDIR-}/usr/local/etc/openvpn/openvpn${IDENTIFIER:+_$IDENTIFIER}.conf"`
-`grep ^comp- "${CHROOTDIR-}/usr/local/etc/openvpn/openvpn${IDENTIFIER:+_$IDENTIFIER}.conf"`
+`grep '^cipher ' "${CHROOTDIR-}/usr/local/etc/openvpn/openvpn${ALTERNATE:+_$ALTERNATE}.conf"`
+`grep ^comp- "${CHROOTDIR-}/usr/local/etc/openvpn/openvpn${ALTERNATE:+_$ALTERNATE}.conf"`
 user nobody
 group nobody
 persist-key
@@ -66,12 +66,12 @@ key-direction 1
 `cat "$CERT_FILE" 2>/dev/null || echo %%-CERTIFICATE-%%`
 </cert>
 <ca>
-`cat "${CHROOTDIR-}/usr/local/etc/openvpn/${IDENTIFIER:+${IDENTIFIER}_}ca.crt"`
+`cat "${CHROOTDIR-}/usr/local/etc/openvpn/${ALTERNATE:+${ALTERNATE}_}ca.crt"`
 </ca>
 <dh>
-`cat "${CHROOTDIR-}/usr/local/etc/openvpn/${IDENTIFIER:+${IDENTIFIER}_}dh"*".pem"`
+`cat "${CHROOTDIR-}/usr/local/etc/openvpn/${ALTERNATE:+${ALTERNATE}_}dh"*".pem"`
 </dh>
 <tls-auth>
-`cat "${CHROOTDIR-}/usr/local/etc/openvpn/private/${IDENTIFIER:+${IDENTIFIER}_}ta.key"`
+`cat "${CHROOTDIR-}/usr/local/etc/openvpn/private/${ALTERNATE:+${ALTERNATE}_}ta.key"`
 </tls-auth>
 EOF

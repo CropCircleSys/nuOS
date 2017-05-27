@@ -16,13 +16,13 @@ set -e; set -u; set -C
 
 NUOS_VER=0.0.11.0b0.1
 
-while getopts a:b:c:C:h:i:m:n:p:qv OPT; do case $OPT in
+while getopts a:A:b:c:C:h:m:n:p:qv OPT; do case $OPT in
 	a) CERT_AUTH=$OPTARG;;
+	A) ALTERNATE=$OPTARG;;
 	b) KEY_BITS=$OPTARG;;
 	c) CIPHER=$OPTARG;;
 	C) CHROOTDIR=$OPTARG;;
 	h) HOST_NAME=$OPTARG;;
-	i) IDENTIFIER=$OPTARG;;
 	m) PRIVATE_MASK=$OPTARG;;
 	n) PRIVATE_NET=$OPTARG;;
 	p) POOL_NAME=$OPTARG;;
@@ -54,7 +54,7 @@ echo 'cert authority  -a CERT_AUTH      ' $CERT_AUTH
 echo 'key bits        -b KEY_BITS       ' $KEY_BITS
 echo 'stream cipher   -c CIPHER         ' ${CIPHER:=AES-$(($KEY_BITS/16))-CFB}
 echo 'host name       -h HOST_NAME      ' $HOST_NAME
-echo 'identifier      -i IDENTIFIER     ' ${IDENTIFIER-}
+echo 'identifier      -A ALTERNATE      ' ${ALTERNATE-}
 echo 'private netmask -m PRIVATE_MASK   ' ${PRIVATE_MASK:=0xffff0000}
 echo 'private net     -n PRIVATE_NET    ' $PRIVATE_NET
 echo 'pool name       -p POOL_NAME      ' ${POOL_NAME:=$POOL_BOOT_NAME}
@@ -78,36 +78,36 @@ if [ ! -d "${CHROOTDIR-}/usr/local/etc/openvpn" ]; then
 	fi
 fi
 
-cp "${CHROOTDIR-}/etc/ssl/certs/$CERT_AUTH.internal.crt" "${CHROOTDIR-}/usr/local/etc/openvpn/${IDENTIFIER:+${IDENTIFIER}_}ca.crt"
-cp "${CHROOTDIR-}/etc/ssl/certs/$HOST_NAME.internal.crt" "${CHROOTDIR-}/usr/local/etc/openvpn/${IDENTIFIER:+${IDENTIFIER}_}server.crt"
-cp "${CHROOTDIR-}/etc/ssl/private/$HOST_NAME.key" "${CHROOTDIR-}/usr/local/etc/openvpn/private/${IDENTIFIER:+${IDENTIFIER}_}server.key"
-openvpn --genkey --secret "${CHROOTDIR-}/usr/local/etc/openvpn/private/${IDENTIFIER:+${IDENTIFIER}_}ta.key"
-$SSL_CMD dhparam -out "${CHROOTDIR-}/usr/local/etc/openvpn/${IDENTIFIER:+${IDENTIFIER}_}dh$KEY_BITS.pem" $KEY_BITS
+cp "${CHROOTDIR-}/etc/ssl/certs/$CERT_AUTH.internal.crt" "${CHROOTDIR-}/usr/local/etc/openvpn/${ALTERNATE:+${ALTERNATE}_}ca.crt"
+cp "${CHROOTDIR-}/etc/ssl/certs/$HOST_NAME.internal.crt" "${CHROOTDIR-}/usr/local/etc/openvpn/${ALTERNATE:+${ALTERNATE}_}server.crt"
+cp "${CHROOTDIR-}/etc/ssl/private/$HOST_NAME.key" "${CHROOTDIR-}/usr/local/etc/openvpn/private/${ALTERNATE:+${ALTERNATE}_}server.key"
+openvpn --genkey --secret "${CHROOTDIR-}/usr/local/etc/openvpn/private/${ALTERNATE:+${ALTERNATE}_}ta.key"
+$SSL_CMD dhparam -out "${CHROOTDIR-}/usr/local/etc/openvpn/${ALTERNATE:+${ALTERNATE}_}dh$KEY_BITS.pem" $KEY_BITS
 
-cat > "${CHROOTDIR-}/usr/local/etc/openvpn/openvpn${IDENTIFIER:+_$IDENTIFIER}.conf" <<EOF
+cat > "${CHROOTDIR-}/usr/local/etc/openvpn/openvpn${ALTERNATE:+_$ALTERNATE}.conf" <<EOF
 dev tun
 topology subnet
 server $PRIVATE_NET $PRIVATE_MASK
-ca ${IDENTIFIER:+${IDENTIFIER}_}ca.crt
-cert ${IDENTIFIER:+${IDENTIFIER}_}server.crt
-key private/${IDENTIFIER:+${IDENTIFIER}_}server.key
-dh ${IDENTIFIER:+${IDENTIFIER}_}dh$KEY_BITS.pem
-tls-auth private/${IDENTIFIER:+${IDENTIFIER}_}ta.key 0
+ca ${ALTERNATE:+${ALTERNATE}_}ca.crt
+cert ${ALTERNATE:+${ALTERNATE}_}server.crt
+key private/${ALTERNATE:+${ALTERNATE}_}server.key
+dh ${ALTERNATE:+${ALTERNATE}_}dh$KEY_BITS.pem
+tls-auth private/${ALTERNATE:+${ALTERNATE}_}ta.key 0
 cipher $CIPHER
 comp-lzo
 user nobody
 group nobody
 persist-key
 persist-tun
-status ${IDENTIFIER:+${IDENTIFIER}_}openvpn-status.log
-ifconfig-pool-persist ${IDENTIFIER:+${IDENTIFIER}_}ipp.txt
+status ${ALTERNATE:+${ALTERNATE}_}openvpn-status.log
+ifconfig-pool-persist ${ALTERNATE:+${ALTERNATE}_}ipp.txt
 keepalive 15 90
 EOF
 
-if [ ! -e "${CHROOTDIR-}/usr/local/etc/rc.d/openvpn${IDENTIFIER:+_$IDENTIFIER}" ]; then
-	ln -s "${CHROOTDIR-}/usr/local/etc/rc.d/openvpn" "${CHROOTDIR-}/usr/local/etc/rc.d/openvpn${IDENTIFIER:+_$IDENTIFIER}"
+if [ ! -e "${CHROOTDIR-}/usr/local/etc/rc.d/openvpn${ALTERNATE:+_$ALTERNATE}" ]; then
+	ln -s "${CHROOTDIR-}/usr/local/etc/rc.d/openvpn" "${CHROOTDIR-}/usr/local/etc/rc.d/openvpn${ALTERNATE:+_$ALTERNATE}"
 fi
 
-sister enable_svc ${CHROOTDIR:+-C "$CHROOTDIR"} openvpn${IDENTIFIER:+_$IDENTIFIER}
+sister enable_svc ${CHROOTDIR:+-C "$CHROOTDIR"} openvpn${ALTERNATE:+_$ALTERNATE}
 
 echo "Configured vpn service."
