@@ -83,7 +83,7 @@ if [ -n "${OPT_LETS_ENCRYPT-}" ]; then
 	service knot onestatus | grep -q 'is running' || (echo "Let's Encrypt service must be run from an operating DNS master." >&2 && exit 85)
 	require_tmp acme_output
 	acme.sh --signcsr --csr /etc/ssl/csrs/$SSL_HOST.csr --dns -d $SSL_HOST -d www.$SSL_HOST 2>&1 | sed -n -E -e "/^\\[[^\]+\\] Domain: '([[:alnum:]\\._\\-]+)'$/{s//dom=\\1/;p;};/^\\[[^\]+\\] TXT value: '([[:alnum:]_\\-]+)'$/{s//txt=\\1/;p;}" >| "$acme_output"
-	[ 2 = `wc -l "$acme_output" | xargs` ]
+	[ 2 = `wc -l < "$acme_output" | xargs` ]
 	. "$acme_output"
 	retire_tmp acme_output
 	[ -n "$dom" -a -n "$txt" ]
