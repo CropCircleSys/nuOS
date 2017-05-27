@@ -130,7 +130,7 @@ mv "${CHROOTDIR-}/var/spool/postfix.orig/".* "${CHROOTDIR-}/var/spool/postfix/" 
 rmdir "${CHROOTDIR-}/var/spool/postfix.orig"
 chflags $flags "${CHROOTDIR-}/var/spool/postfix"
 
-zfs snapshot $POOL_NAME/svc/smtp/postfix@genesis
+zfs snapshot -r $POOL_NAME/svc/smtp/postfix@genesis
 
 sister enable_svc ${CHROOTDIR:+-C "$CHROOTDIR"} postfix
 
