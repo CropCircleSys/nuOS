@@ -16,15 +16,17 @@ set -e; set -u; set -C
 
 NUOS_VER=0.0.11.0b0.1
 
-while getopts a:b:c:C:d:e:h:l:m:n:o:p:sSu:v OPT; do case $OPT in
-	a) AUTH_FILE=$OPTARG; grep -q -- '-BEGIN CERTIFICATE-' "$AUTH_FILE";;
+while getopts A:a:b:c:C:d:e:h:l:Lm:n:o:p:sSu:v OPT; do case $OPT in
+	A) ALTERNATE=$OPTARG; exit 85;; # TODO
+	a) AUTH_FILE=$OPTARG;;
 	b) KEY_BITS=$OPTARG;;
-	c) CERT_FILE=$OPTARG; grep -q -- '-BEGIN CERTIFICATE-' "$CERT_FILE";;
+	c) CERT_FILE=$OPTARG;;
 	C) CHROOTDIR=$OPTARG;;
 	d) DGST_BITS=$OPTARG;;
 	e) EXPIRE_DAYS=$OPTARG;;
 	h) SSL_HOST=$OPTARG;;
 	l) CITY=$OPTARG;;
+	L) OPT_LETS_ENCRYPT=y;;
 	m) EMAIL=$OPTARG;;
 	n) COUNTRY=$OPTARG;;
 	o) COMPANY=$OPTARG;;
@@ -73,6 +75,28 @@ fi
 echo
 
 maybe_yell
+
+if [ -n "${OPT_LETS_ENCRYPT-}" ]; then
+	[ -n $SSL_HOST ]
+	[ -z "${CERT_FILE-}" ]
+	[ -z "${AUTH_FILE-}" ]
+	service knot onestatus | grep -q 'is running' || (echo "Let's Encrypt service must be run from an operating DNS master." >&2 && exit 85)
+	require_tmp acme_output
+	acme.sh --signcsr --csr /etc/ssl/csrs/$SSL_HOST.csr --dns -d $SSL_HOST -d www.$SSL_HOST 2>&1 | sed -n -E -e "/^\\[[^\]+\\] Domain: '([[:alnum:]\\._\\-]+)'$/{s//dom=\\1/;p;};/^\\[[^\]+\\] TXT value: '([[:alnum:]_\\-]+)'$/{s//txt=\\1/;p;}" >| "$acme_output"
+	[ 2 = `wc -l "$acme_output" | xargs` ]
+	. "$acme_output"
+	retire_tmp acme_output
+	[ -n "$dom" -a -n "$txt" ]
+	[ "$dom" = "${dom%.$SSL_HOST}.$SSL_HOST" ]
+	require_tmp parent_zone
+	sister nu_ns_host ${CHROOTDIR:+-C "$CHROOTDIR"} -r txt -h $dom -i $txt -o parent_zone "$parent_zone"
+	sleep 1
+	knotc zone-reload `cat "$parent_zone"`
+	sleep 20
+	acme.sh --renew -d $SSL_HOST 2>&1
+	CERT_FILE=$HOME/.acme.sh/$SSL_HOST/$SSL_HOST.cer
+	AUTH_FILE=$HOME/.acme.sh/$SSL_HOST/fullchain.cer
+fi
 
 nuos_ssl_init
 
@@ -137,6 +161,8 @@ EOF
 	
 else
 	
+	grep -q -- '-BEGIN CERTIFICATE-' "$CERT_FILE"
+	grep -q -- '-BEGIN CERTIFICATE-' "$AUTH_FILE"
 	[ -e "${CHROOTDIR-}/etc/ssl/private/$SSL_HOST.key" ] || exit 2
 	[ ! -e "${CHROOTDIR-}/etc/ssl/certs/$SSL_HOST.crt" ] || exit 17
 	[ ! -e "${CHROOTDIR-}/etc/ssl/certs/$SSL_HOST.ca.crt" ] || exit 17
