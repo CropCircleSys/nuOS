@@ -44,7 +44,7 @@ esac; done; shift $(($OPTIND-1))
 nuos_init
 
 echo 'creating ssl    -h SSL_HOST       ' ${SSL_HOST:=$HOST}
-if [ -z "${CERT_FILE-}" ]; then
+if [ -z "${CERT_FILE-}" -a -z "${OPT_LETS_ENCRYPT-}" ]; then
 	echo 'key bits        -b KEY_BITS       ' ${KEY_BITS:=2048}
 	echo -n 'digest bits     -d DGST_BITS       ' && [ -n "${OPT_SELF_SIGNED-}" ] && echo ${DGST_BITS:=256} || echo n/a
 	echo -n 'valid lifetime  -e EXPIRE_DAYS     ' && [ -n "${OPT_SELF_SIGNED-}" ] && echo ${EXPIRE_DAYS:=365} || echo n/a
