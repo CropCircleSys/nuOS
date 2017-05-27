@@ -18,11 +18,14 @@ NUOS_VER=0.0.11.0b0.1
 
 . "$(dirname "$(realpath "$0")")/../lib/nu_system.sh"
 
-while getopts C:h:i:lv OPT; do case $OPT in
+while getopts A:C:h:i:lt:v OPT; do case $OPT in
+	A) ALTERNATE=$OPTARG;;
 	C) CHROOTDIR=$OPTARG;;
 	h) HOST_NAME=$OPTARG;;
 	i) push PUB_IPS $OPTARG;;
 	l) OPT_LITE=y;;
+	t) SOFTWARE=$OPTARG; case $SOFTWARE in
+		djb|knot) ;; *) exit 22; esac;;
 	v) OPT_VERBOSE=y;;
 esac; done; shift $(($OPTIND-1))
 [ $# = 0 ]
@@ -31,10 +34,18 @@ esac; done; shift $(($OPTIND-1))
 
 nuos_init
 
+: ${SOFTWARE:=knot}
 if [ -z "${PUB_IPS-}" ]; then
-	for dir in `ls -d "${CHROOTDIR-}/var/service/tinydns-"*`; do
-		push PUB_IPS ${dir##*-}
-	done
+	case $SOFTWARE in
+		djb)
+			for dir in `ls -d "${CHROOTDIR-}/var/service/tinydns-"*`; do
+				push PUB_IPS ${dir##*-}
+			done
+		;;
+		knot)
+			PUB_IPS="`sed -n -E -e '/^@	A+\>/,/^[^@[:blank:]]/{/^(@	A+\>|	A+\>)/p;}' "${CHROOTDIR-}/usr/local/etc/knot/example${ALTERNATE:+_${ALTERNATE}}.com.zone" | cut -f 3 | xargs`"
+		;;
+	esac
 fi
 
 echo 'host name       -h HOST_NAME      ' $HOST_NAME
@@ -44,20 +55,57 @@ echo
 
 maybe_yell
 
-for ip in $PUB_IPS; do
-	(
-		cd "${CHROOTDIR-}/var/service/tinydns-$ip/root"
-		if [ -z "${OPT_LITE-}" ]; then
-			for ip_ in $PUB_IPS; do
-				./add-ns $HOST_NAME $ip_
-			done
-			./add-mx $HOST_NAME $ip
+case $SOFTWARE in
+	djb)
+		for ip in $PUB_IPS; do
+			(
+				cd "${CHROOTDIR-}/var/service/tinydns-$ip/root"
+				if [ -z "${OPT_LITE-}" ]; then
+					for ip_ in $PUB_IPS; do
+						./add-ns $HOST_NAME $ip_
+					done
+					./add-mx $HOST_NAME $ip
+				fi
+				./add-host $HOST_NAME $ip || ./add-alias $HOST_NAME $ip
+				./add-alias www.$HOST_NAME $ip
+				make
+			)
+		done
+	;;
+	knot)
+		if [ ! -d "${CHROOTDIR-}/var/db/knot${ALTERNATE:+_${ALTERNATE}}" ]; then
+			mkdir "${CHROOTDIR-}/var/db/knot${ALTERNATE:+_${ALTERNATE}}"
+			chown knot:knot "${CHROOTDIR-}/var/db/knot${ALTERNATE:+_${ALTERNATE}}"
 		fi
-		./add-host $HOST_NAME $ip || ./add-alias $HOST_NAME $ip
-		./add-alias www.$HOST_NAME $ip
-		make
-	)
-done
+		new_serial=`date +%Y%m%d`01
+		if [ -n "${OPT_LITE-}" ]; then
+			[ ! -f "${CHROOTDIR-}/var/db/knot${ALTERNATE:+_${ALTERNATE}}/$HOST_NAME.zone" ]
+			zone=$HOST_NAME
+			while [ ! -f "${CHROOTDIR-}/var/db/knot${ALTERNATE:+_${ALTERNATE}}/$zone.zone" ]; do
+				echo $zone | grep -q '\.'
+				zone=${zone#*.}
+			done
+			host=${HOST_NAME%.$zone}
+			old_serial=`sed -n -E -e '/\<serial[[:blank:]]*$/{s/^[[:blank:]]*([[:digit:]]+).*$/\1/;p;}' "${CHROOTDIR-}/var/db/knot${ALTERNATE:+_${ALTERNATE}}/$zone.zone"`
+			if [ $old_serial -ge $new_serial ]; then
+				new_serial=$(($old_serial + 1))
+			fi
+			sed -i '' -E -e "/\<serial[[:blank:]]*$/s/[[:digit:]]+/$new_serial/" "${CHROOTDIR-}/var/db/knot${ALTERNATE:+_${ALTERNATE}}/$zone.zone"
+			echo >> "${CHROOTDIR-}/var/db/knot${ALTERNATE:+_${ALTERNATE}}/$zone.zone"
+			i=1
+			for ip in $PUB_IPS; do
+				cat >> "${CHROOTDIR-}/var/db/knot${ALTERNATE:+_${ALTERNATE}}/$zone.zone" <<EOF
+`[ $i -gt 1 ] || echo $host`	A	$ip
+EOF
+				i=$(($i + 1))
+			done
+		else
+			[ 1 = `echo "$(sed -n -E -e '/^zone:/,${/^([[:blank:]]|$)/d;p;}' "${CHROOTDIR-}/usr/local/etc/knot/knot${ALTERNATE:+_${ALTERNATE}}.conf")" | wc -l | xargs` ]
+			sed -E -e "s/\<example\\.com\>/$HOST_NAME/g;/\<serial[[:blank:]]*$/s/[[:digit:]]+/$new_serial/" "${CHROOTDIR-}/usr/local/etc/knot/example${ALTERNATE:+_${ALTERNATE}}.com.zone" > "${CHROOTDIR-}/var/db/knot${ALTERNATE:+_${ALTERNATE}}/$HOST_NAME.zone"
+			echo "  - domain: $HOST_NAME" >> "${CHROOTDIR-}/usr/local/etc/knot/knot${ALTERNATE:+_${ALTERNATE}}.conf"
+		fi
+	;;
+esac
 
 
 echo "Configured host $HOST_NAME in name server."
