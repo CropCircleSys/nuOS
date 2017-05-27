@@ -18,12 +18,14 @@ NUOS_VER=0.0.11.0b0.1
 
 . "$(dirname "$(realpath "$0")")/../lib/nu_system.sh"
 
-while getopts A:C:h:i:lt:v OPT; do case $OPT in
+while getopts A:C:h:i:lM:t:v OPT; do case $OPT in
 	A) ALTERNATE=$OPTARG;;
 	C) CHROOTDIR=$OPTARG;;
 	h) HOST_NAME=$OPTARG;;
 	i) push PUB_IPS $OPTARG;;
 	l) OPT_LITE=y;;
+	M) MODE=$OPTARG; case $MODE in
+		master|slave) ;; *) exit 22; esac;;
 	t) SOFTWARE=$OPTARG; case $SOFTWARE in
 		djb|knot) ;; *) exit 22; esac;;
 	v) OPT_VERBOSE=y;;
@@ -43,6 +45,7 @@ if [ -z "${PUB_IPS-}" ]; then
 			done
 		;;
 		knot)
+			echo 'mode            -M MODE           ' ${MODE:=master}
 			PUB_IPS="`sed -n -E -e '/^@	A+\>/,/^[^@[:blank:]]/{/^(@	A+\>|	A+\>)/p;}' "${CHROOTDIR-}/usr/local/etc/knot/example${ALTERNATE:+_${ALTERNATE}}.com.zone" | cut -f 3 | xargs`"
 		;;
 	esac
@@ -73,37 +76,44 @@ case $SOFTWARE in
 		done
 	;;
 	knot)
-		if [ ! -d "${CHROOTDIR-}/var/db/knot${ALTERNATE:+_${ALTERNATE}}" ]; then
-			mkdir "${CHROOTDIR-}/var/db/knot${ALTERNATE:+_${ALTERNATE}}"
-			chown knot:knot "${CHROOTDIR-}/var/db/knot${ALTERNATE:+_${ALTERNATE}}"
-		fi
-		new_serial=`date +%Y%m%d`01
-		if [ -n "${OPT_LITE-}" ]; then
-			[ ! -f "${CHROOTDIR-}/var/db/knot${ALTERNATE:+_${ALTERNATE}}/$HOST_NAME.zone" ]
-			zone=$HOST_NAME
-			while [ ! -f "${CHROOTDIR-}/var/db/knot${ALTERNATE:+_${ALTERNATE}}/$zone.zone" ]; do
-				echo $zone | grep -q '\.'
-				zone=${zone#*.}
-			done
-			host=${HOST_NAME%.$zone}
-			old_serial=`sed -n -E -e '/\<serial[[:blank:]]*$/{s/^[[:blank:]]*([[:digit:]]+).*$/\1/;p;}' "${CHROOTDIR-}/var/db/knot${ALTERNATE:+_${ALTERNATE}}/$zone.zone"`
-			if [ $old_serial -ge $new_serial ]; then
-				new_serial=$(($old_serial + 1))
-			fi
-			sed -i '' -E -e "/\<serial[[:blank:]]*$/s/[[:digit:]]+/$new_serial/" "${CHROOTDIR-}/var/db/knot${ALTERNATE:+_${ALTERNATE}}/$zone.zone"
-			echo >> "${CHROOTDIR-}/var/db/knot${ALTERNATE:+_${ALTERNATE}}/$zone.zone"
-			i=1
-			for ip in $PUB_IPS; do
-				cat >> "${CHROOTDIR-}/var/db/knot${ALTERNATE:+_${ALTERNATE}}/$zone.zone" <<EOF
+		[ 1 = `echo "$(sed -n -E -e '/^zone:/,${/^([[:blank:]]|$)/d;p;}' "${CHROOTDIR-}/usr/local/etc/knot/knot${ALTERNATE:+_${ALTERNATE}}.conf")" | wc -l | xargs` ]
+		zone=$HOST_NAME
+		case $MODE in
+			master)
+				if [ ! -d "${CHROOTDIR-}/var/db/knot${ALTERNATE:+_${ALTERNATE}}" ]; then
+					mkdir "${CHROOTDIR-}/var/db/knot${ALTERNATE:+_${ALTERNATE}}"
+					chown knot:knot "${CHROOTDIR-}/var/db/knot${ALTERNATE:+_${ALTERNATE}}"
+				fi
+				new_serial=`date +%Y%m%d`01
+				if [ -n "${OPT_LITE-}" ]; then
+					[ ! -f "${CHROOTDIR-}/var/db/knot${ALTERNATE:+_${ALTERNATE}}/$zone.zone" ]
+					while [ ! -f "${CHROOTDIR-}/var/db/knot${ALTERNATE:+_${ALTERNATE}}/$zone.zone" ]; do
+						echo $zone | grep -q '\.'
+						zone=${zone#*.}
+					done
+					host=${HOST_NAME%.$zone}
+					old_serial=`sed -n -E -e '/\<serial[[:blank:]]*$/{s/^[[:blank:]]*([[:digit:]]+).*$/\1/;p;}' "${CHROOTDIR-}/var/db/knot${ALTERNATE:+_${ALTERNATE}}/$zone.zone"`
+					if [ $old_serial -ge $new_serial ]; then
+						new_serial=$(($old_serial + 1))
+					fi
+					sed -i '' -E -e "/\<serial[[:blank:]]*$/s/[[:digit:]]+/$new_serial/" "${CHROOTDIR-}/var/db/knot${ALTERNATE:+_${ALTERNATE}}/$zone.zone"
+					echo >> "${CHROOTDIR-}/var/db/knot${ALTERNATE:+_${ALTERNATE}}/$zone.zone"
+					i=1
+					for ip in $PUB_IPS; do
+						cat >> "${CHROOTDIR-}/var/db/knot${ALTERNATE:+_${ALTERNATE}}/$zone.zone" <<EOF
 `[ $i -gt 1 ] || echo $host`	A	$ip
 EOF
-				i=$(($i + 1))
-			done
-		else
-			[ 1 = `echo "$(sed -n -E -e '/^zone:/,${/^([[:blank:]]|$)/d;p;}' "${CHROOTDIR-}/usr/local/etc/knot/knot${ALTERNATE:+_${ALTERNATE}}.conf")" | wc -l | xargs` ]
-			sed -E -e "s/\<example\\.com\>/$HOST_NAME/g;/\<serial[[:blank:]]*$/s/[[:digit:]]+/$new_serial/" "${CHROOTDIR-}/usr/local/etc/knot/example${ALTERNATE:+_${ALTERNATE}}.com.zone" > "${CHROOTDIR-}/var/db/knot${ALTERNATE:+_${ALTERNATE}}/$HOST_NAME.zone"
-			echo "  - domain: $HOST_NAME" >> "${CHROOTDIR-}/usr/local/etc/knot/knot${ALTERNATE:+_${ALTERNATE}}.conf"
-		fi
+						i=$(($i + 1))
+					done
+				else
+					sed -E -e "s/\<example\\.com\>/$zone/g;/\<serial[[:blank:]]*$/s/[[:digit:]]+/$new_serial/" "${CHROOTDIR-}/usr/local/etc/knot/example${ALTERNATE:+_${ALTERNATE}}.com.zone" > "${CHROOTDIR-}/var/db/knot${ALTERNATE:+_${ALTERNATE}}/$zone.zone"
+				fi
+			;;
+			slave)
+				[ -z "${OPT_LITE-}" ]
+			;;
+		esac
+		echo "  - domain: $zone" >> "${CHROOTDIR-}/usr/local/etc/knot/knot${ALTERNATE:+_${ALTERNATE}}.conf"
 	;;
 esac
 
