@@ -104,7 +104,7 @@ if [ -n "${OPT_SSL-}" ]; then
 	sed -i '' -Ee 's/^#(Include[[:>:]].*[[:<:]]httpd-ssl.conf)$/\1/;s/^#(LoadModule[[:>:]].*[[:<:]]mod_(ssl|socache_shmcb).so)$/\1/' "${CHROOTDIR-}/usr/local/etc/$service/httpd.conf"
 	sister nu_ssl ${CHROOTDIR:+-C "$CHROOTDIR"} -s -S -b 1024 -e 29200 -n XX -p Void -h dummy.void
 	mv "${CHROOTDIR-}/etc/ssl/private/dummy.void.key" "${CHROOTDIR-}/usr/local/etc/$service/ssl/private/"
-	mv "${CHROOTDIR-}/etc/ssl/certs/dummy.void.crt" "${CHROOTDIR-}/usr/local/etc/$service/ssl/"
+	mv "${CHROOTDIR-}/etc/ssl/certs/dummy.void.internal.crt" "${CHROOTDIR-}/usr/local/etc/$service/ssl/dummy.void.crt"
 	cat >> "${CHROOTDIR-}/usr/local/etc/$service/extra/httpd-vhosts.conf" <<EOF
 <VirtualHost *:443>
 	DocumentRoot "/usr/local/www/$service/data"
