@@ -58,6 +58,7 @@ if [ -z "${PUB_IPS-}" ]; then
 		;;
 		knot)
 			[ -f "${CHROOTDIR-}/usr/local/etc/knot/knot${ALTERNATE:+_${ALTERNATE}}.conf" ]
+			! diff -q "${CHROOTDIR-}/usr/local/etc/knot/knot.conf.sample" "${CHROOTDIR-}/usr/local/etc/knot/knot${ALTERNATE:+_${ALTERNATE}}.conf" > /dev/null 2>&1
 			master_refs=`sed -n -E -e '/^template:/,/^[^[:blank:]]/p' "${CHROOTDIR-}/usr/local/etc/knot/knot${ALTERNATE:+_${ALTERNATE}}.conf" | sed -e '1d;$d' | sed -n -E -e '/^[[:blank:]]*- id: default$/,/^[[:blank:]]*- id: /p' | sed -n -E -e '1d;$d;/^[[:blank:]]*master:[[:blank:]]*.+/=' | wc -l | xargs`
 			if [ $master_refs -ge 1 ]; then
 				default_mode=slave
