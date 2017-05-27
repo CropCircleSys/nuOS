@@ -17,7 +17,7 @@ set -e; set -u; set -C
 NUOS_VER=0.0.11.0b0.1
 
 while getopts A:a:b:c:C:d:e:h:l:Lm:n:o:p:sSu:v OPT; do case $OPT in
-	A) ALTERNATE=$OPTARG; exit 85;; # TODO
+	A) KNOT_ALTERNATE=$OPTARG;;
 	a) AUTH_FILE=$OPTARG;;
 	b) KEY_BITS=$OPTARG;;
 	c) CERT_FILE=$OPTARG;;
@@ -89,9 +89,9 @@ if [ -n "${OPT_LETS_ENCRYPT-}" ]; then
 	[ -n "$dom" -a -n "$txt" ]
 	[ "$dom" = "${dom%.$SSL_HOST}.$SSL_HOST" ]
 	require_tmp parent_zone
-	sister nu_ns_host ${CHROOTDIR:+-C "$CHROOTDIR"} -r txt -h $dom -i $txt -o parent_zone "$parent_zone"
+	sister nu_ns_host ${CHROOTDIR:+-C "$CHROOTDIR"} ${KNOT_ALTERNATE:+-A $KNOT_ALTERNATE} -r txt -h $dom -i $txt -o parent_zone "$parent_zone"
 	sleep 1
-	knotc zone-reload `cat "$parent_zone"`
+	${CHROOTDIR:+chroot "$CHROOTDIR"} knotc ${KNOT_ALTERNATE:+-c /usr/local/etc/knot/knot_$KNOT_ALTERNATE.conf} zone-reload `cat "$parent_zone"`
 	sleep 20
 	acme.sh --renew -d $SSL_HOST 2>&1
 	CERT_FILE=$HOME/.acme.sh/$SSL_HOST/$SSL_HOST.cer

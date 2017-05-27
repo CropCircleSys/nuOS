@@ -42,10 +42,10 @@ esac; done; shift $(($OPTIND-1))
 
 if [ -n "${OPT_EXPORT_KEY_FINGERPRINTS-}" ]; then
 	ex=1
-	for k in `keymgr zone key list $HOST_NAME | cut -w -f 3`; do
-		if [ 257 = `keymgr zone key show $HOST_NAME $k | grep '^flags' | cut -w -f 2` ]; then
+	for k in `${CHROOTDIR:+chroot "$CHROOTDIR"} keymgr ${ALTERNATE:+-c /usr/local/etc/knot/knot_ALTERNATE.conf} zone key list $HOST_NAME | cut -w -f 3`; do
+		if [ 257 = `${CHROOTDIR:+chroot "$CHROOTDIR"} keymgr ${ALTERNATE:+-c /usr/local/etc/knot/knot_ALTERNATE.conf} zone key show $HOST_NAME $k | grep '^flags' | cut -w -f 2` ]; then
 			ex=0
-			keymgr zone key ds $HOST_NAME $k
+			${CHROOTDIR:+chroot "$CHROOTDIR"} keymgr ${ALTERNATE:+-c /usr/local/etc/knot/knot_ALTERNATE.conf} zone key ds $HOST_NAME $k
 		fi
 	done
 	exit $ex
