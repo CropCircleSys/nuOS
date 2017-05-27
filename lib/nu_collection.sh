@@ -58,6 +58,7 @@ collection_vars_init () {
 	
 	COLL_server='
 		developer
+		net-mgmt/lldpd
 		mail/postfix
 		dns/djbdns
 		dns/knot2
