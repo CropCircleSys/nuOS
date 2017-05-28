@@ -39,6 +39,7 @@ install_vars_init () {
 	echo 'pool name       -p POOL_NAME      ' ${POOL_NAME:=thumb}
 	echo 'pool mnt pt     -m POOL_MNT       ' ${POOL_MNT:=/$POOL_NAME}
 	echo 'pool type       -t POOL_TYPE      ' ${POOL_TYPE=raidz}
+	echo 'partition align    PART_ALIGN     ' ${PART_ALIGN:=128} # stripesize/sectorsize of eventual target media's presented device. power of two, err higher
 	echo 'pool options    -o POOL_OPTS      ' ${POOL_OPTS="-O atime=off -O compression=lz4"}
 	echo 'pkg collection  -c PKG_COLLECTION ' $PKG_COLLECTION
 	echo 'port db dir        PORT_DBDIR     ' $PORT_DBDIR

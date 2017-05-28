@@ -73,8 +73,8 @@ if [ -z "${OPT_SKIP_INIT_ZPOOL-}" ]; then
 	i=0
 	for dev in $POOL_DEVS; do
 		gpart create -s GPT /dev/$dev
-		gpart add -a 8 -t freebsd-boot -s 256 /dev/$dev
-		gpart add -a 8 -t freebsd-zfs -l $POOL_NAME$i /dev/$dev
+		gpart add -a $PART_ALIGN -t freebsd-boot -s 256 /dev/$dev
+		gpart add -a $PART_ALIGN -t freebsd-zfs -l $POOL_NAME$i /dev/$dev
 		gpart set -a bootme -i 2 /dev/$dev
 		gpart bootcode -b /boot/pmbr -p /boot/gptzfsboot -i 1 /dev/$dev
 		gnop create -S 4096 /dev/gpt/$POOL_NAME$i
