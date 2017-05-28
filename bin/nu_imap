@@ -56,7 +56,7 @@ cat >> "${CHROOTDIR-}/usr/local/etc/imapd.conf" <<EOF
 
 servername: $HOST_NAME
 altnamespace: yes
-autocreate_quota: -1
+autocreate_quota: 0
 autocreate_post: yes
 EOF
 

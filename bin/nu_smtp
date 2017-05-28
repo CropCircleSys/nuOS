@@ -55,6 +55,9 @@ mydomain = $HOST_NAME
 EOF
 
 cat >> "${CHROOTDIR-}/usr/local/etc/postfix/main.cf" <<'EOF'
+bounce_queue_lifetime = 0
+bounce_size_limit = 80
+remote_header_rewrite_domain = domain.invalid
 myhostname = $mydomain
 alias_database = hash:$config_directory/aliases
 alias_maps = $alias_database
@@ -74,6 +77,7 @@ smtpd_client_restrictions = permit_sasl_authenticated, permit_mynetworks
 smtpd_helo_required = yes
 smtpd_helo_restrictions = permit_sasl_authenticated, permit_mynetworks, reject_invalid_hostname, reject_unknown_hostname, reject_non_fqdn_hostname
 smtp_tls_security_level = dane
+smtp_dns_support_level = dnssec
 EOF
 
 if [ -n "${OPT_SSL-}" ]; then
@@ -86,18 +90,19 @@ if [ -n "${OPT_SSL-}" ]; then
 	fi
 	cp "${CHROOTDIR-}/etc/ssl/certs/$HOST_NAME.crt" "${CHROOTDIR-}/usr/local/etc/postfix/ssl/"
 	cp "${CHROOTDIR-}/etc/ssl/private/$HOST_NAME.key" "${CHROOTDIR-}/usr/local/etc/postfix/ssl/private/"
-	cat >> "${CHROOTDIR-}/usr/local/etc/postfix/main.cf" <<'EOF'
+	cat >> "${CHROOTDIR-}/usr/local/etc/postfix/main.cf" <<EOF
 smtpd_tls_security_level = may
 smtpd_tls_auth_only = yes
-smtp_tls_session_cache_database = btree:$data_directory/smtp_scache
-smtpd_tls_session_cache_database = btree:$data_directory/smtpd_scache
-smtpd_tls_cert_file = $config_directory/ssl/$myhostname.crt
-smtpd_tls_key_file = $config_directory/ssl/private/$myhostname.key
+smtp_tls_session_cache_database = btree:\$data_directory/smtp_scache
+smtpd_tls_session_cache_database = btree:\$data_directory/smtpd_scache
+smtpd_tls_cert_file = \$config_directory/ssl/$HOST_NAME.crt
+smtpd_tls_key_file = \$config_directory/ssl/private/$HOST_NAME.key
 EOF
+
 	if [ -f "${CHROOTDIR-}/etc/ssl/certs/$HOST_NAME.ca.crt" ]; then
 		cp "${CHROOTDIR-}/etc/ssl/certs/$HOST_NAME.ca.crt" "${CHROOTDIR-}/usr/local/etc/postfix/ssl/"
-		cat >> "${CHROOTDIR-}/usr/local/etc/postfix/main.cf" <<'EOF'
-smtpd_tls_CAfile = $config_directory/ssl/$myhostname.ca.crt
+		cat >> "${CHROOTDIR-}/usr/local/etc/postfix/main.cf" <<EOF
+smtpd_tls_CAfile = \$config_directory/ssl/$HOST_NAME.ca.crt
 EOF
 	fi
 fi
