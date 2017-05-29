@@ -90,7 +90,7 @@ while {
 	(
 		require_tmp err_out
 		{
-			zfs receive -d -u -v $TARGET_DS > "$pipes/recv_out" 2>| "$err_out" &
+			zfs receive -s -d -u -v $TARGET_DS > "$pipes/recv_out" 2>| "$err_out" &
 		} < /dev/stdin
 		zfs_pid=$!
 		touch "$child_pids/$zfs_pid"
