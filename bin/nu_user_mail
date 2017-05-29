@@ -1,0 +1,51 @@
+#!/bin/sh
+set -e; set -u; set -C
+
+# nuOS 0.0.11.0b0.1 - bin/nu_user_mail - LICENSE: MOZ_PUB
+#
+# Copyright (c) 2008-2017 Chad Jacob Milios and Crop Circle Systems, Inc.
+# All rights reserved.
+#
+# This Source Code Form is subject to the terms of the Mozilla Public License, v2.0.
+# If a copy of the MPL was not distributed alongside this file, you can obtain one at
+# https://www.mozilla.org/MPL/2.0 . This software project is not affiliated with the
+# Mozilla Foundation.
+#
+# Official updates and community support available at https://nuos.org .
+# Other licensing options and professional services available at https://ccsys.com .
+
+NUOS_VER=0.0.11.0b0.1
+
+while getopts C:h:m:u:v OPT; do case $OPT in
+	C) CHROOTDIR=$OPTARG;;
+	h) HOST_NAME=$OPTARG;;
+	m) MAIL_ADDRESS=$OPTARG;;
+	u) USER_NAME=$OPTARG;;
+	v) OPT_VERBOSE=y;;
+esac; done; shift $(($OPTIND-1))
+[ $# = 0 ]
+
+. "$(dirname "$(realpath "$0")")/../lib/nu_system.sh"
+. "$(dirname "$(realpath "$0")")/../lib/nu_common.sh"
+
+nuos_init
+
+echo 'system user     -u USER_NAME      ' $USER_NAME
+hostname=${NEW_HOST:-$HOST}
+: ${HOST_NAME:=$hostname}
+echo 'user domain     -h HOST_NAME      ' $HOST_NAME
+echo "${MAIL_ADDRESS:=$USER_NAME@$HOST_NAME}" | grep -q @ || MAIL_ADDRESS="$MAIL_ADDRESS@$HOST_NAME"
+echo 'mail address    -m MAIL_ADDRESS   ' $MAIL_ADDRESS
+
+maybe_yell
+
+cat >> "${CHROOTDIR-}/usr/local/etc/postfix/virtual" <<EOF
+$MAIL_ADDRESS	$USER_NAME@localhost
+EOF
+postmap "${CHROOTDIR-}/usr/local/etc/postfix/virtual"
+cat >> "${CHROOTDIR-}/usr/local/etc/postfix/senders" <<EOF
+$MAIL_ADDRESS	$USER_NAME@$HOST_NAME
+EOF
+postmap "${CHROOTDIR-}/usr/local/etc/postfix/senders"
+
+echo "Configured mail delivery to user $USER_NAME in the $HOST_NAME system domain for envelopes addressed to $MAIL_ADDRESS."
