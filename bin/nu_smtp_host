@@ -1,0 +1,52 @@
+#!/bin/sh
+set -e; set -u; set -C
+
+# nuOS 0.0.11.0b0.1 - bin/nu_smtp_host - LICENSE: MOZ_PUB
+#
+# Copyright (c) 2008-2017 Chad Jacob Milios and Crop Circle Systems, Inc.
+# All rights reserved.
+#
+# This Source Code Form is subject to the terms of the Mozilla Public License, v2.0.
+# If a copy of the MPL was not distributed alongside this file, you can obtain one at
+# https://www.mozilla.org/MPL/2.0 . This software project is not affiliated with the
+# Mozilla Foundation.
+#
+# Official updates and community support available at https://nuos.org .
+# Other licensing options and professional services available at https://ccsys.com .
+
+NUOS_VER=0.0.11.0b0.1
+
+while getopts C:h:v OPT; do case $OPT in
+	C) CHROOTDIR=$OPTARG;;
+	h) HOST_NAME=$OPTARG;;
+	v) OPT_VERBOSE=y;;
+esac; done; shift $(($OPTIND-1))
+[ $# = 0 ]
+
+. "$(dirname "$(realpath "$0")")/../lib/nu_system.sh"
+. "$(dirname "$(realpath "$0")")/../lib/nu_common.sh"
+
+nuos_init
+
+hostname=${NEW_HOST:-$HOST}
+if [ -n "${OPT_ELECT-}" ]; then
+	default_servername=${hostname#*.}
+else
+	default_servername=$hostname
+fi
+
+echo 'host name       -h HOST_NAME      ' ${HOST_NAME:=${default_servername}}
+echo
+
+maybe_yell
+
+[ "$HOST_NAME" != "$hostname" ]
+
+[ -f "${CHROOTDIR-}/usr/local/etc/postfix/domains" ]
+
+cat >> "${CHROOTDIR-}/usr/local/etc/postfix/domains" <<EOF
+$HOST_NAME	OK
+EOF
+postmap "${CHROOTDIR-}/usr/local/etc/postfix/domains"
+
+echo "Configured smtp server to accept mail for $HOST_NAME."
