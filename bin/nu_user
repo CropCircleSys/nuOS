@@ -52,10 +52,12 @@ else
 	echo -n 'passwordless    -P OPT_NO_PASSWD   ' && [ -n "${OPT_NO_PASSWD-}" ] && echo set || echo null
 	echo -n 'sasl account    -a OPT_SASL        ' && [ -n "${OPT_SASL-}" ] && echo set || echo null
 	hostname=${NEW_HOST:-$HOST}
-	echo -n 'user domain     -h HOST_NAME       ' && [ -n "${OPT_SASL-}" -o -z "${OPT_NOMAIL-}" ] && echo ${HOST_NAME:=$hostname} || echo n/a
+	: ${HOST_NAME:=$hostname}
+	echo -n 'user domain     -h HOST_NAME       ' && [ -n "${OPT_SASL-}" -o -z "${OPT_NOMAIL-}" ] && echo $HOST_NAME || echo n/a
 	echo -n 'no mail inbox   -M OPT_NOMAIL      ' && [ -n "${OPT_NOMAIL-}" ] && echo set || echo null
-	echo -n 'mail delivery   -d DELIVER_MAIL    ' && [ -z "${OPT_NOMAIL-}" ] && echo ${DELIVER_MAIL:=local} || echo n/a
-	echo -n 'mailbox host    -D DELIVER_HOST    ' && [ "${DELIVER_MAIL-}" = net ] && echo ${DELIVER_HOST:=localhost} || echo n/a
+	echo 'mail delivery   -d DELIVER_MAIL    ' ${DELIVER_MAIL:=local}
+	[ "${DELIVER_HOST:=localhost}" != $HOST_NAME ] || DELIVER_HOST=localhost
+	echo -n 'mailbox host    -D DELIVER_HOST    ' && [ $DELIVER_MAIL = net ] && echo $DELIVER_HOST || echo n/a
 fi
 
 maybe_yell
@@ -63,7 +65,7 @@ maybe_yell
 if [ -n "${OPT_IMPORT-}" ]; then
 	while read user passwd name; do
 		[ -n "$user" -a -n "$passwd" ]
-		sh $0 ${OPT_SASL:+-a} ${OPT_SAMBA:+-s} ${OPT_VERBOSE:+-v} ${HOST_NAME:+-h "$HOST_NAME"} ${POOL_NAME:+-p "$POOL_NAME"} ${CHROOTDIR:+-C "$CHROOTDIR"} -n "${name:-User $user}" -u $user <<EOF
+		sh $0 ${OPT_SASL:+-a} ${OPT_SAMBA:+-s} ${OPT_VERBOSE:+-v} ${HOST_NAME:+-h "$HOST_NAME"} ${POOL_NAME:+-p "$POOL_NAME"} -d $DELIVER_MAIL ${DELIVER_HOST:+-D "$DELIVER_HOST"} ${CHROOTDIR:+-C "$CHROOTDIR"} -n "${name:-User $user}" -u $user <<EOF
 $passwd
 EOF
 		subproc_exit_status=$?
@@ -74,18 +76,18 @@ EOF
 	exit 0
 fi
 
-if [ -z "${OPT_NOMAIL-}" ]; then
-	if [ $DELIVER_MAIL = net ]; then
-		if [ localhost = $DELIVER_HOST -o $HOST_NAME = $DELIVER_HOST ]; then
-			lmtp_nexthop=unix:/var/imap/socket/lmtp
-		else
-			lmtp_nexthop=inet:$DELIVER_HOST
-		fi
-		cat >> "${CHROOTDIR-}/usr/local/etc/postfix/transport" <<EOF
+if [ $DELIVER_MAIL = net ]; then
+	if [ localhost = $DELIVER_HOST ]; then
+		lmtp_nexthop=unix:/var/imap/socket/lmtp
+	else
+		lmtp_nexthop=inet:$DELIVER_HOST
+	fi
+	cat >> "${CHROOTDIR-}/usr/local/etc/postfix/transport" <<EOF
 $USER_NAME	$lmtp_nexthop
 EOF
-		postmap "${CHROOTDIR-}/usr/local/etc/postfix/virtual"
-	fi
+	postmap "${CHROOTDIR-}/usr/local/etc/postfix/transport"
+fi
+if [ -z "${OPT_NOMAIL-}" ]; then
 	cat >> "${CHROOTDIR-}/usr/local/etc/postfix/virtual" <<EOF
 $USER_NAME@$HOST_NAME	$USER_NAME@localhost
 EOF
@@ -94,9 +96,7 @@ EOF
 $USER_NAME@$HOST_NAME	$USER_NAME@$HOST_NAME
 EOF
 	postmap "${CHROOTDIR-}/usr/local/etc/postfix/senders"
-	fi
 fi
-
 
 if [ -z "${OPT_NO_PASSWD-}" ]; then
 	read -p 'user password:' -r password
