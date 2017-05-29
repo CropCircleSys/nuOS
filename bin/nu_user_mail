@@ -36,6 +36,7 @@ hostname=${NEW_HOST:-$HOST}
 echo 'user domain     -h HOST_NAME      ' $HOST_NAME
 echo "${MAIL_ADDRESS:=$USER_NAME@$HOST_NAME}" | grep -q @ || MAIL_ADDRESS="$MAIL_ADDRESS@$HOST_NAME"
 echo 'mail address    -m MAIL_ADDRESS   ' $MAIL_ADDRESS
+echo
 
 maybe_yell
 
