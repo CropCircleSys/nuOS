@@ -16,8 +16,9 @@ set -e; set -u; set -C
 
 NUOS_VER=0.0.11.0b0.1
 
-while getopts C:h:p:sv OPT; do case $OPT in
+while getopts C:eh:p:sv OPT; do case $OPT in
 	C) CHROOTDIR=$OPTARG;;
+	e) OPT_ELECT=y;;
 	h) HOST_NAME=$OPTARG;;
 	p) POOL_NAME=$OPTARG;;
 	s) OPT_SSL=y;;
@@ -32,46 +33,51 @@ esac; done; shift $(($OPTIND-1))
 
 nuos_init
 
-echo 'host name       -h HOST_NAME      ' ${HOST_NAME:=$HOST}
+hostname=${NEW_HOST:-$HOST}
+if [ -n "${OPT_ELECT-}" ]; then
+	default_servername=${hostname#*.}
+else
+	default_servername=$hostname
+fi
+
+echo 'host name       -h HOST_NAME      ' ${HOST_NAME:=${default_servername}}
 echo 'pool name       -p POOL_NAME      ' ${POOL_NAME:=$POOL_BOOT_NAME}
+echo -n 'promote server  -e OPT_ELECT       ' && [ -n "${OPT_ELECT-}" ] && echo set || echo null
 echo -n 'ssl             -s OPT_SSL         ' && [ -n "${OPT_SSL-}" ] && echo set || echo null
 echo
 
 maybe_yell
 
+[ -n "${OPT_ELECT-}" ] || [ "$HOST_NAME" = "$hostname" ]
+
 [ ! -e "${CHROOTDIR-}/usr/local/etc/postfix/virtual" ]
 
-touch "${CHROOTDIR-}/usr/local/etc/postfix/virtual" "${CHROOTDIR-}/usr/local/etc/postfix/aliases" "${CHROOTDIR-}/usr/local/etc/postfix/domains"
+touch "${CHROOTDIR-}/usr/local/etc/postfix/virtual" "${CHROOTDIR-}/usr/local/etc/postfix/aliases" "${CHROOTDIR-}/usr/local/etc/postfix/domains" "${CHROOTDIR-}/usr/local/etc/postfix/senders" "${CHROOTDIR-}/usr/local/etc/postfix/transport"
 
-postmap "${CHROOTDIR-}/usr/local/etc/postfix/domains"
-postmap "${CHROOTDIR-}/usr/local/etc/postfix/virtual"
+postmap "${CHROOTDIR-}/usr/local/etc/postfix/virtual" "${CHROOTDIR-}/usr/local/etc/postfix/domains" "${CHROOTDIR-}/usr/local/etc/postfix/senders" "${CHROOTDIR-}/usr/local/etc/postfix/transport"
 postalias "${CHROOTDIR-}/usr/local/etc/postfix/aliases"
 
 sed -ne '/^$/,${/^./,$p;}' "${CHROOTDIR-}/usr/local/etc/postfix/bounce.cf.default" > "${CHROOTDIR-}/usr/local/etc/postfix/bounce.cf"
 
-cat >> "${CHROOTDIR-}/usr/local/etc/postfix/main.cf" <<EOF
-
-mydomain = $HOST_NAME
-EOF
-
 cat >> "${CHROOTDIR-}/usr/local/etc/postfix/main.cf" <<'EOF'
+
 bounce_queue_lifetime = 0
 bounce_size_limit = 80
 remote_header_rewrite_domain = domain.invalid
-myhostname = $mydomain
+authorized_flush_users = static:$mail_owner
+authorized_mailq_users = static:$mail_owner
+authorized_submit_users = !nobody, !unknown, static:anyone
 alias_database = hash:$config_directory/aliases
 alias_maps = $alias_database
 message_size_limit = 67108864
 mailbox_size_limit = 1073741824
 virtual_alias_maps = hash:$config_directory/virtual
-mailbox_transport = lmtp:unix:/var/imap/socket/lmtp
-local_recipient_maps = $virtual_alias_maps
+mailbox_transport_maps = hash:$config_directory/transport
 virtual_alias_domains = hash:$config_directory/domains
-smtpd_sender_login_maps = $local_recipient_maps
+smtpd_sender_login_maps = hash:$config_directory/senders
 bounce_template_file = $config_directory/bounce.cf
 smtpd_sasl_auth_enable = yes
-smtpd_sasl_local_domain = $mydomain
-smtpd_sasl_security_options = noanonymous
+smtpd_sasl_local_domain = $myorigin
 smtpd_relay_restrictions = reject_authenticated_sender_login_mismatch, permit_sasl_authenticated, permit_mynetworks, reject_unauth_destination, reject_unlisted_recipient
 smtpd_client_restrictions = permit_sasl_authenticated, permit_mynetworks
 smtpd_helo_required = yes
@@ -104,6 +110,15 @@ EOF
 		cat >> "${CHROOTDIR-}/usr/local/etc/postfix/main.cf" <<EOF
 smtpd_tls_CAfile = \$config_directory/ssl/$HOST_NAME.ca.crt
 EOF
+	fi
+fi
+
+if [ "$HOST_NAME" != "$hostname" ]; then
+	echo 'smtp_helo_name = $myorigin' >> "${CHROOTDIR-}/usr/local/etc/postfix/main.cf"
+	if [ "$HOST_NAME" = "$default_servername" ]; then
+		echo 'myorigin = $mydomain' >> "${CHROOTDIR-}/usr/local/etc/postfix/main.cf"
+	else
+		echo "myorigin = $HOST_NAME" >> "${CHROOTDIR-}/usr/local/etc/postfix/main.cf"
 	fi
 fi
 
