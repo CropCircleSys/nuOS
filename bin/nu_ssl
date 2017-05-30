@@ -48,12 +48,12 @@ if [ -z "${CERT_FILE-}" -a -z "${OPT_LETS_ENCRYPT-}" ]; then
 	echo 'key bits        -b KEY_BITS       ' ${KEY_BITS:=2048}
 	echo -n 'digest bits     -d DGST_BITS       ' && [ -n "${OPT_SELF_SIGNED-}" ] && echo ${DGST_BITS:=256} || echo n/a
 	echo -n 'valid lifetime  -e EXPIRE_DAYS     ' && [ -n "${OPT_SELF_SIGNED-}" ] && echo ${EXPIRE_DAYS:=365} || echo n/a
-	echo 'country code    -n COUNTRY        ' $COUNTRY
 	[ -n "$COUNTRY" ] || COUNTRY=XX
+	echo 'country code    -n COUNTRY        ' $COUNTRY
 	country_len=${#COUNTRY}
 	[ $country_len -eq 2 ] || (echo "COUNTRY must be 2 chars (standard: ISO 3166-1 alpha-2)" >&2 && exit 85)
-	echo 'state/province  -p STATE          ' $STATE
 	[ -n "$STATE" ] || STATE=undefined
+	echo 'state/province  -p STATE          ' $STATE
 	echo 'city/locality   -l CITY           ' ${CITY:=}
 	echo 'company/org     -o COMPANY        ' ${COMPANY:=}
 	[ -n "$COMPANY" ] || COMPANY=undefined
