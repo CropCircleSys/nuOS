@@ -16,9 +16,10 @@ set -e; set -u; set -C
 
 NUOS_VER=0.0.11.0b0.1
 
-while getopts C:h:su:v OPT; do case $OPT in
+while getopts C:h:p:su:v OPT; do case $OPT in
 	C) CHROOTDIR=$OPTARG;;
 	h) HOST_NAME=$OPTARG;;
+	p) PROXY_TO=$OPTARG;;
 	s) [ -n "${OPT_SSL-}" ] && OPT_STRICT=y || OPT_SSL=y;;
 	u) USER_NAME=$OPTARG;;
 	v) OPT_VERBOSE=y;;
@@ -80,13 +81,28 @@ else
 	no_ssl=y
 fi
 
+if [ -n "${PROXY_TO-}" ]; then
+	PROXY_TO="${PROXY_TO%/}"
+	if [ "$PROXY_TO" != "${PROXY_TO#https://}" ]; then
+		backend_ssl=y
+		PROXY_TO="${PROXY_TO#https://}"
+	else
+		PROXY_TO="${PROXY_TO#http://}"
+	fi
+	backend_host="${PROXY_TO%%/*}"
+fi
+
 cat > "${CHROOTDIR-}/usr/local/etc/$service/Includes/$HOST_NAME.conf" <<EOF
 <VirtualHost ${OPT_SSL:+_default_:443}${no_ssl:+*:80}>
-	DocumentRoot "$user_home/$HOST_NAME/www/public"
 	ServerName $HOST_NAME${OPT_SSL:+:443}
 	ServerAdmin webmaster@$HOST_NAME
+	DocumentRoot "$user_home/$HOST_NAME/www/public"
 	Header always setifempty X-Frame-Options SAMEORIGIN
-${OPT_SSL:+	SSLEngine On
+${PROXY_TO:+	ProxyPass / http${backend_ssl:+s}://$PROXY_TO/
+	ProxyPassReverse / http${backend_ssl:+s}://$PROXY_TO/
+	ProxyPassReverseCookieDomain $backend_host $HOST_NAME
+	ProxyPreserveHost On
+}${OPT_SSL:+	SSLEngine On
 	SSLCertificateFile "/usr/local/etc/$service/ssl/$HOST_NAME.crt"
 	SSLCertificateKeyFile "/usr/local/etc/$service/ssl/private/$HOST_NAME.key"
 ${self_signed:+	SSLUseStapling off
