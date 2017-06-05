@@ -73,7 +73,7 @@ cat >> "${CHROOTDIR-}/usr/local/etc/$service/extra/httpd-vhosts.conf" <<EOF
 EOF
 
 sed -i '' -Ee '
-	s/^#(LoadModule[[:>:]].*[[:<:]]mod_(proxy|proxy_http|proxy_wstunnel|rewrite).so)$/\1/
+	s/^#(LoadModule[[:>:]].*[[:<:]]mod_(http2|proxy|proxy_http|proxy_http2|proxy_wstunnel|proxy_balancer|rewrite|slotmem_shm).so)$/\1/
 	s/^#(Include[[:>:]].*[[:<:]]httpd-(mpm|vhosts|default).conf)$/\1/
 	/^#ServerName /a\
 ServerName localhost
