@@ -86,16 +86,15 @@ cat > "${CHROOTDIR-}/usr/local/etc/$service/Includes/$HOST_NAME.conf" <<EOF
 	ServerName $HOST_NAME${OPT_SSL:+:443}
 	ServerAdmin webmaster@$HOST_NAME
 	Header always setifempty X-Frame-Options SAMEORIGIN
-	ErrorLog "/var/log/httpd-vhost/$HOST_NAME-error.log"
 ${OPT_SSL:+	SSLEngine On
 	SSLCertificateFile "/usr/local/etc/$service/ssl/$HOST_NAME.crt"
 	SSLCertificateKeyFile "/usr/local/etc/$service/ssl/private/$HOST_NAME.key"
 ${self_signed:+	SSLUseStapling off
 #}	SSLCertificateChainFile "/usr/local/etc/$service/ssl/$HOST_NAME.ca.crt"
 ${OPT_STRICT:+	Header always set Strict-Transport-Security "max-age=$((5*365*24*60*60)); includeSubdomains; preload"
-}	CustomLog "/var/log/httpd-vhost/$HOST_NAME-ssl_request.log" "%t %h %{SSL_PROTOCOL}x %{SSL_CIPHER}x \"%r\" %b"
-}${no_ssl:+	CustomLog "/var/log/httpd-vhost/$HOST_NAME-access.log" common
-}
+}}	CustomLog "/var/log/httpd-vhost/$HOST_NAME-access.log" common
+${OPT_SSL:+	CustomLog "/var/log/httpd-vhost/$HOST_NAME-ssl_request.log" "%t %h %{SSL_PROTOCOL\}x %{SSL_CIPHER\}x \"%r\" %b"
+}	ErrorLog "/var/log/httpd-vhost/$HOST_NAME-error.log"
 </VirtualHost>
 ${OPT_SSL:+<VirtualHost _default_:443>
 	ServerName www.$HOST_NAME:443
