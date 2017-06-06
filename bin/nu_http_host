@@ -90,6 +90,7 @@ if [ -n "${PROXY_TO-}" ]; then
 		PROXY_TO="${PROXY_TO#http://}"
 	fi
 	backend_host="${PROXY_TO%%/*}"
+	backend_host="${backend_host%:*}"
 fi
 
 cat > "${CHROOTDIR-}/usr/local/etc/$service/Includes/$HOST_NAME.conf" <<EOF
