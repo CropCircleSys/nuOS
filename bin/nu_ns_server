@@ -148,6 +148,7 @@ policy:
     algorithm: RSASHA256
     ksk-size: $KSK_BITS
     zsk-size: $ZSK_BITS
+    nsec3: on
 
 EOF
 		fi
