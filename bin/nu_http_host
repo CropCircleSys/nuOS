@@ -102,7 +102,7 @@ cat > "${CHROOTDIR-}/usr/local/etc/$service/Includes/$HOST_NAME.conf" <<EOF
 ${PROXY_TO:+	RewriteEngine On
 	RewriteCond %{HTTP:Connection} Upgrade [nocase]
 	RewriteCond %{HTTP:Upgrade} websocket [nocase]
-	RewriteRule /(.*) ws${backend_ssl:+s}://$PROXY_TO/$1 [proxy,END]
+	RewriteRule /(.*) ws${backend_ssl:+s}://$PROXY_TO/\$1 [proxy,END]
 	ProxyPass / http${backend_ssl:+s}://$PROXY_TO/
 	ProxyPassReverse / http${backend_ssl:+s}://$PROXY_TO/
 	ProxyPassReverseCookieDomain $backend_host $HOST_NAME
