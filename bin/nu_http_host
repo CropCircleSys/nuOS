@@ -105,7 +105,8 @@ ${PROXY_TO:+	ProxyPass / http${backend_ssl:+s}://$PROXY_TO/
 	ProxyPreserveHost On
 ${backend_ssl:+	SSLProxyEngine on
 	SSLProxyVerify require
-	SSLProxyCACertificateFile "/usr/local/etc/$service/ssl/$HOST_NAME.ca.crt"
+	SSLProxyVerifyDepth 10
+	SSLProxyCACertificateFile /usr/local/etc/ssl/cert.pem
 }}${OPT_SSL:+	SSLEngine On
 	SSLCertificateFile "/usr/local/etc/$service/ssl/$HOST_NAME.crt"
 	SSLCertificateKeyFile "/usr/local/etc/$service/ssl/private/$HOST_NAME.key"
