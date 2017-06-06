@@ -99,7 +99,11 @@ cat > "${CHROOTDIR-}/usr/local/etc/$service/Includes/$HOST_NAME.conf" <<EOF
 	ServerAdmin webmaster@$HOST_NAME
 	DocumentRoot "$user_home/$HOST_NAME/www/public"
 	Header always setifempty X-Frame-Options SAMEORIGIN
-${PROXY_TO:+	ProxyPass / http${backend_ssl:+s}://$PROXY_TO/
+${PROXY_TO:+	RewriteEngine On
+	RewriteCond %{HTTP:Connection} Upgrade [nocase]
+	RewriteCond %{HTTP:Upgrade} websocket [nocase]
+	RewriteRule /(.*) ws${backend_ssl:+s}://$PROXY_TO/$1 [proxy,END]
+	ProxyPass / http${backend_ssl:+s}://$PROXY_TO/
 	ProxyPassReverse / http${backend_ssl:+s}://$PROXY_TO/
 	ProxyPassReverseCookieDomain $backend_host $HOST_NAME
 	ProxyPreserveHost On
