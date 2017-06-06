@@ -103,7 +103,10 @@ ${PROXY_TO:+	ProxyPass / http${backend_ssl:+s}://$PROXY_TO/
 	ProxyPassReverse / http${backend_ssl:+s}://$PROXY_TO/
 	ProxyPassReverseCookieDomain $backend_host $HOST_NAME
 	ProxyPreserveHost On
-}${OPT_SSL:+	SSLEngine On
+${backend_ssl:+	SSLProxyEngine on
+	SSLProxyVerify require
+	SSLProxyCACertificateFile "/usr/local/etc/$service/ssl/$HOST_NAME.ca.crt"
+}}${OPT_SSL:+	SSLEngine On
 	SSLCertificateFile "/usr/local/etc/$service/ssl/$HOST_NAME.crt"
 	SSLCertificateKeyFile "/usr/local/etc/$service/ssl/private/$HOST_NAME.key"
 ${self_signed:+	SSLUseStapling off
