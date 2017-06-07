@@ -1,0 +1,69 @@
+#!/bin/sh
+set -e; set -u; set -C
+
+# nuOS 0.0.11.0b0.1 - bin/nu_purge_snapshot - LICENSE: BSD_SMPL
+#
+# Copyright (c) 2008-2017 Chad Jacob Milios and Crop Circle Systems, Inc.
+# All rights reserved.
+#
+# This Source Code Form is subject to the terms of the Simplified BSD License.
+# If a copy of the Simplified BSD License was not distributed alongside this file, you can
+# obtain one at https://www.freebsd.org/copyright/freebsd-license.html . This software
+# project is not affiliated with the FreeBSD Project.
+#
+# Official updates and community support available at https://nuos.org .
+# Other licensing options and professional services available at https://ccsys.com .
+
+NUOS_VER=0.0.11.0b0.1
+
+while getopts l:np:v OPT; do case $OPT in
+	l) SNAP_LABEL=`echo "$OPTARG" | tr -dc '[:alnum:]'`;;
+	n) OPT_DRY_RUN=y;;
+	p) POOL_NAME=$OPTARG;;
+	v) OPT_VERBOSE=y;;
+esac; done; shift $(($OPTIND-1))
+[ $# -ge 1 -o -f /etc/nuos/backup ]
+
+. "$(dirname "$(realpath "$0")")/../lib/nu_system.sh"
+. "$(dirname "$(realpath "$0")")/../lib/nu_common.sh"
+. "$(dirname "$(realpath "$0")")/../lib/nu_backup.sh"
+
+nuos_init -q
+
+: ${POOL_NAME:=$POOL_BOOT_NAME}
+
+maybe_yell
+
+require_tmp backlist
+
+if [ $# -ge 1 ]; then
+	echo $@ | xargs -n 1 >| "$backlist"
+else
+	grep -Ev '^#|^$' < /etc/nuos/backup >| "$backlist"
+fi
+
+require_tmp output_backlist
+while read ds; do
+	ds=$POOL_NAME/$ds
+	while printf %s "$ds" | grep -q '('; do
+		tdds=`printf %s "$ds" | sed -E -e 's/^([^(]*)\(([^)]*)\)(.*)$/\1	\2	\3/'`
+		IFS='	' read left var right <<EOF
+$tdds
+EOF
+		val=`zfs get -H -p -o value $var ${left%/}`
+		[ -n "$val" -a "$val" != - ]
+		ds="$left$val$right"
+	done
+	printf '%s\n' "$ds" >> "$output_backlist"
+done < "$backlist"
+retire_tmp backlist
+
+grep -v @ "$output_backlist" \
+	| xargs -n1 zfs list -H -r -t snap -o name \
+	| grep "@${SNAP_LABEL:+${SNAP_LABEL}-}t[0-9]" \
+	| tail -r \
+	| xargs -n 1 zfs destroy ${OPT_DRY_RUN:+-n} -p
+
+retire_tmp output_backlist
+
+#retire_tmp backup_log
