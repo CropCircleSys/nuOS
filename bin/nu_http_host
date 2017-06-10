@@ -104,8 +104,8 @@ if [ -n "${PROXY_TO-}" ]; then
 	backend_host="${backend_host%:*}"
 fi
 
-[ -z "${OPT_NO_HTTP2-}" ] || h2=y
-[ -z "${OPT_NO_WEBSOCKET-}" ] || ws=y
+[ -n "${OPT_NO_HTTP2-}" ] || h2=y
+[ -n "${OPT_NO_WEBSOCKET-}" ] || ws=y
 
 cat > "${CHROOTDIR-}/usr/local/etc/$service/Includes/$HOST_NAME.conf" <<EOF
 <VirtualHost ${OPT_SSL:+_default_:443}${no_ssl:+*:80}>
