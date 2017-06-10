@@ -16,13 +16,15 @@ set -e; set -u; set -C
 
 NUOS_VER=0.0.11.0b0.1
 
-while getopts C:h:p:su:v OPT; do case $OPT in
+while getopts C:h:Hp:su:vW OPT; do case $OPT in
 	C) CHROOTDIR=$OPTARG;;
 	h) HOST_NAME=$OPTARG;;
+	H) OPT_NO_HTTP2=y;;
 	p) PROXY_TO=$OPTARG;;
 	s) [ -n "${OPT_SSL-}" ] && OPT_STRICT=y || OPT_SSL=y;;
 	u) USER_NAME=$OPTARG;;
 	v) OPT_VERBOSE=y;;
+	W) OPT_NO_WEBSOCKET=y;;
 esac; done; shift $(($OPTIND-1))
 [ $# = 0 ]
 
@@ -83,15 +85,27 @@ fi
 
 if [ -n "${PROXY_TO-}" ]; then
 	PROXY_TO="${PROXY_TO%/}"
-	if [ "$PROXY_TO" != "${PROXY_TO#https://}" ]; then
+	if [ "$PROXY_TO" != "${PROXY_TO#h2://}" ]; then
 		backend_ssl=y
+		backend_scheme=h2
+		PROXY_TO="${PROXY_TO#h2://}"
+	elif [ "$PROXY_TO" != "${PROXY_TO#https://}" ]; then
+		backend_ssl=y
+		backend_scheme=https
 		PROXY_TO="${PROXY_TO#https://}"
+	elif [ "$PROXY_TO" != "${PROXY_TO#h2c://}" ]; then
+		backend_scheme=h2c
+		PROXY_TO="${PROXY_TO#h2c://}"
 	else
+		backend_scheme=http
 		PROXY_TO="${PROXY_TO#http://}"
 	fi
 	backend_host="${PROXY_TO%%/*}"
 	backend_host="${backend_host%:*}"
 fi
+
+[ -z "${OPT_NO_HTTP2-}" ] || h2=y
+[ -z "${OPT_NO_WEBSOCKET-}" ] || ws=y
 
 cat > "${CHROOTDIR-}/usr/local/etc/$service/Includes/$HOST_NAME.conf" <<EOF
 <VirtualHost ${OPT_SSL:+_default_:443}${no_ssl:+*:80}>
@@ -99,11 +113,11 @@ cat > "${CHROOTDIR-}/usr/local/etc/$service/Includes/$HOST_NAME.conf" <<EOF
 	ServerAdmin webmaster@$HOST_NAME
 	DocumentRoot "$user_home/$HOST_NAME/www/public"
 	Header always setifempty X-Frame-Options SAMEORIGIN
-${PROXY_TO:+	RewriteEngine On
+${PROXY_TO:+${ws:+	RewriteEngine On
 	RewriteCond %{HTTP:Connection\} Upgrade [nocase]
 	RewriteCond %{HTTP:Upgrade\} websocket [nocase]
 	RewriteRule /(.*) ws${backend_ssl:+s}://$PROXY_TO/\$1 [proxy,END]
-	ProxyPass / http${backend_ssl:+s}://$PROXY_TO/
+}	ProxyPass / $backend_scheme://$PROXY_TO/
 	ProxyPassReverse / http${backend_ssl:+s}://$PROXY_TO/
 	ProxyPassReverseCookieDomain $backend_host $HOST_NAME
 	ProxyPreserveHost On
@@ -120,7 +134,8 @@ ${OPT_STRICT:+	Header always set Strict-Transport-Security "max-age=$((5*365*24*
 }}	CustomLog "/var/log/httpd-vhost/$HOST_NAME-access.log" common
 ${OPT_SSL:+	CustomLog "/var/log/httpd-vhost/$HOST_NAME-ssl_request.log" "%t %h %{SSL_PROTOCOL\}x %{SSL_CIPHER\}x \"%r\" %b"
 }	ErrorLog "/var/log/httpd-vhost/$HOST_NAME-error.log"
-</VirtualHost>
+${h2:+	Protocols h2${no_ssl:+c} http/1.1
+}</VirtualHost>
 ${OPT_SSL:+<VirtualHost _default_:443>
 	ServerName www.$HOST_NAME:443
 	SSLEngine On
