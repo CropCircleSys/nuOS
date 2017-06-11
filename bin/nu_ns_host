@@ -118,12 +118,15 @@ case $SOFTWARE in
 					chown knot:knot "${CHROOTDIR-}/var/db/knot${ALTERNATE:+_${ALTERNATE}}"
 				fi
 				if [ -n "${OPT_LITE-}" ]; then
-					[ ! -f "${CHROOTDIR-}/var/db/knot${ALTERNATE:+_${ALTERNATE}}/$zone.zone" ]
 					while [ ! -f "${CHROOTDIR-}/var/db/knot${ALTERNATE:+_${ALTERNATE}}/$zone.zone" ]; do
 						echo $zone | grep -q '\.' || (echo "could not find zone file (are we the configured master of a parent zone?)" >&2 && exit 85)
 						zone=${zone#*.}
 					done
-					host=${HOST_NAME%.$zone}
+					if [ "$HOST_NAME" = "$zone" ]; then
+						host=@
+					else
+						host=${HOST_NAME%.$zone}
+					fi
 					read -r _ _ _ type _ _ _ _ ttl _ _ <<EOF
 $(${CHROOTDIR:+chroot "$CHROOTDIR"} knotc ${ALTERNATE:+-c /usr/local/etc/knot/knot_$ALTERNATE.conf} zone-read $zone @ SOA)
 EOF
