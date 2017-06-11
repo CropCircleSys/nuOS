@@ -18,7 +18,7 @@ NUOS_VER=0.0.11.0b0.1
 
 . "$(dirname "$(realpath "$0")")/../lib/nu_system.sh"
 
-while getopts A:C:h:i:klM:o:r:t:v OPT; do case $OPT in
+while getopts A:C:h:i:klM:o:r:st:v OPT; do case $OPT in
 	A) ALTERNATE=$OPTARG;;
 	C) CHROOTDIR=$OPTARG;;
 	h) HOST_NAME=$OPTARG;;
@@ -32,6 +32,7 @@ while getopts A:C:h:i:klM:o:r:t:v OPT; do case $OPT in
 			setvar out_$type "$file";;
 		*) exit 22; esac; shift $OPTIND;;
 	r) REC_TYPE="`echo "$OPTARG" | tr '[:lower:]' '[:upper:]'`"; OPT_LITE=y;;
+	s) OPT_SINGLE_RECORD=y;;
 	t) SOFTWARE=$OPTARG; case $SOFTWARE in
 		djb|knot) ;; *) exit 22; esac;;
 	v) OPT_VERBOSE=y;;
@@ -132,9 +133,13 @@ $(${CHROOTDIR:+chroot "$CHROOTDIR"} knotc ${ALTERNATE:+-c /usr/local/etc/knot/kn
 EOF
 					[ SOA = "$type" ]
 					${CHROOTDIR:+chroot "$CHROOTDIR"} knotc ${ALTERNATE:+-c /usr/local/etc/knot/knot_$ALTERNATE.conf} zone-begin $zone
-					for ip in $PUB_IPS; do
-						${CHROOTDIR:+chroot "$CHROOTDIR"} knotc ${ALTERNATE:+-c /usr/local/etc/knot/knot_$ALTERNATE.conf} zone-set $zone $host $ttl $REC_TYPE $ip
-					done
+					if [ -n "${OPT_SINGLE_RECORD-}" ]; then
+						${CHROOTDIR:+chroot "$CHROOTDIR"} knotc ${ALTERNATE:+-c /usr/local/etc/knot/knot_$ALTERNATE.conf} zone-set $zone $host $ttl $REC_TYPE $PUB_IPS
+					else
+						for ip in $PUB_IPS; do
+							${CHROOTDIR:+chroot "$CHROOTDIR"} knotc ${ALTERNATE:+-c /usr/local/etc/knot/knot_$ALTERNATE.conf} zone-set $zone $host $ttl $REC_TYPE $ip
+						done
+					fi
 					${CHROOTDIR:+chroot "$CHROOTDIR"} knotc ${ALTERNATE:+-c /usr/local/etc/knot/knot_$ALTERNATE.conf} zone-commit $zone
 				else
 					sed -E -e "s/\<example\\.com\>/$zone/g;/\<serial[[:blank:]]*$/s/[[:digit:]]+/`date +%Y%m%d`01/" "${CHROOTDIR-}/usr/local/etc/knot/example${ALTERNATE:+_${ALTERNATE}}.com.zone" > "${CHROOTDIR-}/var/db/knot${ALTERNATE:+_${ALTERNATE}}/$zone.zone"
