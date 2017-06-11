@@ -68,8 +68,11 @@ incr () {
 }
 
 push () {
-	local var=$1; shift
-	eval setvar $var \"\${$var:+\$$var }$*\"
+	local var=$1 old_val= prepend= new_val=; shift
+	eval old_val=\"\${$var-}\"
+	prepend="${old_val:+$old_val }"
+	new_val="$prepend$*"
+	setvar $var "$new_val"
 }
 
 mnt_dev () {
