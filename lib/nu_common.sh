@@ -49,12 +49,16 @@ nuos_ssl_init () {
 	if [ -x /usr/local/bin/openssl ]; then
 		SSL_CMD=/usr/local/bin/openssl
 		SSL_SUITE=openssl-port
-		if [ ! -e /usr/local/openssl/openssl.cnf ]; then
-			cp /usr/local/openssl/openssl.cnf.sample /usr/local/openssl/openssl.cnf
+		SSL_CONF=/usr/local/openssl/openssl.cnf
+		if [ ! -e $SSL_CONF ]; then
+			sed -e '/^\[ v3_req ]$/a\
+1.3.6.1.5.5.7.1.24 = DER:30:03:02:01:05
+' $SSL_CONF.sample > $SSL_CONF
 		fi
 	else
 		SSL_CMD=/usr/bin/openssl
 		SSL_SUITE=openssl-freebsd-base
+		SSL_CONF=/etc/ssl/openssl.cnf
 	fi
 }
 

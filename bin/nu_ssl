@@ -145,7 +145,7 @@ EOF
 		fi
 		[ ! -e "${CHROOTDIR-}/etc/ssl/csrs/$SSL_HOST.csr" ] || exit 17
 		(echo && echo) >> "$tempfile"
-		command="$SSL_CMD req -new -key ${CHROOTDIR-}/etc/ssl/private/$SSL_HOST.key -out ${CHROOTDIR-}/etc/ssl/csrs/$SSL_HOST.csr"
+		command="$SSL_CMD req -new -key ${CHROOTDIR-}/etc/ssl/private/$SSL_HOST.key -reqexts v3_req -out ${CHROOTDIR-}/etc/ssl/csrs/$SSL_HOST.csr"
 		message="Generated key $SSL_HOST.key and certificate signing request $SSL_HOST.csr in /etc/ssl/."
 	fi
 	
