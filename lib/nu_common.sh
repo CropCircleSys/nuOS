@@ -85,3 +85,21 @@ nuos_sha_fngr () {
 				q
 			}"
 }
+
+ns_master_zone () {
+	local opt_chroot= alternate= chrootdir= zone= host_name=; unset alternate chrootdir
+	while getopts A:cC: OPT; do case $OPT in
+		A) alternate=$OPTARG;;
+		c) opt_chroot=y;;
+		C) chrootdir=$OPTARG;;
+	esac; done; shift $(($OPTIND-1))
+	[ $# -eq 1 ]
+	host_name=$1; shift
+	zone=$host_name
+	
+	while [ ! -f "${opt_chroot:+${chrootdir-$CHROOTDIR}}/var/db/knot${alternate:+_${alternate}}/$zone.zone" ]; do
+		echo $zone | grep -q '\.' || { echo "could not find zone file (are we the configured master of a parent zone?)" >&2 && return 85; }
+		zone=${zone#*.}
+	done
+	echo $zone
+}

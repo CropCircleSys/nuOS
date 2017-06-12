@@ -220,7 +220,12 @@ EOF
 			i=$(($i + 1))
 		done
 
-		echo >> "${CHROOTDIR-}/usr/local/etc/knot/example${ALTERNATE:+_${ALTERNATE}}.com.zone"
+		cat >> "${CHROOTDIR-}/usr/local/etc/knot/example${ALTERNATE:+_${ALTERNATE}}.com.zone" <<EOF
+
+@	CAA	128 issue ";" 
+	CAA	128 issuewild ";" 
+
+EOF
 		
 		i=1
 		for ip in $PUB_IPS; do

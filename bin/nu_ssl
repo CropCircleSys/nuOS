@@ -81,6 +81,13 @@ if [ -n "${OPT_LETS_ENCRYPT-}" ]; then
 	[ -z "${CERT_FILE-}" ]
 	[ -z "${AUTH_FILE-}" ]
 	service knot onestatus | grep -q 'is running' || (echo "Let's Encrypt service must be run from an operating DNS master." >&2 && exit 85)
+	sister nu_ns_host ${CHROOTDIR:+-C "$CHROOTDIR"} ${KNOT_ALTERNATE:+-A $KNOT_ALTERNATE} -d -r caa -h $SSL_HOST
+	sister nu_ns_host ${CHROOTDIR:+-C "$CHROOTDIR"} ${KNOT_ALTERNATE:+-A $KNOT_ALTERNATE} -s -r caa -h $SSL_HOST -i '128 issue "letsencrypt.org"'
+	sister nu_ns_host ${CHROOTDIR:+-C "$CHROOTDIR"} ${KNOT_ALTERNATE:+-A $KNOT_ALTERNATE} -s -r caa -h $SSL_HOST -i '128 issuewild ";"'
+	sleep 1
+	parent_zone=$(ns_master_zone ${CHROOTDIR:+-c} ${KNOT_ALTERNATE:+-A $KNOT_ALTERNATE} $SSL_HOST)
+	${CHROOTDIR:+chroot "$CHROOTDIR"} knotc ${KNOT_ALTERNATE:+-c /usr/local/etc/knot/knot_$KNOT_ALTERNATE.conf} zone-reload $parent_zone
+	sleep 15
 	require_tmp acme_output
 	acme.sh --signcsr --csr /etc/ssl/csrs/$SSL_HOST.csr --dns -d $SSL_HOST -d www.$SSL_HOST 2>&1 | sed -n -E -e "/^\\[[^\]+\\] Domain: '([[:alnum:]\\._\\-]+)'$/{s//dom=\\1/;p;};/^\\[[^\]+\\] TXT value: '([[:alnum:]_\\-]+)'$/{s//txt=\\1/;p;}" >| "$acme_output"
 	[ 2 = `wc -l < "$acme_output" | xargs` ]
@@ -88,11 +95,10 @@ if [ -n "${OPT_LETS_ENCRYPT-}" ]; then
 	retire_tmp acme_output
 	[ -n "$dom" -a -n "$txt" ]
 	[ "$dom" = "${dom%.$SSL_HOST}.$SSL_HOST" ]
-	require_tmp parent_zone
-	sister nu_ns_host ${CHROOTDIR:+-C "$CHROOTDIR"} ${KNOT_ALTERNATE:+-A $KNOT_ALTERNATE} -r txt -h $dom -i $txt -o parent_zone "$parent_zone"
+	sister nu_ns_host ${CHROOTDIR:+-C "$CHROOTDIR"} ${KNOT_ALTERNATE:+-A $KNOT_ALTERNATE} -r txt -h $dom -i $txt
 	sleep 1
-	${CHROOTDIR:+chroot "$CHROOTDIR"} knotc ${KNOT_ALTERNATE:+-c /usr/local/etc/knot/knot_$KNOT_ALTERNATE.conf} zone-reload `cat "$parent_zone"`
-	sleep 20
+	${CHROOTDIR:+chroot "$CHROOTDIR"} knotc ${KNOT_ALTERNATE:+-c /usr/local/etc/knot/knot_$KNOT_ALTERNATE.conf} zone-reload $parent_zone
+	sleep 15
 	acme.sh --renew -d $SSL_HOST 2>&1
 	CERT_FILE=$HOME/.acme.sh/$SSL_HOST/$SSL_HOST.cer
 	AUTH_FILE=$HOME/.acme.sh/$SSL_HOST/fullchain.cer
