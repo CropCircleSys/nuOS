@@ -81,9 +81,7 @@ if [ -n "${OPT_LETS_ENCRYPT-}" ]; then
 	[ -z "${CERT_FILE-}" ]
 	[ -z "${AUTH_FILE-}" ]
 	service knot onestatus | grep -q 'is running' || (echo "Let's Encrypt service must be run from an operating DNS master." >&2 && exit 85)
-	sister nu_ns_host ${CHROOTDIR:+-C "$CHROOTDIR"} ${KNOT_ALTERNATE:+-A $KNOT_ALTERNATE} -d -r caa -h $SSL_HOST
-	sister nu_ns_host ${CHROOTDIR:+-C "$CHROOTDIR"} ${KNOT_ALTERNATE:+-A $KNOT_ALTERNATE} -s -r caa -h $SSL_HOST -i '128 issue "letsencrypt.org"'
-	sister nu_ns_host ${CHROOTDIR:+-C "$CHROOTDIR"} ${KNOT_ALTERNATE:+-A $KNOT_ALTERNATE} -s -r caa -h $SSL_HOST -i '128 issuewild ";"'
+	sister nu_ns_host ${CHROOTDIR:+-C "$CHROOTDIR"} ${KNOT_ALTERNATE:+-A $KNOT_ALTERNATE} -h $SSL_HOST -c letsencrypt.org
 	sleep 1
 	parent_zone=$(ns_master_zone ${CHROOTDIR:+-c} ${KNOT_ALTERNATE:+-A $KNOT_ALTERNATE} $SSL_HOST)
 	${CHROOTDIR:+chroot "$CHROOTDIR"} knotc ${KNOT_ALTERNATE:+-c /usr/local/etc/knot/knot_$KNOT_ALTERNATE.conf} zone-reload $parent_zone

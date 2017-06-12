@@ -18,8 +18,9 @@ NUOS_VER=0.0.11.0b0.1
 
 . "$(dirname "$(realpath "$0")")/../lib/nu_system.sh"
 
-while getopts A:C:dh:i:klM:r:st:v OPT; do case $OPT in
+while getopts A:c:C:dh:i:klM:r:st:vw OPT; do case $OPT in
 	A) ALTERNATE=$OPTARG;;
+	c) CA_ZONE=$OPTARG;;
 	C) CHROOTDIR=$OPTARG;;
 	d) OPT_DELETE=y;;
 	h) HOST_NAME=$OPTARG;;
@@ -33,6 +34,7 @@ while getopts A:C:dh:i:klM:r:st:v OPT; do case $OPT in
 	t) SOFTWARE=$OPTARG; case $SOFTWARE in
 		djb|knot) ;; *) exit 22; esac;;
 	v) OPT_VERBOSE=y;;
+	w) OPT_CA_WILDCARD=y;;
 esac; done; shift $(($OPTIND-1))
 [ $# = 0 ]
 
@@ -47,6 +49,18 @@ if [ -n "${OPT_EXPORT_KEY_FINGERPRINTS-}" ]; then
 		fi
 	done
 	exit $ex
+fi
+
+if [ -n "${CA_ZONE-}" ]; then
+	sister nu_ns_host ${CHROOTDIR:+-C "$CHROOTDIR"} ${ALTERNATE:+-A $ALTERNATE} -d -r caa -h $SSL_HOST
+	sister nu_ns_host ${CHROOTDIR:+-C "$CHROOTDIR"} ${ALTERNATE:+-A $ALTERNATE} -s -r caa -h $SSL_HOST -i "128 issue \"$CA_ZONE\""
+	if [ -n "${OPT_CA_WILDCARD-}" ]; then
+		wild_zone=$CA_ZONE
+	else
+		wild_zone=";"
+	fi
+	sister nu_ns_host ${CHROOTDIR:+-C "$CHROOTDIR"} ${ALTERNATE:+-A $ALTERNATE} -s -r caa -h $SSL_HOST -i "128 issuewild \"$wild_zone\""
+	exit 0
 fi
 
 nuos_init
@@ -87,8 +101,6 @@ echo -n 'lightweight     -l OPT_LITE        ' && [ -n "${OPT_LITE-}" ] && echo s
 echo
 
 maybe_yell
-
-[ -z "${out_parent_zone-}" ] || [ -f "$out_parent_zone" -a -w "$out_parent_zone" -a ! -s "$out_parent_zone" ]
 
 case $SOFTWARE in
 	djb)
