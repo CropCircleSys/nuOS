@@ -52,16 +52,19 @@ if [ -n "${OPT_EXPORT_KEY_FINGERPRINTS-}" ]; then
 fi
 
 if [ -n "${CA_ZONE-}" ]; then
-	sister nu_ns_host ${CHROOTDIR:+-C "$CHROOTDIR"} ${ALTERNATE:+-A $ALTERNATE} -d -r caa -h $SSL_HOST
-	if [ -z "${OPT_DELETE-}" ]; then
-		sister nu_ns_host ${CHROOTDIR:+-C "$CHROOTDIR"} ${ALTERNATE:+-A $ALTERNATE} -s -r caa -h $SSL_HOST -i "128 issue \"$CA_ZONE\""
+	sister nu_ns_host ${CHROOTDIR:+-C "$CHROOTDIR"} ${ALTERNATE:+-A $ALTERNATE} -d -r caa -h $HOST_NAME
+	if [ x-d != "x${CA_ZONE-}" -a d != "${CA_ZONE-}" -a -z "${OPT_DELETE-}" ]; then
 		if [ -n "${OPT_CA_WILDCARD-}" ]; then
 			wild_zone=$CA_ZONE
 		else
 			wild_zone=";"
 		fi
-		sister nu_ns_host ${CHROOTDIR:+-C "$CHROOTDIR"} ${ALTERNATE:+-A $ALTERNATE} -s -r caa -h $SSL_HOST -i "128 issuewild \"$wild_zone\""
+	else
+		CA_ZONE=";"
+		wild_zone=";"
 	fi
+	sister nu_ns_host ${CHROOTDIR:+-C "$CHROOTDIR"} ${ALTERNATE:+-A $ALTERNATE} -s -r caa -h $HOST_NAME -i "128 issue \"$CA_ZONE\""
+	sister nu_ns_host ${CHROOTDIR:+-C "$CHROOTDIR"} ${ALTERNATE:+-A $ALTERNATE} -s -r caa -h $HOST_NAME -i "128 issuewild \"$wild_zone\""
 	exit 0
 fi
 
