@@ -53,13 +53,15 @@ fi
 
 if [ -n "${CA_ZONE-}" ]; then
 	sister nu_ns_host ${CHROOTDIR:+-C "$CHROOTDIR"} ${ALTERNATE:+-A $ALTERNATE} -d -r caa -h $SSL_HOST
-	sister nu_ns_host ${CHROOTDIR:+-C "$CHROOTDIR"} ${ALTERNATE:+-A $ALTERNATE} -s -r caa -h $SSL_HOST -i "128 issue \"$CA_ZONE\""
-	if [ -n "${OPT_CA_WILDCARD-}" ]; then
-		wild_zone=$CA_ZONE
-	else
-		wild_zone=";"
+	if [ -z "${OPT_DELETE-}" ]; then
+		sister nu_ns_host ${CHROOTDIR:+-C "$CHROOTDIR"} ${ALTERNATE:+-A $ALTERNATE} -s -r caa -h $SSL_HOST -i "128 issue \"$CA_ZONE\""
+		if [ -n "${OPT_CA_WILDCARD-}" ]; then
+			wild_zone=$CA_ZONE
+		else
+			wild_zone=";"
+		fi
+		sister nu_ns_host ${CHROOTDIR:+-C "$CHROOTDIR"} ${ALTERNATE:+-A $ALTERNATE} -s -r caa -h $SSL_HOST -i "128 issuewild \"$wild_zone\""
 	fi
-	sister nu_ns_host ${CHROOTDIR:+-C "$CHROOTDIR"} ${ALTERNATE:+-A $ALTERNATE} -s -r caa -h $SSL_HOST -i "128 issuewild \"$wild_zone\""
 	exit 0
 fi
 
