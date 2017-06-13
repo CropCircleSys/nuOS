@@ -16,7 +16,7 @@ set -e; set -u; set -C
 
 NUOS_VER=0.0.11.0b0.1
 
-while getopts A:a:b:c:C:d:e:h:l:Lm:n:o:p:sSu:v OPT; do case $OPT in
+while getopts A:a:b:c:C:d:e:h:l:Lm:n:o:p:stSu:v OPT; do case $OPT in
 	A) KNOT_ALTERNATE=$OPTARG;;
 	a) AUTH_FILE=$OPTARG;;
 	b) KEY_BITS=$OPTARG;;
@@ -32,6 +32,7 @@ while getopts A:a:b:c:C:d:e:h:l:Lm:n:o:p:sSu:v OPT; do case $OPT in
 	o) COMPANY=$OPTARG;;
 	p) STATE=$OPTARG;;
 	s) OPT_SELF_SIGNED=y;;
+	t) OPT_EXPORT_TLSA=y;;
 	S) OPT_UNSECURE=y;;
 	u) DEPT=$OPTARG;;
 	v) OPT_VERBOSE=y;;
@@ -40,6 +41,30 @@ esac; done; shift $(($OPTIND-1))
 
 . "$(dirname "$(realpath "$0")")/../lib/nu_system.sh"
 . "$(dirname "$(realpath "$0")")/../lib/nu_common.sh"
+
+nuos_ssl_init
+
+if [ -n "${OPT_EXPORT_TLSA-}" ]; then
+		: ${KEY_BITS:=256}
+		case $KEY_BITS in
+			256) type=1;;
+			512) type=2;;
+			*) echo "KEY_BITS must be 256 or 512 when using OPT_EXPORT_TLSA" >&2 && exit 85;;
+		esac
+		if [ -f "${CHROOTDIR-}/etc/ssl/certs/$SSL_HOST.crt" ]; then
+			sufx=crt
+			usage=1
+		elif [ -f "${CHROOTDIR-}/etc/ssl/certs/$SSL_HOST.internal.crt" ]; then
+			sufx=internal.crt
+			usage=3
+		else
+			echo "$0: /etc/ssl/certs/$SSL_HOST.crt: No such file or directory" >&2
+			exit 1
+		fi
+		echo -n "$usage 0 $type "
+		$SSL_CMD x509 -in "${CHROOTDIR-}/etc/ssl/certs/$SSL_HOST.$sufx" -outform DER | sha$KEY_BITS
+	exit 0
+fi
 
 nuos_init
 
@@ -101,8 +126,6 @@ if [ -n "${OPT_LETS_ENCRYPT-}" ]; then
 	CERT_FILE=$HOME/.acme.sh/$SSL_HOST/$SSL_HOST.cer
 	AUTH_FILE=$HOME/.acme.sh/$SSL_HOST/fullchain.cer
 fi
-
-nuos_ssl_init
 
 if [ -z "${CERT_FILE-}" ]; then
 	
