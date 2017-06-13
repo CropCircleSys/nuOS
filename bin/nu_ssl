@@ -16,7 +16,9 @@ set -e; set -u; set -C
 
 NUOS_VER=0.0.11.0b0.1
 
-while getopts A:a:b:c:C:d:e:h:l:Lm:n:o:p:stSu:v OPT; do case $OPT in
+. "$(dirname "$(realpath "$0")")/../lib/nu_system.sh"
+
+while getopts A:a:b:c:C:d:e:h:l:Lm:n:o:p:stT:Su:v OPT; do case $OPT in
 	A) KNOT_ALTERNATE=$OPTARG;;
 	a) AUTH_FILE=$OPTARG;;
 	b) KEY_BITS=$OPTARG;;
@@ -32,17 +34,21 @@ while getopts A:a:b:c:C:d:e:h:l:Lm:n:o:p:stSu:v OPT; do case $OPT in
 	o) COMPANY=$OPTARG;;
 	p) STATE=$OPTARG;;
 	s) OPT_SELF_SIGNED=y;;
-	t) OPT_EXPORT_TLSA=y;;
+	t) incr OPT_EXPORT_TLSA 1;;
+	T) TLSA_TRANSPORT=$OPTARG;;
 	S) OPT_UNSECURE=y;;
 	u) DEPT=$OPTARG;;
 	v) OPT_VERBOSE=y;;
 esac; done; shift $(($OPTIND-1))
 [ $# = 0 ]
 
-. "$(dirname "$(realpath "$0")")/../lib/nu_system.sh"
 . "$(dirname "$(realpath "$0")")/../lib/nu_common.sh"
 
 nuos_ssl_init
+
+check_ns_server () {
+	service knot onestatus | grep -q 'is running' || (echo "Let's Encrypt service must be run from an operating DNS master." >&2 && exit 85)
+}
 
 if [ -n "${OPT_EXPORT_TLSA-}" ]; then
 	: ${KEY_BITS:=256}
@@ -61,11 +67,24 @@ if [ -n "${OPT_EXPORT_TLSA-}" ]; then
 		echo "$0: /etc/ssl/certs/$SSL_HOST.crt: No such file or directory" >&2
 		exit 1
 	fi
+	selector=1
 	require_tmp pub_key
 	$SSL_CMD x509 -in "${CHROOTDIR-}/etc/ssl/certs/$SSL_HOST.$sufx" -noout -pubkey >| "$pub_key"
-	echo -n "$usage 1 $type "
-	$SSL_CMD rsa -pubin -in "$pub_key" -outform DER 2>/dev/null | sha$KEY_BITS
+	hash=`$SSL_CMD rsa -pubin -in "$pub_key" -outform DER 2>/dev/null | sha$KEY_BITS`
 	retire_tmp pub_key
+	record_data="$usage $selector $type $hash"
+	if [ 2 = "${OPT_EXPORT_TLSA-}" ]; then
+		port=${STATE-} # XXX repurpose the (-p)rovince option to mean (-p)ort
+		: ${port:=443}
+		: ${TLSA_TRANSPORT:=tcp}
+		check_ns_server
+		for h in $SSL_HOST www.$SSL_HOST; do
+			sister nu_ns_host ${CHROOTDIR:+-C "$CHROOTDIR"} ${KNOT_ALTERNATE:+-A $KNOT_ALTERNATE} -d -h _$port._$TLSA_TRANSPORT.$h -r tlsa
+			sister nu_ns_host ${CHROOTDIR:+-C "$CHROOTDIR"} ${KNOT_ALTERNATE:+-A $KNOT_ALTERNATE} -h _$port._$TLSA_TRANSPORT.$h -r tlsa -s -i "$record_data"
+		done
+	else
+		echo "$record_data"
+	fi
 	exit 0
 fi
 
@@ -108,7 +127,7 @@ if [ -n "${OPT_LETS_ENCRYPT-}" ]; then
 	[ -n $SSL_HOST ]
 	[ -z "${CERT_FILE-}" ]
 	[ -z "${AUTH_FILE-}" ]
-	service knot onestatus | grep -q 'is running' || (echo "Let's Encrypt service must be run from an operating DNS master." >&2 && exit 85)
+	check_ns_server
 	sister nu_ns_host ${CHROOTDIR:+-C "$CHROOTDIR"} ${KNOT_ALTERNATE:+-A $KNOT_ALTERNATE} -h $SSL_HOST -c letsencrypt.org
 	sleep 1
 	parent_zone=$(ns_master_zone ${CHROOTDIR:+-c} ${KNOT_ALTERNATE:+-A $KNOT_ALTERNATE} $SSL_HOST)
