@@ -99,7 +99,7 @@ EOF
 			cat "$SSL/certs/$HOST_NAME.ca.crt" >> "$pg/ssl/$HOST_NAME.crt"
 		fi
 		mkdir -p "$SSL/certs.installed/localhost/$HOST_NAME.${internal:+internal.}crt"
-		ln -s "$pg_/ssl/$HOST_NAME.crt" "$SSL/certs.installed/localhost/$d.full.crt/postgres$SHORT_VER"
+		ln -s "$pg_/ssl/$HOST_NAME.crt" "$SSL/certs.installed/localhost/$HOST_NAME.full.crt/postgres$SHORT_VER"
 		cat >> "$pg/postgresql.conf" <<EOF
 ssl = on
 ssl_cert_file = 'ssl/$HOST_NAME.crt'
