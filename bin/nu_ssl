@@ -79,7 +79,7 @@ if [ -n "${OPT_EXPORT_TLSA-}" ]; then
 		: ${TLSA_TRANSPORT:=tcp}
 		check_ns_server
 		for h in $SSL_HOST www.$SSL_HOST; do
-			sister nu_ns_host ${CHROOTDIR:+-C "$CHROOTDIR"} ${KNOT_ALTERNATE:+-A $KNOT_ALTERNATE} -d -h _$port._$TLSA_TRANSPORT.$h -r tlsa
+			sister nu_ns_host ${CHROOTDIR:+-C "$CHROOTDIR"} ${KNOT_ALTERNATE:+-A $KNOT_ALTERNATE} -dd -h _$port._$TLSA_TRANSPORT.$h -r tlsa
 			sister nu_ns_host ${CHROOTDIR:+-C "$CHROOTDIR"} ${KNOT_ALTERNATE:+-A $KNOT_ALTERNATE} -h _$port._$TLSA_TRANSPORT.$h -r tlsa -s -i "$record_data"
 		done
 	else
