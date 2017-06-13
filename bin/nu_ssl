@@ -146,7 +146,7 @@ if [ -n "${OPT_LETS_ENCRYPT-}" ]; then
 	sleep 15
 	acme.sh --renew -d $SSL_HOST 2>&1
 	CERT_FILE=$HOME/.acme.sh/$SSL_HOST/$SSL_HOST.cer
-	AUTH_FILE=$HOME/.acme.sh/$SSL_HOST/fullchain.cer
+	AUTH_FILE=$HOME/.acme.sh/$SSL_HOST/ca.cer
 fi
 
 if [ -z "${CERT_FILE-}" ]; then
