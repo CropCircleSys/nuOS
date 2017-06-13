@@ -1,0 +1,56 @@
+#!/bin/sh
+set -e; set -u; set -C
+
+# nuOS 0.0.11.0b0.1 - bin/nu_acme_renew - LICENSE: MOZ_PUB
+#
+# Copyright (c) 2008-2017 Chad Jacob Milios and Crop Circle Systems, Inc.
+# All rights reserved.
+#
+# This Source Code Form is subject to the terms of the Mozilla Public License, v2.0.
+# If a copy of the MPL was not distributed alongside this file, you can obtain one at
+# https://www.mozilla.org/MPL/2.0 . This software project is not affiliated with the
+# Mozilla Foundation.
+#
+# Official updates and community support available at https://nuos.org .
+# Other licensing options and professional services available at https://ccsys.com .
+
+NUOS_VER=0.0.11.0b0.1
+
+. "$(dirname "$(realpath "$0")")/../lib/nu_system.sh"
+
+while getopts fv OPT; do case $OPT in
+	f) OPT_FORCE=y;;
+	v) OPT_VERBOSE=y;;
+esac; done; shift $(($OPTIND-1))
+
+. "$(dirname "$(realpath "$0")")/../lib/nu_common.sh"
+
+[ $# -ge 1 ] || set -- `x=/ca.cer; cd && cd .acme.sh && ls *$x 2> /dev/null | sed -e "s|$x\$||"`
+
+nuos_init
+
+maybe_yell
+
+SSL_CERTS=/etc/ssl/certs
+
+for d in $@; do
+  acme.sh --renew -d $d ${OPT_FORCE:+--force} && renewed=y || renewed=
+  if [ -n "${renewed-}" ]; then
+    cat /root/.acme.sh/$d/$d.cer \
+      >| $SSL_CERTS/$d.crt
+    cat /root/.acme.sh/$d/ca.cer \
+      >| $SSL_CERTS/$d.ca.crt
+    for l in `ls $SSL_CERTS.installed/localhost/$d.crt/* 2> /dev/null`; do
+      cat $SSL_CERTS/$d.crt >| "$l"
+    done
+    for l in `ls $SSL_CERTS.installed/localhost/$d.ca.crt/* 2> /dev/null`; do
+      cat $SSL_CERTS/$d.ca.crt >| "$l"
+    done
+    for l in `ls $SSL_CERTS.installed/localhost/$d.full.crt/* 2> /dev/null`; do
+      cat $SSL_CERTS/$d.crt >| "$l"
+      if [ -f $SSL_CERTS/$d.ca.crt ]; then
+        cat $SSL_CERTS/$d.ca.crt >> "$l"
+      fi
+    done
+  fi
+done

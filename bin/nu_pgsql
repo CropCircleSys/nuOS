@@ -43,7 +43,9 @@ maybe_yell
 
 pghome=`${CHROOTDIR:+chroot "$CHROOTDIR"} pw usershow postgres | cut -d : -f 9`
 [ -e "${CHROOTDIR-}$pghome" ]
-[ ! -e "${CHROOTDIR-}$pghome/data$SHORT_VER" ]
+pg_="$pghome/data$SHORT_VER"
+pg="${CHROOTDIR-}$pg_"
+[ ! -e "$pg" ]
 which expect
 
 sister enable_svc ${CHROOTDIR:+-C "$CHROOTDIR"} postgresql
@@ -64,35 +66,41 @@ ${CHROOTDIR:+chroot "$CHROOTDIR"} expect -n -c '
 ' <<EOF
 $rand_token
 EOF
-[ -f "${CHROOTDIR-}$pghome/data$SHORT_VER/PG_VERSION" ]
+[ -f "$pg/PG_VERSION" ]
 (umask 77 && cat > "${CHROOTDIR-}$pghome/.pgpass") <<EOF
 localhost:*:*:postgres:$rand_token
 EOF
 chown postgres:postgres "${CHROOTDIR-}$pghome/.pgpass"
 
 if [ -n "${OPT_NETWORK-}" ]; then
-	cat >> "${CHROOTDIR-}$pghome/data$SHORT_VER/postgresql.conf" <<'EOF'
+	cat >> "$pg/postgresql.conf" <<'EOF'
 listen_addresses = '*'
 EOF
 	if [ -n "${OPT_SSL-}" ]; then
-		mkdir "${CHROOTDIR-}$pghome/data$SHORT_VER/ssl"
-		${CHROOTDIR:+chroot "$CHROOTDIR"} chown postgres $pghome/data$SHORT_VER/ssl
-		(umask 77 && mkdir "${CHROOTDIR-}$pghome/data$SHORT_VER/ssl/private")
-		${CHROOTDIR:+chroot "$CHROOTDIR"} chown postgres $pghome/data$SHORT_VER/ssl/private
+		SSL="${CHROOTDIR-}/etc/ssl"
+		mkdir "$pg/ssl"
+		${CHROOTDIR:+chroot "$CHROOTDIR"} chown postgres $pg_/ssl
+		(umask 77 && mkdir "$pg/ssl/private")
+		${CHROOTDIR:+chroot "$CHROOTDIR"} chown postgres $pg_/ssl/private
 		if zfs list $POOL_BOOT_NAME-pvt > /dev/null 2>&1; then # this check will need to be refined if ever we support CHROOTDIR
-			chflags schg "${CHROOTDIR-}$pghome/data$SHORT_VER/ssl/private"
-			zfs create -o mountpoint=$pghome/data$SHORT_VER/ssl/private $POOL_BOOT_NAME-pvt/sys/host/pgsql-ssl
-			chmod go-rx "${CHROOTDIR-}$pghome/data$SHORT_VER/ssl/private"
-			${CHROOTDIR:+chroot "$CHROOTDIR"} chown postgres:postgres $pghome/data$SHORT_VER/ssl/private
+			chflags schg "$pg/ssl/private"
+			zfs create -o mountpoint=$pg_/ssl/private $POOL_BOOT_NAME-pvt/sys/host/pgsql-ssl
+			chmod go-rx "$pg/ssl/private"
+			${CHROOTDIR:+chroot "$CHROOTDIR"} chown postgres:postgres $pg_/ssl/private
 		fi
-		cp "${CHROOTDIR-}/etc/ssl/certs/$HOST_NAME.crt" "${CHROOTDIR-}$pghome/data$SHORT_VER/ssl/"
-		${CHROOTDIR:+chroot "$CHROOTDIR"} chown postgres $pghome/data$SHORT_VER/ssl/$HOST_NAME.crt
-		cp "${CHROOTDIR-}/etc/ssl/private/$HOST_NAME.key" "${CHROOTDIR-}$pghome/data$SHORT_VER/ssl/private/"
-		${CHROOTDIR:+chroot "$CHROOTDIR"} chown postgres $pghome/data$SHORT_VER/ssl/private/$HOST_NAME.key
-		if [ -f "${CHROOTDIR-}/etc/ssl/certs/$HOST_NAME.ca.crt" ]; then
-			cat "${CHROOTDIR-}/etc/ssl/certs/$HOST_NAME.ca.crt" >> "${CHROOTDIR-}$pghome/data$SHORT_VER/ssl/$HOST_NAME.crt"
+		if ! cp "$SSL/certs/$HOST_NAME.crt" "$pg/ssl/"; then
+			cp "$SSL/certs/$HOST_NAME.internal.crt" "$pg/ssl/$HOST_NAME.crt"
+			internal=y
 		fi
-		cat >> "${CHROOTDIR-}$pghome/data$SHORT_VER/postgresql.conf" <<EOF
+		${CHROOTDIR:+chroot "$CHROOTDIR"} chown postgres $pg_/ssl/$HOST_NAME.crt
+		cp "$SSL/private/$HOST_NAME.key" "$pg/ssl/private/"
+		${CHROOTDIR:+chroot "$CHROOTDIR"} chown postgres $pg_/ssl/private/$HOST_NAME.key
+		if [ -f "$SSL/certs/$HOST_NAME.ca.crt" ]; then
+			cat "$SSL/certs/$HOST_NAME.ca.crt" >> "$pg/ssl/$HOST_NAME.crt"
+		fi
+		mkdir -p "$SSL/certs.installed/localhost/$HOST_NAME.${internal:+internal.}crt"
+		ln -s "$pg_/ssl/$HOST_NAME.crt" "$SSL/certs.installed/localhost/$d.full.crt/postgres$SHORT_VER"
+		cat >> "$pg/postgresql.conf" <<EOF
 ssl = on
 ssl_cert_file = 'ssl/$HOST_NAME.crt'
 ssl_key_file = 'ssl/private/$HOST_NAME.key'

@@ -72,10 +72,18 @@ user_home=`pw -V "${CHROOTDIR-}/etc" usershow $USER_NAME | cut -d : -f 9`
 ${CHROOTDIR:+chroot "$CHROOTDIR"} su -m $USER_NAME -c "mkdir -p \"$user_home/$HOST_NAME/www/public\""
 
 if [ -n "${OPT_SSL-}" ]; then
-	cp "${CHROOTDIR-}/etc/ssl/certs/$HOST_NAME.crt" "${CHROOTDIR-}/usr/local/etc/$service/ssl/" || cp "${CHROOTDIR-}/etc/ssl/certs/$HOST_NAME.internal.crt" "${CHROOTDIR-}/usr/local/etc/$service/ssl/$HOST_NAME.crt"
+	if cp "${CHROOTDIR-}/etc/ssl/certs/$HOST_NAME.crt" "${CHROOTDIR-}/usr/local/etc/$service/ssl/"; then
+		sufx=crt
+	else
+		sufx=internal.crt
+		cp "${CHROOTDIR-}/etc/ssl/certs/$HOST_NAME.internal.crt" "${CHROOTDIR-}/usr/local/etc/$service/ssl/$HOST_NAME.crt"
+	fi
+	mkdir -p "${CHROOTDIR-}/etc/ssl/certs.installed/localhost/$HOST_NAME.$sufx"
+	ln -s "/usr/local/etc/$service/ssl/$HOST_NAME.crt" "${CHROOTDIR-}/etc/ssl/certs.installed/localhost/$HOST_NAME.$sufx/$service"
 	cp "${CHROOTDIR-}/etc/ssl/private/$HOST_NAME.key" "${CHROOTDIR-}/usr/local/etc/$service/ssl/private/"
-	if [ -f "${CHROOTDIR-}/etc/ssl/certs/$HOST_NAME.ca.crt" ]; then
-		cp "${CHROOTDIR-}/etc/ssl/certs/$HOST_NAME.ca.crt" "${CHROOTDIR-}/usr/local/etc/$service/ssl/"
+	if cp "${CHROOTDIR-}/etc/ssl/certs/$HOST_NAME.ca.crt" "${CHROOTDIR-}/usr/local/etc/$service/ssl/"; then
+		mkdir -p "${CHROOTDIR-}/etc/ssl/certs.installed/localhost/$HOST_NAME.ca.crt"
+		ln -s "/usr/local/etc/$service/ssl/$HOST_NAME.ca.crt" "${CHROOTDIR-}/etc/ssl/certs.installed/localhost/$HOST_NAME.ca.crt/$service"
 	else
 		self_signed=y
 	fi
