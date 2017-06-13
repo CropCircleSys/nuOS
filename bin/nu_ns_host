@@ -22,7 +22,7 @@ while getopts A:c:C:dh:i:klM:r:st:vw OPT; do case $OPT in
 	A) ALTERNATE=$OPTARG;;
 	c) CA_ZONE=$OPTARG;;
 	C) CHROOTDIR=$OPTARG;;
-	d) OPT_DELETE=y;;
+	d) incr OPT_DELETE 1;;
 	h) HOST_NAME=$OPTARG;;
 	i) push PUB_IPS $OPTARG;;
 	k) OPT_EXPORT_KEY_FINGERPRINTS=y;;
@@ -155,7 +155,7 @@ EOF
 						fi
 					else
 						if [ -n "${OPT_DELETE-}" ]; then
-							$knotc_cmd zone-unset $zone $host $([ A = $REC_TYPE -o AAAA = $REC_TYPE ] || echo $REC_TYPE)
+							$knotc_cmd zone-unset $zone $host $([ A = $REC_TYPE -o AAAA = $REC_TYPE ] || echo $REC_TYPE) || ex=1
 						else
 							for ip in $PUB_IPS; do
 								$knotc_cmd zone-set $zone $host $ttl $REC_TYPE $ip
@@ -205,5 +205,8 @@ EOF
 	;;
 esac
 
+if [ -z "${OPT_DELETE-}" -o -z "${ex-}" ]; then
+	echo "Configured host $HOST_NAME in name server."
+fi
 
-echo "Configured host $HOST_NAME in name server."
+[ 2 -le "${OPT_DELETE-}" ] || exit ${ex-0}
