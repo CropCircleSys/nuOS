@@ -35,10 +35,12 @@ SSL_CERTS=/etc/ssl/certs
 
 for d in $@; do
 	if [ -n "${OPT_INSTALL_ONLY-}" ] || acme.sh --renew -d $d ${OPT_FORCE:+--force}; then
-		cat /root/.acme.sh/$d/$d.cer \
-			>| $SSL_CERTS/$d.crt
-		cat /root/.acme.sh/$d/ca.cer \
-			>| $SSL_CERTS/$d.ca.crt
+		if [ -z "${OPT_INSTALL_ONLY-}" ]; then
+			cat /root/.acme.sh/$d/$d.cer \
+				>| $SSL_CERTS/$d.crt
+			cat /root/.acme.sh/$d/ca.cer \
+				>| $SSL_CERTS/$d.ca.crt
+		fi
 		for l in `ls $SSL_CERTS.installed/localhost/$d.crt/* 2> /dev/null`; do
 			cat $SSL_CERTS/$d.crt >| "$l"
 		done
