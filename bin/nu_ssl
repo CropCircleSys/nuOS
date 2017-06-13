@@ -73,7 +73,7 @@ if [ -n "${OPT_EXPORT_TLSA-}" ]; then
 	hash=`$SSL_CMD rsa -pubin -in "$pub_key" -outform DER 2>/dev/null | sha$KEY_BITS`
 	retire_tmp pub_key
 	record_data="$usage $selector $type $hash"
-	if [ 2 = "${OPT_EXPORT_TLSA-}" ]; then
+	if [ 2 -le $OPT_EXPORT_TLSA ]; then
 		port=${STATE-} # XXX repurpose the (-p)rovince option to mean (-p)ort
 		: ${port:=443}
 		: ${TLSA_TRANSPORT:=tcp}
