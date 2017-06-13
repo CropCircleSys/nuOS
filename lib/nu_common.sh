@@ -60,6 +60,10 @@ nuos_ssl_init () {
 		SSL_SUITE=openssl-freebsd-base
 		SSL_CONF=/etc/ssl/openssl.cnf
 	fi
+	if [ ${HOST%%.*} != "`readlink /etc/ssl/certs.installed/localhost`" ]; then
+		mkdir -p /etc/ssl/certs.installed/${HOST%%.*}
+		ln -sf ${HOST%%.*} /etc/ssl/certs.installed/localhost
+	fi
 }
 
 nuos_sha_fngr () {
