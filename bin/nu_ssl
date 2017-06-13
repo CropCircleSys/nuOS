@@ -45,24 +45,27 @@ esac; done; shift $(($OPTIND-1))
 nuos_ssl_init
 
 if [ -n "${OPT_EXPORT_TLSA-}" ]; then
-		: ${KEY_BITS:=256}
-		case $KEY_BITS in
-			256) type=1;;
-			512) type=2;;
-			*) echo "KEY_BITS must be 256 or 512 when using OPT_EXPORT_TLSA" >&2 && exit 85;;
-		esac
-		if [ -f "${CHROOTDIR-}/etc/ssl/certs/$SSL_HOST.crt" ]; then
-			sufx=crt
-			usage=1
-		elif [ -f "${CHROOTDIR-}/etc/ssl/certs/$SSL_HOST.internal.crt" ]; then
-			sufx=internal.crt
-			usage=3
-		else
-			echo "$0: /etc/ssl/certs/$SSL_HOST.crt: No such file or directory" >&2
-			exit 1
-		fi
-		echo -n "$usage 0 $type "
-		$SSL_CMD x509 -in "${CHROOTDIR-}/etc/ssl/certs/$SSL_HOST.$sufx" -outform DER | sha$KEY_BITS
+	: ${KEY_BITS:=256}
+	case $KEY_BITS in
+		256) type=1;;
+		512) type=2;;
+		*) echo "KEY_BITS must be 256 or 512 when using OPT_EXPORT_TLSA" >&2 && exit 85;;
+	esac
+	if [ -f "${CHROOTDIR-}/etc/ssl/certs/$SSL_HOST.crt" ]; then
+		sufx=crt
+		usage=1
+	elif [ -f "${CHROOTDIR-}/etc/ssl/certs/$SSL_HOST.internal.crt" ]; then
+		sufx=internal.crt
+		usage=3
+	else
+		echo "$0: /etc/ssl/certs/$SSL_HOST.crt: No such file or directory" >&2
+		exit 1
+	fi
+	require_tmp pub_key
+	$SSL_CMD x509 -in "${CHROOTDIR-}/etc/ssl/certs/$SSL_HOST.$sufx" -noout -pubkey >| "$pub_key"
+	echo -n "$usage 1 $type "
+	$SSL_CMD rsa -pubin -in "$pub_key" -outform DER 2>/dev/null | sha$KEY_BITS
+	retire_tmp pub_key
 	exit 0
 fi
 
