@@ -209,4 +209,4 @@ if [ -z "${OPT_DELETE-}" -o -z "${ex-}" ]; then
 	echo "Configured host $HOST_NAME in name server."
 fi
 
-[ 2 -le "${OPT_DELETE-}" ] || exit ${ex-0}
+[ 2 -le "${OPT_DELETE-0}" ] || exit ${ex-0}
