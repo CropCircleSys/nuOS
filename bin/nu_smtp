@@ -94,7 +94,12 @@ if [ -n "${OPT_SSL-}" ]; then
 		zfs create -o mountpoint=/usr/local/etc/postfix/ssl/private $POOL_NAME-pvt/sys/host/smtp-ssl
 		chmod go-rx "${CHROOTDIR-}/usr/local/etc/postfix/ssl/private"
 	fi
-	cp "${CHROOTDIR-}/etc/ssl/certs/$HOST_NAME.crt" "${CHROOTDIR-}/usr/local/etc/postfix/ssl/"
+	if ! cp "${CHROOTDIR-}/etc/ssl/certs/$HOST_NAME.crt" "${CHROOTDIR-}/usr/local/etc/postfix/ssl/"; then
+		cp "${CHROOTDIR-}/etc/ssl/certs/$HOST_NAME.internal.crt" "${CHROOTDIR-}/usr/local/etc/postfix/ssl/$HOST_NAME.crt"
+		internal=y
+	fi
+	mkdir -p "${CHROOTDIR-}/etc/ssl/certs.installed/localhost/$HOST_NAME.${internal:+internal.}crt"
+	ln -s "/usr/local/etc/postfix/ssl/$HOST_NAME.crt" "${CHROOTDIR-}/etc/ssl/certs.installed/localhost/$HOST_NAME.${internal:+internal.}crt/postfix"
 	cp "${CHROOTDIR-}/etc/ssl/private/$HOST_NAME.key" "${CHROOTDIR-}/usr/local/etc/postfix/ssl/private/"
 	cat >> "${CHROOTDIR-}/usr/local/etc/postfix/main.cf" <<EOF
 smtpd_tls_security_level = may
@@ -105,8 +110,9 @@ smtpd_tls_cert_file = \$config_directory/ssl/$HOST_NAME.crt
 smtpd_tls_key_file = \$config_directory/ssl/private/$HOST_NAME.key
 EOF
 
-	if [ -f "${CHROOTDIR-}/etc/ssl/certs/$HOST_NAME.ca.crt" ]; then
-		cp "${CHROOTDIR-}/etc/ssl/certs/$HOST_NAME.ca.crt" "${CHROOTDIR-}/usr/local/etc/postfix/ssl/"
+	if cp "${CHROOTDIR-}/etc/ssl/certs/$HOST_NAME.ca.crt" "${CHROOTDIR-}/usr/local/etc/postfix/ssl/"; then
+		mkdir -p "${CHROOTDIR-}/etc/ssl/certs.installed/localhost/$HOST_NAME.ca.crt"
+		ln -s "/usr/local/etc/postfix/ssl/$HOST_NAME.ca.crt" "${CHROOTDIR-}/etc/ssl/certs.installed/localhost/$HOST_NAME.ca.crt/postfix"
 		cat >> "${CHROOTDIR-}/usr/local/etc/postfix/main.cf" <<EOF
 smtpd_tls_CAfile = \$config_directory/ssl/$HOST_NAME.ca.crt
 EOF
