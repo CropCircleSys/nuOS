@@ -62,10 +62,10 @@ if [ -n "${OPT_SSL-}" ]; then
 	if [ -f "${CHROOTDIR-}/etc/ssl/certs/$HOST_NAME.ca.crt" ]; then
 		cat "${CHROOTDIR-}/etc/ssl/certs/$HOST_NAME.ca.crt" >> "${CHROOTDIR-}/usr/local/etc/pure-ftpd/ssl/private/$HOST_NAME.pem"
 	fi
-	ln -s private/$HOST_NAME.pem "${CHROOTDIR-}/usr/local/etc/pure-ftpd/ssl/server.pem"
-	sed -i '' -Ee '
-		/^[#[:blank:]]*TLS(CipherSuite)?[[:>:]]/s/^[#[:blank:]]*//
-	' "${CHROOTDIR-}/usr/local/etc/pure-ftpd.conf"
+	sed -i '' -Ee "
+		/^[#[:blank:]]*TLS[[:>:]]([[:blank:]]*)[[:digit:]]\$/s//TLS\\11/
+		/^[#[:blank:]]*CertFile[[:>:]]([[:blank:]]*).*\$/s||CertFile\\1/usr/local/etc/pure-ftpd/ssl/private/$HOST_NAME.pem|
+		" "${CHROOTDIR-}/usr/local/etc/pure-ftpd.conf"
 fi
 
 sister enable_svc ${CHROOTDIR:+-C "$CHROOTDIR"} pureftpd
