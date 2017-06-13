@@ -41,17 +41,13 @@ for d in $@; do
 			cat /root/.acme.sh/$d/ca.cer \
 				>| $SSL_CERTS/$d.ca.crt
 		fi
-		for l in `ls $SSL_CERTS.installed/localhost/$d.crt/* 2> /dev/null`; do
-			cat $SSL_CERTS/$d.crt >| "$l"
-		done
-		for l in `ls $SSL_CERTS.installed/localhost/$d.ca.crt/* 2> /dev/null`; do
-			cat $SSL_CERTS/$d.ca.crt >| "$l"
-		done
-		for l in `ls $SSL_CERTS.installed/localhost/$d.full.crt/* 2> /dev/null`; do
-			cat $SSL_CERTS/$d.crt >| "$l"
-			if [ -f $SSL_CERTS/$d.ca.crt ]; then
-				cat $SSL_CERTS/$d.ca.crt >> "$l"
-			fi
+		for x in crt ca.crt full.crt; do
+			for l in `ls $SSL_CERTS.installed/localhost/$d.$x/* 2> /dev/null`; do
+				cat $SSL_CERTS/$d.${x#full.} >| "$l"
+				if [ full.crt = $x ] && [ -f $SSL_CERTS/$d.ca.crt ]; then
+					cat $SSL_CERTS/$d.ca.crt >> "$l"
+				fi
+			done
 		done
 	fi
 done
