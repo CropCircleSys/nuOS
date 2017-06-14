@@ -34,15 +34,10 @@ maybe_yell
 SSL_CERTS=/etc/ssl/certs
 
 for d in $@; do
-	if [ -n "${OPT_INSTALL_ONLY-}" ] \
-			|| acme.sh --renew -d $d ${OPT_FORCE:+--force} \
-				| sed -Ee "
-						/^\\[[^]]+] Renew: '$d'\$/d
-						/^\\[[^]]+] Skip, Next renewal time is: .+\$/d
-						/^\\[[^]]+] Add '--force' to force to renew.\$/d
-					"
-	then
+	require_tmp acme_out
+	if [ -n "${OPT_INSTALL_ONLY-}" ] || acme.sh --renew -d $d ${OPT_FORCE:+--force} >| "$acme_out"; then
 		if [ -z "${OPT_INSTALL_ONLY-}" ]; then
+			cat "$acme_out"
 			cat /root/.acme.sh/$d/$d.cer \
 				>| $SSL_CERTS/$d.crt
 			cat /root/.acme.sh/$d/ca.cer \
@@ -57,4 +52,5 @@ for d in $@; do
 			done
 		done
 	fi
+	retire_tmp acme_out
 done
