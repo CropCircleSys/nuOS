@@ -27,14 +27,21 @@ esac; done; shift $(($OPTIND-1))
 
 [ $# -ge 1 ] || set -- `x=/ca.cer; cd && cd .acme.sh && ls *$x 2> /dev/null | sed -e "s|$x\$||"`
 
-nuos_init
+nuos_init -q
 
 maybe_yell
 
 SSL_CERTS=/etc/ssl/certs
 
 for d in $@; do
-	if [ -n "${OPT_INSTALL_ONLY-}" ] || acme.sh --renew -d $d ${OPT_FORCE:+--force}; then
+	if [ -n "${OPT_INSTALL_ONLY-}" ] \
+			|| acme.sh --renew -d $d ${OPT_FORCE:+--force} \
+				| sed -Ee "
+						/^\\[[^]]+] Renew: '$d'\$/d
+						/^\\[[^]]+] Skip, Next renewal time is: .+\$/d
+						/^\\[[^]]+] Add '--force' to force to renew.\$/d
+					"
+	then
 		if [ -z "${OPT_INSTALL_ONLY-}" ]; then
 			cat /root/.acme.sh/$d/$d.cer \
 				>| $SSL_CERTS/$d.crt
