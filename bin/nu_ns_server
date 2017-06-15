@@ -222,14 +222,17 @@ EOF
 EOF
 		cat >> "$ETC/example$sufx.com.zone" <<EOF
 	TXT	"v=spf1 mx -all"
-
 EOF
 
 		cat >> "$ETC/example$sufx.in-addr.arpa.zone" <<EOF
 	TXT	"v=spf1 -all"
+EOF
+		
+		tee -a "$ETC/example$sufx.com.zone" >> "$ETC/example$sufx.in-addr.arpa.zone" <<EOF
+
+*	TXT	"v=spf1 -all"
 
 EOF
-
 		
 		i=1
 		for ip in $PUB_IPS; do
