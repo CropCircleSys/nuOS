@@ -45,6 +45,7 @@ collection_vars_init () {
 		misc/buffer
 		sysutils/pipemeter
 		archivers/lzop
+		archivers/p7zip
 		sysutils/smartmontools
 		net/rsync
 		security/sudo
@@ -87,6 +88,7 @@ collection_vars_init () {
 		databases/mysql57-server
 		databases/mongodb34
 		databases/redis
+		lang/mono-basic
 		www/npm
 		www/apache24
 		www/nginx
@@ -94,6 +96,7 @@ collection_vars_init () {
 		security/cyrus-sasl2-saslauthd
 		net-im/ejabberd
 		lang/phantomjs
+		net/rabbitmq
 		textproc/rubygem-sass
 		emulators/virtualbox-ose
 		graphics/povray-meta
@@ -104,6 +107,7 @@ collection_vars_init () {
 		mail/roundcube-sieverules
 		irc/irssi
 		sysutils/lsof
+		net/kamailio
 	'
 	
 	COLL_office='
@@ -129,5 +133,6 @@ collection_vars_init () {
 		www/firefox
 		mail/thunderbird
 		multimedia/vlc
+		net-im/jitsi
 	'
 }
