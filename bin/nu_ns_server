@@ -18,8 +18,10 @@ NUOS_VER=0.0.11.0b0.1
 
 . "$(dirname "$(realpath "$0")")/../lib/nu_system.sh"
 
-while getopts A:C:dh:i:k:m:s:t:vz: OPT; do case $OPT in
+while getopts a:A:b:C:dh:i:k:m:s:t:vz: OPT; do case $OPT in
+	a) ALGORITHM=$OPTARG;;
 	A) ALTERNATE=$OPTARG;;
+	b) SIG_BITS=$OPTARG;;
 	C) CHROOTDIR=$OPTARG;;
 	d) OPT_DNSSEC=y;;
 	h) HOST_NAME=$OPTARG;;
@@ -65,6 +67,13 @@ case $SOFTWARE in
 		echo 'slave ips       -s SLAVES         ' ${SLAVES-<none>}
 		echo -n 'dnssec          -d OPT_DNSSEC      ' && [ -n "${OPT_DNSSEC-}" ] && echo set || echo null
 		if [ -n "${OPT_DNSSEC-}" ]; then
+			echo 'algorithm       -a ALGORITHM      ' ${ALGORITHM:=rsa}
+			echo 'hash size       -b SIG_BITS       ' ${SIG_BITS:=256}
+			case $ALGORITHM in
+				rsa) algo=rsasha$SIG_BITS;;
+				ecdsa) algo=ecdsap$SIG_BITSsha$SIG_BITS;;
+			esac
+			[ -n "$algo" ]
 			echo 'keykey size     -k KSK_BITS       ' ${KSK_BITS:=2048}
 			echo 'zonekey size    -z ZSK_BITS       ' ${ZSK_BITS:=1024}
 		fi
@@ -104,10 +113,12 @@ case $SOFTWARE in
 	
 	knot)
 		
-		if [ ! -f "${CHROOTDIR-}/usr/local/etc/knot/example.com.zone.sample" ]; then
-			mv -n -h "${CHROOTDIR-}/usr/local/etc/knot/example.com.zone" "${CHROOTDIR-}/usr/local/etc/knot/example.com.zone.sample"
+		ETC="${CHROOTDIR-}/usr/local/etc/knot"
+		sufx=${ALTERNATE:+_${ALTERNATE}}
+		if [ ! -f "$ETC/example.com.zone.sample" ]; then
+			mv -n -h "$ETC/example.com.zone" "$ETC/example.com.zone.sample"
 		fi
-		[ ! -e "${CHROOTDIR-}/usr/local/etc/knot/knot${ALTERNATE:+_${ALTERNATE}}.conf" -a -f "${CHROOTDIR-}/usr/local/etc/knot/knot.conf.sample" ] || diff -q "${CHROOTDIR-}/usr/local/etc/knot/knot.conf.sample" "${CHROOTDIR-}/usr/local/etc/knot/knot${ALTERNATE:+_${ALTERNATE}}.conf"
+		[ ! -e "$ETC/knot$sufx.conf" -a -f "$ETC/knot.conf.sample" ] || diff -q "$ETC/knot.conf.sample" "$ETC/knot$sufx.conf"
 		
 		case $MODE in
 			master)
@@ -125,13 +136,13 @@ case $SOFTWARE in
 				s/^([[:blank:]]*)# user:.*$/\1user: knot:knot/
 				p
 			}
-			/^log:/,/^$/p' "${CHROOTDIR-}/usr/local/etc/knot/knot.conf.sample" >| "${CHROOTDIR-}/usr/local/etc/knot/knot${ALTERNATE:+_${ALTERNATE}}.conf"
+			/^log:/,/^$/p' "$ETC/knot.conf.sample" >| "$ETC/knot$sufx.conf"
 		
 		if [ -n "${MASTERS-}${SLAVES-}" ]; then
-			cat >> "${CHROOTDIR-}/usr/local/etc/knot/knot${ALTERNATE:+_${ALTERNATE}}.conf" <<EOF
+			cat >> "$ETC/knot$sufx.conf" <<EOF
 remote:
   - id: $other_mode
-    address: ${MASTERS-}${SLAVES-}@53
+    address: ${MASTERS-}${SLAVES-}
 
 acl:
   - id: acl_$other_mode
@@ -142,10 +153,10 @@ EOF
 		fi
 		
 		if [ -n "${OPT_DNSSEC-}" ]; then
-			cat >> "${CHROOTDIR-}/usr/local/etc/knot/knot${ALTERNATE:+_${ALTERNATE}}.conf" <<EOF
+			cat >> "$ETC/knot$sufx.conf" <<EOF
 policy:
-  - id: rsa
-    algorithm: RSASHA256
+  - id: $ALGORITHM
+    algorithm: $algo
     ksk-size: $KSK_BITS
     zsk-size: $ZSK_BITS
     nsec3: on
@@ -153,7 +164,7 @@ policy:
 EOF
 		fi
 		
-		cat >> "${CHROOTDIR-}/usr/local/etc/knot/knot${ALTERNATE:+_${ALTERNATE}}.conf" <<EOF
+		cat >> "$ETC/knot$sufx.conf" <<EOF
 template:
   - id: default
     semantic-checks: on
@@ -162,23 +173,34 @@ ${MASTERS+    master: master
 }${SLAVES+    notify: slave
     acl: acl_slave
 }${OPT_DNSSEC+    dnssec-signing: on
-    dnssec-policy: rsa
-    kasp-db: kasp
+    dnssec-policy: $ALGORITHM
 }
 zone:
 EOF
 		
-		sed -nEe '/^\$/,/^$/p;/^@/,/^$/{s/\<dns1\>/ns1/;p;}' "${CHROOTDIR-}/usr/local/etc/knot/example.com.zone.sample" >| "${CHROOTDIR-}/usr/local/etc/knot/example${ALTERNATE:+_${ALTERNATE}}.com.zone"
+		sed -nEe '
+				/^\$/,/^$/p
+				/^@/,/^$/{
+					s/\<dns1\>/ns1/
+					p
+				}
+			' \
+			"$ETC/example.com.zone.sample" \
+				>| "$ETC/example$sufx.com.zone"
 		
 		i=1
 		for ip in $PUB_IPS; do
-			cat >> "${CHROOTDIR-}/usr/local/etc/knot/example${ALTERNATE:+_${ALTERNATE}}.com.zone" <<EOF
+			cat >> "$ETC/example$sufx.com.zone" <<EOF
 	NS	ns$i
 EOF
 			i=$(($i + 1))
 		done
 		
-		sed -Ee 's/\<example\.com\>/example.in-addr.arpa/g' "${CHROOTDIR-}/usr/local/etc/knot/example${ALTERNATE:+_${ALTERNATE}}.com.zone" >| "${CHROOTDIR-}/usr/local/etc/knot/example${ALTERNATE:+_${ALTERNATE}}.in-addr.arpa.zone"
+		sed -Ee '
+				s/\<example\.com\>/example.in-addr.arpa/g
+			' \
+			"$ETC/example$sufx.com.zone" \
+				>| "$ETC/example$sufx.in-addr.arpa.zone"
 		
 		i=1
 		for ip in $PUB_IPS; do
@@ -186,17 +208,32 @@ EOF
 				1) order=0;;
 				*) order=10;;
 			esac
-			cat >> "${CHROOTDIR-}/usr/local/etc/knot/example${ALTERNATE:+_${ALTERNATE}}.com.zone" <<EOF
+			cat >> "$ETC/example$sufx.com.zone" <<EOF
 	MX	$order mx$i
 EOF
 			i=$(($i + 1))
 		done
 		
-		echo | tee -a "${CHROOTDIR-}/usr/local/etc/knot/example${ALTERNATE:+_${ALTERNATE}}.com.zone" >> "${CHROOTDIR-}/usr/local/etc/knot/example${ALTERNATE:+_${ALTERNATE}}.in-addr.arpa.zone"
+		tee -a "$ETC/example$sufx.com.zone" >> "$ETC/example$sufx.in-addr.arpa.zone" <<EOF
+
+	CAA	128 issue ";"
+	CAA	128 issuewild ";"
+
+EOF
+		cat >> "$ETC/example$sufx.com.zone" <<EOF
+	TXT	"v=spf1 mx -all"
+
+EOF
+
+		cat >> "$ETC/example$sufx.in-addr.arpa.zone" <<EOF
+	TXT	"v=spf1 -all"
+
+EOF
+
 		
 		i=1
 		for ip in $PUB_IPS; do
-			tee -a "${CHROOTDIR-}/usr/local/etc/knot/example${ALTERNATE:+_${ALTERNATE}}.com.zone" >> "${CHROOTDIR-}/usr/local/etc/knot/example${ALTERNATE:+_${ALTERNATE}}.in-addr.arpa.zone" <<EOF
+			tee -a "$ETC/example$sufx.com.zone" >> "$ETC/example$sufx.in-addr.arpa.zone" <<EOF
 ns$i	A	$ip
 
 EOF
@@ -205,7 +242,7 @@ EOF
 		
 		i=1
 		for ip in $PUB_IPS; do
-			cat >> "${CHROOTDIR-}/usr/local/etc/knot/example${ALTERNATE:+_${ALTERNATE}}.com.zone" <<EOF
+			cat >> "$ETC/example$sufx.com.zone" <<EOF
 mx$i	A	$ip
 
 EOF
@@ -214,34 +251,38 @@ EOF
 		
 		i=1
 		for ip in $PUB_IPS; do
-			cat >> "${CHROOTDIR-}/usr/local/etc/knot/example${ALTERNATE:+_${ALTERNATE}}.com.zone" <<EOF
+			cat >> "$ETC/example$sufx.com.zone" <<EOF
+slave$i	A	$ip
+
+EOF
+			i=$(($i + 1))
+		done
+		
+		i=1
+		for ip in $PUB_IPS; do
+			cat >> "$ETC/example$sufx.com.zone" <<EOF
 `[ $i -gt 1 ] || echo @`	A	$ip
 EOF
 			i=$(($i + 1))
 		done
-
-		cat >> "${CHROOTDIR-}/usr/local/etc/knot/example${ALTERNATE:+_${ALTERNATE}}.com.zone" <<EOF
-
-@	CAA	128 issue ";" 
-	CAA	128 issuewild ";" 
-
-EOF
+		
+		echo >> "$ETC/example$sufx.com.zone"
 		
 		i=1
 		for ip in $PUB_IPS; do
-			cat >> "${CHROOTDIR-}/usr/local/etc/knot/example${ALTERNATE:+_${ALTERNATE}}.com.zone" <<EOF
+			cat >> "$ETC/example$sufx.com.zone" <<EOF
 `[ $i -gt 1 ] || echo www`	A	$ip
 EOF
 			i=$(($i + 1))
 		done
 		
-		cat >> "${CHROOTDIR-}/usr/local/etc/knot/example${ALTERNATE:+_${ALTERNATE}}.in-addr.arpa.zone" <<EOF
+		cat >> "$ETC/example$sufx.in-addr.arpa.zone" <<EOF
 @	PTR	example.com.
 EOF
 		
 		if [ $MODE = slave ]; then
 			for ip in $PUB_IPS; do
-				echo "  - domain: `rev_zone $ip`" >> "${CHROOTDIR-}/usr/local/etc/knot/knot${ALTERNATE:+_${ALTERNATE}}.conf"
+				echo "  - domain: `rev_zone $ip`" >> "$ETC/knot$sufx.conf"
 			done
 		fi
 		
