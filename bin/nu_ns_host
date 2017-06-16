@@ -196,7 +196,7 @@ EOF
 		if [ -z "${OPT_LITE-}" ]; then
 			: ${zone:=$HOST_NAME}
 			[ -n "${conf_began-}" ] || { $knotc_cmd conf-begin && conf_began=y; }
-			$knotc_cmd conf-${OPT_DELETE+:un}set "zone[$zone]"
+			$knotc_cmd conf-${OPT_DELETE:+un}set "zone[$zone]"
 			if [ -z "${OPT_DELETE-}" -a master = $MODE ]; then
 				[ slave = $MODE ] || $knotc_cmd conf-set "zone[$zone].file" "/var/db/knot${ALTERNATE:+_${ALTERNATE}}/$zone.zone"
 			fi
