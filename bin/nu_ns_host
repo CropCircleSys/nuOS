@@ -127,6 +127,7 @@ case $SOFTWARE in
 	knot)
 		[ $MODE = $default_mode ]
 		zone=$HOST_NAME
+		knotc_cmd="$(echo ${CHROOTDIR:+chroot "$CHROOTDIR"} knotc ${ALTERNATE:+-c /usr/local/etc/knot/knot_$ALTERNATE.conf})"
 		case $MODE in
 			master)
 				if [ ! -d "${CHROOTDIR-}/var/db/knot${ALTERNATE:+_${ALTERNATE}}" ]; then
@@ -141,7 +142,6 @@ case $SOFTWARE in
 					else
 						host=${HOST_NAME%.$zone}
 					fi
-					knotc_cmd="$(echo ${CHROOTDIR:+chroot "$CHROOTDIR"} knotc ${ALTERNATE:+-c /usr/local/etc/knot/knot_$ALTERNATE.conf})"
 					read -r _ _ _ type _ _ _ _ ttl _ _ <<EOF
 $($knotc_cmd zone-read $zone @ SOA)
 EOF
