@@ -61,6 +61,8 @@ collection_vars_init () {
 		developer
 		net-mgmt/lldpd
 		mail/postfix
+		mail/opendkim
+		mail/opendmarc
 		dns/djbdns
 		dns/knot2
 		security/acme.sh

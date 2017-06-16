@@ -1,0 +1,140 @@
+--- ../opendkim.orig/files/patch-opendkim_opendkim-lua.c	1970-01-01 00:00:00.000000000 +0000
++++ files/patch-opendkim_opendkim-lua.c	2017-06-16 03:38:51.623515000 +0000
+@@ -0,0 +1,137 @@
++--- opendkim/opendkim-lua.c.orig	2015-02-04 00:31:11.000000000 +0000
+++++ opendkim/opendkim-lua.c	2017-06-16 03:37:07.741427000 +0000
++@@ -282,7 +282,7 @@
++ 		free(ptr);
++ 		return NULL;
++ 	}
++-# if LUA_VERSION_NUM == 502
+++# if (LUA_VERSION_NUM == 502 || LUA_VERSION_NUM == 503)
++ 	else if (nsize != 0 && ptr == NULL)
++ # else /* LUA_VERSION_NUM == 502 */
++ 	else if (nsize != 0 && osize == 0)
++@@ -482,7 +482,7 @@
++ 	**  Register functions.
++ 	*/
++ 
++-# if LUA_VERSION_NUM == 502
+++# if (LUA_VERSION_NUM == 502 || LUA_VERSION_NUM == 503)
++ 	luaL_newlib(l, dkimf_lua_lib_setup);
++ 	lua_setglobal(l, "odkim");
++ # else /* LUA_VERSION_NUM == 502 */
++@@ -529,7 +529,7 @@
++ 	/* import other globals */
++ 	dkimf_import_globals(ctx, l);
++ 
++-# if LUA_VERSION_NUM == 502
+++# if (LUA_VERSION_NUM == 502 || LUA_VERSION_NUM == 503)
++ 	switch (lua_load(l, dkimf_lua_reader, (void *) &io, name, NULL))
++ # else /* LUA_VERSION_NUM == 502 */
++ 	switch (lua_load(l, dkimf_lua_reader, (void *) &io, name))
++@@ -561,7 +561,7 @@
++ 		io.lua_io_len = 0;
++ 		io.lua_io_alloc = 0;
++ 
++-		if (lua_dump(l, dkimf_lua_writer, &io) == 0)
+++		if (lua_dump(l, dkimf_lua_writer, &io, 0) == 0)
++ 		{
++ 			*keep = (void *) io.lua_io_script;
++ 			*funclen = io.lua_io_len;
++@@ -637,7 +637,7 @@
++ 	**  Register functions.
++ 	*/
++ 
++-# if LUA_VERSION_NUM == 502
+++# if (LUA_VERSION_NUM == 502 || LUA_VERSION_NUM == 503)
++ 	luaL_newlib(l, dkimf_lua_lib_screen);
++ 	lua_setglobal(l, "odkim");
++ # else /* LUA_VERSION_NUM == 502 */
++@@ -674,7 +674,7 @@
++ 	/* import other globals */
++ 	dkimf_import_globals(ctx, l);
++ 
++-# if LUA_VERSION_NUM == 502
+++# if (LUA_VERSION_NUM == 502 || LUA_VERSION_NUM == 503)
++ 	switch (lua_load(l, dkimf_lua_reader, (void *) &io, name, NULL))
++ # else /* LUA_VERSION_NUM == 502 */
++ 	switch (lua_load(l, dkimf_lua_reader, (void *) &io, name))
++@@ -706,7 +706,7 @@
++ 		io.lua_io_len = 0;
++ 		io.lua_io_alloc = 0;
++ 
++-		if (lua_dump(l, dkimf_lua_writer, &io) == 0)
+++		if (lua_dump(l, dkimf_lua_writer, &io, 0) == 0)
++ 		{
++ 			*keep = (void *) io.lua_io_script;
++ 			*funclen = io.lua_io_len;
++@@ -782,7 +782,7 @@
++ 	**  Register functions.
++ 	*/
++ 
++-# if LUA_VERSION_NUM == 502
+++# if (LUA_VERSION_NUM == 502 || LUA_VERSION_NUM == 503)
++ 	luaL_newlib(l, dkimf_lua_lib_stats);
++ 	lua_setglobal(l, "odkim");
++ # else /* LUA_VERSION_NUM == 502 */
++@@ -911,7 +911,7 @@
++ 	/* import other globals */
++ 	dkimf_import_globals(ctx, l);
++ 
++-# if LUA_VERSION_NUM == 502
+++# if (LUA_VERSION_NUM == 502 || LUA_VERSION_NUM == 503)
++ 	switch (lua_load(l, dkimf_lua_reader, (void *) &io, name, NULL))
++ # else /* LUA_VERSION_NUM == 502 */
++ 	switch (lua_load(l, dkimf_lua_reader, (void *) &io, name))
++@@ -943,7 +943,7 @@
++ 		io.lua_io_len = 0;
++ 		io.lua_io_alloc = 0;
++ 
++-		if (lua_dump(l, dkimf_lua_writer, &io) == 0)
+++		if (lua_dump(l, dkimf_lua_writer, &io, 0) == 0)
++ 		{
++ 			*keep = (void *) io.lua_io_script;
++ 			*funclen = io.lua_io_len;
++@@ -1019,7 +1019,7 @@
++ 	**  Register functions.
++ 	*/
++ 
++-# if LUA_VERSION_NUM == 502
+++# if (LUA_VERSION_NUM == 502 || LUA_VERSION_NUM == 503)
++ 	luaL_newlib(l, dkimf_lua_lib_final);
++ 	lua_setglobal(l, "odkim");
++ # else /* LUA_VERSION_NUM == 502 */
++@@ -1148,7 +1148,7 @@
++ 	/* import other globals */
++ 	dkimf_import_globals(ctx, l);
++ 
++-# if LUA_VERSION_NUM == 502
+++# if (LUA_VERSION_NUM == 502 || LUA_VERSION_NUM == 503)
++ 	switch (lua_load(l, dkimf_lua_reader, (void *) &io, name, NULL))
++ # else /* LUA_VERSION_NUM == 502 */
++ 	switch (lua_load(l, dkimf_lua_reader, (void *) &io, name))
++@@ -1180,7 +1180,7 @@
++ 		io.lua_io_len = 0;
++ 		io.lua_io_alloc = 0;
++ 
++-		if (lua_dump(l, dkimf_lua_writer, &io) == 0)
+++		if (lua_dump(l, dkimf_lua_writer, &io, 0) == 0)
++ 		{
++ 			*keep = (void *) io.lua_io_script;
++ 			*funclen = io.lua_io_len;
++@@ -1249,7 +1249,7 @@
++ 		lua_pushstring(l, query);
++ 	lua_setglobal(l, "query");
++ 
++-# if LUA_VERSION_NUM == 502
+++# if (LUA_VERSION_NUM == 502 || LUA_VERSION_NUM == 503)
++ 	switch (lua_load(l, dkimf_lua_reader, (void *) &io, script, NULL))
++ # else /* LUA_VERSION_NUM == 502 */
++ 	switch (lua_load(l, dkimf_lua_reader, (void *) &io, script))
++@@ -1281,7 +1281,7 @@
++ 		io.lua_io_len = 0;
++ 		io.lua_io_alloc = 0;
++ 
++-		if (lua_dump(l, dkimf_lua_writer, &io) == 0)
+++		if (lua_dump(l, dkimf_lua_writer, &io, 0) == 0)
++ 		{
++ 			*keep = (void *) io.lua_io_script;
++ 			*funclen = io.lua_io_len;
