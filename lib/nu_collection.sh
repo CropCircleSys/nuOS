@@ -49,6 +49,7 @@ collection_vars_init () {
 		sysutils/smartmontools
 		net/rsync
 		security/sudo
+		textproc/jq
 	'
 	
 	COLL_developer='
