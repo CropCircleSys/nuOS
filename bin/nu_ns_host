@@ -184,6 +184,9 @@ EOF
 										> "${CHROOTDIR-}/var/db/knot${ALTERNATE:+_${ALTERNATE}}/$rz.zone"
 							[ -n "${conf_began-}" ] || { $knotc_cmd conf-begin && conf_began=y; }
 							$knotc_cmd conf-set "zone[$rz]"
+							cat >> "${CHROOTDIR-}/usr/local/etc/knot/knot${ALTERNATE:+_${ALTERNATE}}.conf" <<EOF
+  - domain: $rz
+EOF
 						fi
 					done
 				fi
@@ -195,7 +198,17 @@ EOF
 		if [ -z "${OPT_LITE-}" ]; then
 			: ${zone:=$HOST_NAME}
 			[ -n "${conf_began-}" ] || { $knotc_cmd conf-begin && conf_began=y; }
-			$knotc_cmd conf-${OPT_DELETE:+un}set "zone[$zone]"
+			if [ -n "${OPT_DELETE-}" ]; then
+				$knotc_cmd conf-unset "zone[$zone]"
+				zone_escd="$(echo $zone | sed -e 's/\./\\./g')"
+				sed -i '' -e "/^[[:blank:]]*-[[:blank:]]*domain:[[:blank:]]*$zone_escd[[:blank:]]*\$/d" \
+					"${CHROOTDIR-}/usr/local/etc/knot/knot${ALTERNATE:+_${ALTERNATE}}.conf"
+			else
+				$knotc_cmd conf-set "zone[$zone]"
+				cat >> "${CHROOTDIR-}/usr/local/etc/knot/knot${ALTERNATE:+_${ALTERNATE}}.conf" <<EOF
+  - domain: $zone
+EOF
+			fi
 		fi
 		[ -z "${conf_began-}" ] || $knotc_cmd conf-commit
 	;;
