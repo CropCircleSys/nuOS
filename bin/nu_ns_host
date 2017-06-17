@@ -184,7 +184,6 @@ EOF
 										> "${CHROOTDIR-}/var/db/knot${ALTERNATE:+_${ALTERNATE}}/$rz.zone"
 							[ -n "${conf_began-}" ] || { $knotc_cmd conf-begin && conf_began=y; }
 							$knotc_cmd conf-set "zone[$rz]"
-							$knotc_cmd conf-set "zone[$rz].file" "/var/db/knot${ALTERNATE:+_${ALTERNATE}}/$rz.zone"
 						fi
 					done
 				fi
