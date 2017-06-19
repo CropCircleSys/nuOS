@@ -31,8 +31,7 @@ while getopts A:c:C:dh:i:klM:r:st:vw OPT; do case $OPT in
 		master|slave) ;; *) exit 22; esac;;
 	r) REC_TYPE="`echo "$OPTARG" | tr '[:lower:]' '[:upper:]'`"; OPT_LITE=y;;
 	s) OPT_SINGLE_RECORD=y;;
-	t) SOFTWARE=$OPTARG; case $SOFTWARE in
-		djb|knot) ;; *) exit 22; esac;;
+	t) TTL=$OPTARG;;
 	v) OPT_VERBOSE=y;;
 	w) OPT_CA_WILDCARD=y;;
 esac; done; shift $(($OPTIND-1))
@@ -142,23 +141,25 @@ case $SOFTWARE in
 					else
 						host=${HOST_NAME%.$zone}
 					fi
-					read -r _ _ _ type _ _ _ _ ttl _ _ <<EOF
-$($knotc_cmd zone-read $zone @ SOA)
-EOF
-					[ SOA = "$type" ]
+					if [ $REC_TYPE = CAA -o '(' $REC_TYPE = TXT -a '(' $host = _acme-challenge -o $host != "${host#_acme-challenge.}" ')' ')' ]; then
+						default_ttl=60
+					else
+						default_ttl=3600
+					fi
+					: ${TTL:=$default_ttl}
 					$knotc_cmd zone-begin $zone
 					if [ -n "${OPT_SINGLE_RECORD-}" ]; then
 						if [ -n "${OPT_DELETE-}" ]; then
 							$knotc_cmd zone-unset $zone $host $REC_TYPE "$PUB_IPS"
 						else
-							$knotc_cmd zone-set $zone $host $ttl $REC_TYPE "$PUB_IPS"
+							$knotc_cmd zone-set $zone $host $TTL $REC_TYPE "$PUB_IPS"
 						fi
 					else
 						if [ -n "${OPT_DELETE-}" ]; then
 							$knotc_cmd zone-unset $zone $host $([ A = $REC_TYPE -o AAAA = $REC_TYPE ] || echo $REC_TYPE) || ex=1
 						else
 							for ip in $PUB_IPS; do
-								$knotc_cmd zone-set $zone $host $ttl $REC_TYPE $ip
+								$knotc_cmd zone-set $zone $host $TTL $REC_TYPE $ip
 							done
 						fi
 					fi

@@ -216,8 +216,8 @@ EOF
 		
 		tee -a "$ETC/example$sufx.com.zone" >> "$ETC/example$sufx.in-addr.arpa.zone" <<EOF
 
-	CAA	128 issue ";"
-	CAA	128 issuewild ";"
+	1m	CAA	128 issue ";"
+	1m	CAA	128 issuewild ";"
 
 EOF
 		cat >> "$ETC/example$sufx.com.zone" <<EOF
@@ -231,6 +231,11 @@ EOF
 		tee -a "$ETC/example$sufx.com.zone" >> "$ETC/example$sufx.in-addr.arpa.zone" <<EOF
 
 *	TXT	"v=spf1 -all"
+
+EOF
+		
+		cat >> "$ETC/example$sufx.com.zone" <<EOF
+_acme-challenge	1m	TXT	";"
 
 EOF
 		

@@ -131,8 +131,10 @@ if [ -n "${OPT_LETS_ENCRYPT-}" ]; then
 	sister nu_ns_host ${CHROOTDIR:+-C "$CHROOTDIR"} ${KNOT_ALTERNATE:+-A $KNOT_ALTERNATE} -h $SSL_HOST -c letsencrypt.org
 	sleep 1
 	parent_zone=$(ns_master_zone ${CHROOTDIR:+-c} ${KNOT_ALTERNATE:+-A $KNOT_ALTERNATE} $SSL_HOST)
+	${CHROOTDIR:+chroot "$CHROOTDIR"} knotc ${KNOT_ALTERNATE:+-c /usr/local/etc/knot/knot_$KNOT_ALTERNATE.conf} zone-flush $parent_zone
+	sleep 1
 	${CHROOTDIR:+chroot "$CHROOTDIR"} knotc ${KNOT_ALTERNATE:+-c /usr/local/etc/knot/knot_$KNOT_ALTERNATE.conf} zone-reload $parent_zone
-	sleep 15
+	sleep 90
 	require_tmp acme_output
 	acme.sh --signcsr --csr /etc/ssl/csrs/$SSL_HOST.csr --dns -d $SSL_HOST -d www.$SSL_HOST 2>&1 | sed -n -E -e "/^\\[[^\]+\\] Domain: '([[:alnum:]\\._\\-]+)'$/{s//dom=\\1/;p;};/^\\[[^\]+\\] TXT value: '([[:alnum:]_\\-]+)'$/{s//txt=\\1/;p;}" >| "$acme_output"
 	[ 2 = `wc -l < "$acme_output" | xargs` ]
@@ -140,13 +142,17 @@ if [ -n "${OPT_LETS_ENCRYPT-}" ]; then
 	retire_tmp acme_output
 	[ -n "$dom" -a -n "$txt" ]
 	[ "$dom" = "${dom%.$SSL_HOST}.$SSL_HOST" ]
+	sister nu_ns_host ${CHROOTDIR:+-C "$CHROOTDIR"} ${KNOT_ALTERNATE:+-A $KNOT_ALTERNATE} -d -r txt -h $dom || true
 	sister nu_ns_host ${CHROOTDIR:+-C "$CHROOTDIR"} ${KNOT_ALTERNATE:+-A $KNOT_ALTERNATE} -r txt -h $dom -i $txt
 	sleep 1
+	${CHROOTDIR:+chroot "$CHROOTDIR"} knotc ${KNOT_ALTERNATE:+-c /usr/local/etc/knot/knot_$KNOT_ALTERNATE.conf} zone-flush $parent_zone
+	sleep 1
 	${CHROOTDIR:+chroot "$CHROOTDIR"} knotc ${KNOT_ALTERNATE:+-c /usr/local/etc/knot/knot_$KNOT_ALTERNATE.conf} zone-reload $parent_zone
-	sleep 15
+	sleep 90
 	acme.sh --renew -d $SSL_HOST 2>&1
 	CERT_FILE=$HOME/.acme.sh/$SSL_HOST/$SSL_HOST.cer
 	AUTH_FILE=$HOME/.acme.sh/$SSL_HOST/ca.cer
+	sister nu_ns_host ${CHROOTDIR:+-C "$CHROOTDIR"} ${KNOT_ALTERNATE:+-A $KNOT_ALTERNATE} -h $SSL_HOST -c -d
 fi
 
 if [ -z "${CERT_FILE-}" ]; then
