@@ -36,13 +36,15 @@ maybe_yell
 SSL_CERTS=/etc/ssl/certs
 
 for d in $@; do
-	hosts=$($SSL_CMD x509 -in $SSL_CERTS/$d.crt -noout -text | sed -nEe '/^[[:blank:]]*X509v3 Subject Alternative Name:[[:blank:]]*$/{s///;N;s/^[[:space:]]*//;s/, / /;s/\<DNS://g;p;}')
-	[ -n "$hosts" ] || hosts=$($SSL_CMD x509 -in $SSL_CERTS/$d.crt -noout -subject -nameopt sep_multiline | sed -ne '/^    CN=/s///p')
-	for a in $hosts; do
-		dom_args="${dom_args:+$dom_args }-d $a"
-	done
+	if [ -z "${OPT_INSTALL_ONLY-}" ]; then
+		hosts=$($SSL_CMD x509 -in $SSL_CERTS/$d.crt -noout -text | sed -nEe '/^[[:blank:]]*X509v3 Subject Alternative Name:[[:blank:]]*$/{s///;N;s/^[[:space:]]*//;s/, / /;s/\<DNS://g;p;}')
+		[ -n "$hosts" ] || hosts=$($SSL_CMD x509 -in $SSL_CERTS/$d.crt -noout -subject -nameopt sep_multiline | sed -ne '/^    CN=/s///p')
+		for a in $hosts; do
+			dom_args="${dom_args:+$dom_args }-d $a"
+		done
+	fi
 	require_tmp acme_out
-	[ -n "${OPT_INSTALL_ONLY-}" ] || echo acme.sh --renew $dom_args ${OPT_FORCE:+--force}
+	[ -n "${OPT_INSTALL_ONLY-}" ]
 	if [ -n "${OPT_INSTALL_ONLY-}" ] || acme.sh --renew $dom_args ${OPT_FORCE:+--force} >| "$acme_out"; then
 		if [ -z "${OPT_INSTALL_ONLY-}" ]; then
 			cat "$acme_out"
