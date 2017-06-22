@@ -279,8 +279,12 @@ else
 	grep -q -- '-BEGIN CERTIFICATE-' "$CERT_FILE"
 	grep -q -- '-BEGIN CERTIFICATE-' "$AUTH_FILE"
 	[ -e "${CHROOTDIR-}/etc/ssl/private/$SSL_HOST.key" ] || exit 2
-	[ ! -e "${CHROOTDIR-}/etc/ssl/certs/$SSL_HOST.crt" ] || [ -n "${OPT_FORCE-}" ] || exit 17
-	[ ! -e "${CHROOTDIR-}/etc/ssl/certs/$SSL_HOST.ca.crt" ] || [ -n "${OPT_FORCE-}" ] || exit 17
+	for x in crt ca.crt; do
+		if [ -n "${OPT_FORCE-}" ] && [ -e "${CHROOTDIR-}/etc/ssl/certs/$SSL_HOST.$x" ]; then
+			mv "${CHROOTDIR-}/etc/ssl/certs/$SSL_HOST.$x" "${CHROOTDIR-}/etc/ssl/certs/$SSL_HOST.$x.bak"
+		fi
+		[ ! -e "${CHROOTDIR-}/etc/ssl/certs/$SSL_HOST.$x" ] || exit 17
+	done
 	[ $SSL_HOST = `$SSL_CMD x509 -noout -subject -nameopt sep_multiline -in $CERT_FILE | sed -ne '/^    CN=/s///p'` ] || exit 85
 	cat $CERT_FILE > "${CHROOTDIR-}/etc/ssl/certs/$SSL_HOST.crt"
 	echo "Inserted certificate $CERT_FILE as $SSL_HOST.crt in /etc/ssl/certs/."
