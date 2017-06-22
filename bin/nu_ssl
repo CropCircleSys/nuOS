@@ -18,7 +18,7 @@ NUOS_VER=0.0.11.0b0.1
 
 . "$(dirname "$(realpath "$0")")/../lib/nu_system.sh"
 
-while getopts A:a:b:c:C:d:e:h:l:Lm:n:o:p:stT:Su:v OPT; do case $OPT in
+while getopts A:a:b:c:C:d:e:fh:l:Lm:n:o:p:stT:Su:vW OPT; do case $OPT in
 	A) KNOT_ALTERNATE=$OPTARG;;
 	a) AUTH_FILE=$OPTARG;;
 	b) KEY_BITS=$OPTARG;;
@@ -26,6 +26,7 @@ while getopts A:a:b:c:C:d:e:h:l:Lm:n:o:p:stT:Su:v OPT; do case $OPT in
 	C) CHROOTDIR=$OPTARG;;
 	d) DGST_BITS=$OPTARG;;
 	e) EXPIRE_DAYS=$OPTARG;;
+	f) OPT_FORCE=y;;
 	h) SSL_HOST=$OPTARG;;
 	l) CITY=$OPTARG;;
 	L) OPT_LETS_ENCRYPT=y;;
@@ -34,13 +35,16 @@ while getopts A:a:b:c:C:d:e:h:l:Lm:n:o:p:stT:Su:v OPT; do case $OPT in
 	o) COMPANY=$OPTARG;;
 	p) STATE=$OPTARG;;
 	s) OPT_SELF_SIGNED=y;;
+	S) OPT_UNSECURE=y;;
 	t) incr OPT_EXPORT_TLSA 1;;
 	T) TLSA_TRANSPORT=$OPTARG;;
-	S) OPT_UNSECURE=y;;
 	u) DEPT=$OPTARG;;
 	v) OPT_VERBOSE=y;;
+	W) OPT_EMPTY_SAN_LIST=y;;
 esac; done; shift $(($OPTIND-1))
 [ $# = 0 ]
+: ${SSL_HOST:=$HOST}
+[ -n "${OPT_EMPTY_SAN_LIST-}" ] || : ${SAN_LIST:=www.%}
 
 . "$(dirname "$(realpath "$0")")/../lib/nu_common.sh"
 
@@ -50,7 +54,18 @@ check_ns_server () {
 	service knot onestatus | grep -q 'is running' || (echo "Let's Encrypt service must be run from an operating DNS master." >&2 && exit 85)
 }
 
+san_init () {
+	san=y
+	i=1
+	SAN_LIST="$(echo $SAN_LIST | sed -e s/%/$SSL_HOST/g)"
+	for a in $SSL_HOST $SAN_LIST; do
+		san_value="${san_value:+$san_value, }DNS.$i=$a"
+		i=$(($i + 1 ))
+	done
+}
+
 if [ -n "${OPT_EXPORT_TLSA-}" ]; then
+	san_init
 	: ${KEY_BITS:=256}
 	case $KEY_BITS in
 		256) type=1;;
@@ -78,7 +93,7 @@ if [ -n "${OPT_EXPORT_TLSA-}" ]; then
 		: ${port:=443}
 		: ${TLSA_TRANSPORT:=tcp}
 		check_ns_server
-		for h in $SSL_HOST www.$SSL_HOST; do
+		for h in $SSL_HOST $SAN_LIST; do
 			sister nu_ns_host ${CHROOTDIR:+-C "$CHROOTDIR"} ${KNOT_ALTERNATE:+-A $KNOT_ALTERNATE} -dd -h _$port._$TLSA_TRANSPORT.$h -r tlsa
 			sister nu_ns_host ${CHROOTDIR:+-C "$CHROOTDIR"} ${KNOT_ALTERNATE:+-A $KNOT_ALTERNATE} -h _$port._$TLSA_TRANSPORT.$h -r tlsa -s -i "$record_data"
 		done
@@ -90,7 +105,7 @@ fi
 
 nuos_init
 
-echo 'creating ssl    -h SSL_HOST       ' ${SSL_HOST:=$HOST}
+echo 'creating ssl    -h SSL_HOST       ' $SSL_HOST
 if [ -z "${CERT_FILE-}" -a -z "${OPT_LETS_ENCRYPT-}" ]; then
 	echo 'key bits        -b KEY_BITS       ' ${KEY_BITS:=2048}
 	echo -n 'digest bits     -d DGST_BITS       ' && [ -n "${OPT_SELF_SIGNED-}" ] && echo ${DGST_BITS:=256} || echo n/a
@@ -106,11 +121,12 @@ if [ -z "${CERT_FILE-}" -a -z "${OPT_LETS_ENCRYPT-}" ]; then
 	[ -n "$COMPANY" ] || COMPANY=undefined
 	echo 'dept/unit       -u DEPT           ' ${DEPT:=}
 	if [ -z "${EMAIL-}" ]; then
-		if [ ca = "${SSL_HOST%%.*}" -o cert-auth = "${SSL_HOST%%.*}" ]; then
-			EMAIL=security@${SSL_HOST#ca.}
-		else
-			EMAIL=operator@$SSL_HOST
-		fi
+		case ${SSL_HOST%%.*} in
+			[Cc][Aa]|[Cc][Ee][Rr][Tt]-[Aa][Uu][Tt][Hh])
+				EMAIL=security@${SSL_HOST#${SSL_HOST%%.*}.};;
+			*)
+				EMAIL=operator@$SSL_HOST;;
+		esac
 	fi
 	echo 'email           -m EMAIL          ' $EMAIL
 	echo -n 'self signed     -s OPT_SELF_SIGNED ' && [ -n "${OPT_SELF_SIGNED-}" ] && echo set || echo null
@@ -128,31 +144,45 @@ if [ -n "${OPT_LETS_ENCRYPT-}" ]; then
 	[ -z "${CERT_FILE-}" ]
 	[ -z "${AUTH_FILE-}" ]
 	check_ns_server
+	san_init
+	for a in $SSL_HOST $SAN_LIST; do
+		dom_args="${dom_args:+$dom_args }-d $a"
+	done
 	sister nu_ns_host ${CHROOTDIR:+-C "$CHROOTDIR"} ${KNOT_ALTERNATE:+-A $KNOT_ALTERNATE} -h $SSL_HOST -c letsencrypt.org
 	sleep 1
 	parent_zone=$(ns_master_zone ${CHROOTDIR:+-c} ${KNOT_ALTERNATE:+-A $KNOT_ALTERNATE} $SSL_HOST)
 	${CHROOTDIR:+chroot "$CHROOTDIR"} knotc ${KNOT_ALTERNATE:+-c /usr/local/etc/knot/knot_$KNOT_ALTERNATE.conf} zone-flush $parent_zone
 	sleep 1
 	${CHROOTDIR:+chroot "$CHROOTDIR"} knotc ${KNOT_ALTERNATE:+-c /usr/local/etc/knot/knot_$KNOT_ALTERNATE.conf} zone-reload $parent_zone
+	echo acme.sh --signcsr --csr /etc/ssl/csrs/$SSL_HOST.csr --dns $dom_args ${OPT_FORCE:+--force}
 	sleep 90
 	require_tmp acme_output
-	acme.sh --signcsr --csr /etc/ssl/csrs/$SSL_HOST.csr --dns -d $SSL_HOST -d www.$SSL_HOST 2>&1 | sed -n -E -e "/^\\[[^\]+\\] Domain: '([[:alnum:]\\._\\-]+)'$/{s//dom=\\1/;p;};/^\\[[^\]+\\] TXT value: '([[:alnum:]_\\-]+)'$/{s//txt=\\1/;p;}" >| "$acme_output"
-	[ 2 = `wc -l < "$acme_output" | xargs` ]
-	. "$acme_output"
-	retire_tmp acme_output
-	[ -n "$dom" -a -n "$txt" ]
-	[ "$dom" = "${dom%.$SSL_HOST}.$SSL_HOST" ]
-	sister nu_ns_host ${CHROOTDIR:+-C "$CHROOTDIR"} ${KNOT_ALTERNATE:+-A $KNOT_ALTERNATE} -d -r txt -h $dom || true
-	sister nu_ns_host ${CHROOTDIR:+-C "$CHROOTDIR"} ${KNOT_ALTERNATE:+-A $KNOT_ALTERNATE} -r txt -h $dom -i $txt
-	sleep 1
+	acme.sh --signcsr --csr /etc/ssl/csrs/$SSL_HOST.csr --dns $dom_args ${OPT_FORCE:+--force} >| "$acme_output" 2>&1 || true
+	require_tmp acme_challenge
+	sed -n -E -e "/^\\[[^\]+\\] Domain: '([[:alnum:]\\._\\-]+)'$/{s//\\1/;N;{/\\n\\[[^\]+\\] TXT value: '([[:alnum:]_\\-]+)'$/s// \\1/p;};}" "$acme_output" >| "$acme_challenge"
+	#retire_tmp acme_output
+	for a in $SSL_HOST $SAN_LIST; do
+		h=_acme-challenge.$a
+		txt=$(grep "^$h " "$acme_challenge" | cut -w -f 2)
+		if [ -n "$txt" ]; then
+			sister nu_ns_host ${CHROOTDIR:+-C "$CHROOTDIR"} ${KNOT_ALTERNATE:+-A $KNOT_ALTERNATE} -d -r txt -h $h || true
+			sister nu_ns_host ${CHROOTDIR:+-C "$CHROOTDIR"} ${KNOT_ALTERNATE:+-A $KNOT_ALTERNATE} -r txt -h $h -i $txt
+			sleep 1
+		fi
+	done
 	${CHROOTDIR:+chroot "$CHROOTDIR"} knotc ${KNOT_ALTERNATE:+-c /usr/local/etc/knot/knot_$KNOT_ALTERNATE.conf} zone-flush $parent_zone
 	sleep 1
 	${CHROOTDIR:+chroot "$CHROOTDIR"} knotc ${KNOT_ALTERNATE:+-c /usr/local/etc/knot/knot_$KNOT_ALTERNATE.conf} zone-reload $parent_zone
+	echo acme.sh --renew $dom_args ${OPT_FORCE:+--force}
 	sleep 90
-	acme.sh --renew -d $SSL_HOST 2>&1
+	acme.sh --renew $dom_args ${OPT_FORCE:+--force} 2>&1 || true
+	sister nu_ns_host ${CHROOTDIR:+-C "$CHROOTDIR"} ${KNOT_ALTERNATE:+-A $KNOT_ALTERNATE} -h $SSL_HOST -c -d
 	CERT_FILE=$HOME/.acme.sh/$SSL_HOST/$SSL_HOST.cer
 	AUTH_FILE=$HOME/.acme.sh/$SSL_HOST/ca.cer
-	sister nu_ns_host ${CHROOTDIR:+-C "$CHROOTDIR"} ${KNOT_ALTERNATE:+-A $KNOT_ALTERNATE} -h $SSL_HOST -c -d
+	if [ ! -e "$CERT_FILE" -o "${CHROOTDIR-}/etc/ssl/certs/$SSL_HOST.crt" -nt "$CERT_FILE" ]; then
+		echo "ERROR: Something went wrong with ACME procedure." >&2
+		exit 1
+	fi
 fi
 
 if [ -z "${CERT_FILE-}" ]; then
@@ -163,56 +193,86 @@ if [ -z "${CERT_FILE-}" ]; then
 	if [ ! -d "${CHROOTDIR-}/etc/ssl/certs" ]; then
 		mkdir "${CHROOTDIR-}/etc/ssl/certs"
 	fi
-	[ ! -e "${CHROOTDIR-}/etc/ssl/private/$SSL_HOST.key" ] || exit 17
-	if [ -z "${OPT_UNSECURE-}" ]; then
-		read -p 'keyfile password:' -r key_password
-		key_password_len=${#key_password}
-		[ $key_password_len -ge 4 ] || (echo "password too short (must be 4 chars or more)" >&2 && exit 85)
-		read -p 'repeat password:' -r key_password_repeat
-		[ "$key_password" = "$key_password_repeat" ] || (echo "password entered incorrectly" >&2 && exit 85)
-		require_tmp key_password_file
-		cat >| "$key_password_file" <<EOF
+	if [ -e "${CHROOTDIR-}/etc/ssl/private/$SSL_HOST.key" ]; then
+		echo "WARNING: Using existing $SSL_HOST.key found in /etc/ssl/private. Any specified options related to generating keys will be ignored." >&2
+	else
+		if [ -z "${OPT_UNSECURE-}" ]; then
+			read -p 'keyfile password:' -r key_password
+			key_password_len=${#key_password}
+			[ $key_password_len -ge 4 ] || (echo "password too short (must be 4 chars or more)" >&2 && exit 85)
+			read -p 'repeat password:' -r key_password_repeat
+			[ "$key_password" = "$key_password_repeat" ] || (echo "password entered incorrectly" >&2 && exit 85)
+			require_tmp key_password_file
+			cat >| "$key_password_file" <<EOF
 $key_password
 EOF
-		(umask 77 && $SSL_CMD genrsa -des3 -passout "file:$key_password_file" -out "${CHROOTDIR-}/etc/ssl/private/$SSL_HOST.key" $KEY_BITS)
-	else
-		(umask 77 && $SSL_CMD genrsa -out "${CHROOTDIR-}/etc/ssl/private/$SSL_HOST.key" $KEY_BITS)
+			(umask 77 && $SSL_CMD genrsa -des3 -passout "file:$key_password_file" -out "${CHROOTDIR-}/etc/ssl/private/$SSL_HOST.key" $KEY_BITS)
+		else
+			(umask 77 && $SSL_CMD genrsa -out "${CHROOTDIR-}/etc/ssl/private/$SSL_HOST.key" $KEY_BITS)
+		fi
 	fi
 	
-	require_tmp tempfile
-	cat >| "$tempfile" <<EOF
-$COUNTRY
-$STATE
-$CITY
-$COMPANY
-$DEPT
-$SSL_HOST
-$EMAIL
-EOF
+	subj_enc () {
+		echo "$1" | sed -e 's/ /\\ /g'
+	}
+	san_init
+	#subj="/countryName=$COUNTRY/stateOrProvinceName=$(subj_enc "$STATE")/localityName=$(subj_enc "$CITY")/organizationName=$(subj_enc "$COMPANY")/organizationalUnitName=$(subj_enc "$DEPT")/commonName=$SSL_HOST/emailAddress=$EMAIL/subjectAltName=$san_value"
+	subj="/countryName=$COUNTRY/stateOrProvinceName=$(subj_enc "$STATE")/localityName=$(subj_enc "$CITY")/organizationName=$(subj_enc "$COMPANY")/organizationalUnitName=$(subj_enc "$DEPT")/commonName=$SSL_HOST/emailAddress=$EMAIL"
 	
 	if [ -n "${OPT_SELF_SIGNED-}" ]; then
-		[ ! -e "${CHROOTDIR-}/etc/ssl/certs/$SSL_HOST.internal.crt" ] || exit 17
-		command="$SSL_CMD req -new -x509 -nodes -sha$DGST_BITS -days $EXPIRE_DAYS -key ${CHROOTDIR-}/etc/ssl/private/$SSL_HOST.key -out ${CHROOTDIR-}/etc/ssl/certs/$SSL_HOST.internal.crt"
-		message="Generated key $SSL_HOST.key and certificate $SSL_HOST.internal.crt in /etc/ssl/."
+		sufx=internal.crt
+		dir=certs
 	else
-		if [ ! -d "${CHROOTDIR-}/etc/ssl/csrs" ]; then
-			mkdir "${CHROOTDIR-}/etc/ssl/csrs"
-		fi
-		[ ! -e "${CHROOTDIR-}/etc/ssl/csrs/$SSL_HOST.csr" ] || exit 17
-		(echo && echo) >> "$tempfile"
-		command="$SSL_CMD req -new -key ${CHROOTDIR-}/etc/ssl/private/$SSL_HOST.key -reqexts v3_req -out ${CHROOTDIR-}/etc/ssl/csrs/$SSL_HOST.csr"
-		message="Generated key $SSL_HOST.key and certificate signing request $SSL_HOST.csr in /etc/ssl/."
+		ca_signed=y
+		sufx=csr
+		dir=csrs
 	fi
+
+	if [ ! -d "${CHROOTDIR-}/etc/ssl/$dir" ]; then
+		mkdir "${CHROOTDIR-}/etc/ssl/$dir"
+	fi
+	[ ! -e "${CHROOTDIR-}/etc/ssl/$dir/$SSL_HOST.$sufx" ] || mv "${CHROOTDIR-}/etc/ssl/$dir/$SSL_HOST.$sufx" "${CHROOTDIR-}/etc/ssl/$dir/$SSL_HOST.$sufx.bak"
 	
-	if [ -z "${OPT_UNSECURE-}" ]; then
-		$command -passin "file:$key_password_file" < "$tempfile" 2> /dev/null
+	require_tmp ssl_cnf
+	sed -e "
+		/^\\[ *v3_req *]\$/{
+${ca_signed:+			a\\
+1.3.6.1.5.5.7.1.24 = DER:30:03:02:01:05
+}			a\\
+subjectAltName = @alt_names
+		}
+" $SSL_CONF >| "$ssl_cnf"
+	
+	echo '[alt_names]' >> "$ssl_cnf"
+	i=1
+	for a in $SSL_HOST $SAN_LIST; do
+		echo "DNS.$i = $a" >> "$ssl_cnf"
+		i=$(($i + 1 ))
+	done
+	
+	echo $SSL_CMD req \
+		-config "$ssl_cnf" \
+		-new \
+		-subj '"'"$subj"'"' \
+		-key /etc/ssl/private/$SSL_HOST.key \
+		${OPT_SELF_SIGNED:+-x509 -nodes -sha$DGST_BITS -days $EXPIRE_DAYS} \
+		-reqexts v3_req \
+		-out /etc/ssl/${OPT_SELF_SIGNED:+certs}${ca_signed:+csrs}/$SSL_HOST.${OPT_SELF_SIGNED:+internal.crt}${ca_signed:+csr}
+	$SSL_CMD req \
+		-config "$ssl_cnf" \
+		-new \
+		-subj "$subj" \
+		-key "${CHROOTDIR-}/etc/ssl/private/$SSL_HOST.key" \
+		${key_password_file:+-passin "file:$key_password_file"} \
+		${OPT_SELF_SIGNED:+-x509 -nodes -sha$DGST_BITS -days $EXPIRE_DAYS} \
+		-reqexts v3_req \
+		-out "${CHROOTDIR-}/etc/ssl/${OPT_SELF_SIGNED:+certs}${ca_signed:+csrs}/$SSL_HOST.${OPT_SELF_SIGNED:+internal.crt}${ca_signed:+csr}"
+	if [ -n "${key_password_file-}" ]; then
 		rm "$key_password_file"
-	else
-		$command < "$tempfile" 2> /dev/null
 	fi
-	rm "$tempfile"
+	#retire_tmp ssl_cnf
 	
-	echo $message
+	echo "Generated key $SSL_HOST.key and certificate${ca_signed:+ signing request} $SSL_HOST.$sufx in /etc/ssl/."
 	
 else
 	
@@ -221,7 +281,7 @@ else
 	[ -e "${CHROOTDIR-}/etc/ssl/private/$SSL_HOST.key" ] || exit 2
 	[ ! -e "${CHROOTDIR-}/etc/ssl/certs/$SSL_HOST.crt" ] || exit 17
 	[ ! -e "${CHROOTDIR-}/etc/ssl/certs/$SSL_HOST.ca.crt" ] || exit 17
-	[ $SSL_HOST = `$SSL_CMD x509 -noout -subject -nameopt sep_multiline -in $CERT_FILE | sed -e '/^    CN=/!d;s/^    CN=//'` ] || exit 85
+	[ $SSL_HOST = `$SSL_CMD x509 -noout -subject -nameopt sep_multiline -in $CERT_FILE | sed -ne '/^    CN=/s///p'` ] || exit 85
 	cat $CERT_FILE > "${CHROOTDIR-}/etc/ssl/certs/$SSL_HOST.crt"
 	echo "Inserted certificate $CERT_FILE as $SSL_HOST.crt in /etc/ssl/certs/."
 	if [ -n "${AUTH_FILE-}" ]; then

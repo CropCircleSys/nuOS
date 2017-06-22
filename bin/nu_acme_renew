@@ -29,14 +29,21 @@ esac; done; shift $(($OPTIND-1))
 [ $# -ge 1 ] || set -- `x=/ca.cer; cd && cd .acme.sh && ls *$x 2> /dev/null | sed -e "s|$x\$||"`
 
 nuos_init -q
+nuos_ssl_init
 
 maybe_yell
 
 SSL_CERTS=/etc/ssl/certs
 
 for d in $@; do
+	hosts=$($SSL_CMD req -in /root/.acme.sh/$d/$d.csr -noout -text | sed -nEe '/^[[:blank:]]*X509v3 Subject Alternative Name:[[:blank:]]*$/{s///;N;s/^[[:space:]]*//;s/, / /;s/\<DNS://g;p;}')
+	[ -n "$hosts" ] || hosts=$($SSL_CMD req -in /root/.acme.sh/$d/$d.csr -noout -subject -nameopt sep_multiline | sed -ne '/^    CN=/s///p')
+	for a in $hosts; do
+		dom_args="${dom_args:+$dom_args }-d $a"
+	done
 	require_tmp acme_out
-	if [ -n "${OPT_INSTALL_ONLY-}" ] || acme.sh --renew -d $d ${OPT_FORCE:+--force} >| "$acme_out"; then
+	[ -n "${OPT_INSTALL_ONLY-}" ] || echo acme.sh --renew $dom_args ${OPT_FORCE:+--force}
+	if [ -n "${OPT_INSTALL_ONLY-}" ] || acme.sh --renew $dom_args ${OPT_FORCE:+--force} >| "$acme_out"; then
 		if [ -z "${OPT_INSTALL_ONLY-}" ]; then
 			cat "$acme_out"
 			cat /root/.acme.sh/$d/$d.cer \
