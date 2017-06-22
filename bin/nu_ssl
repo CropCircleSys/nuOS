@@ -44,7 +44,7 @@ while getopts A:a:b:c:C:d:e:fh:l:Lm:n:o:p:stT:Su:vW OPT; do case $OPT in
 esac; done; shift $(($OPTIND-1))
 [ $# = 0 ]
 : ${SSL_HOST:=$HOST}
-[ -n "${OPT_EMPTY_SAN_LIST-}" ] || : ${SAN_LIST:=www.%}
+[ -n "${OPT_EMPTY_SAN_LIST-}" ] && SAN_LIST= || : ${SAN_LIST:=www.%}
 
 . "$(dirname "$(realpath "$0")")/../lib/nu_common.sh"
 
