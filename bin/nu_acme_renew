@@ -36,8 +36,8 @@ maybe_yell
 SSL_CERTS=/etc/ssl/certs
 
 for d in $@; do
-	hosts=$($SSL_CMD req -in $SSL_CERTS/$d.crt -noout -text | sed -nEe '/^[[:blank:]]*X509v3 Subject Alternative Name:[[:blank:]]*$/{s///;N;s/^[[:space:]]*//;s/, / /;s/\<DNS://g;p;}')
-	[ -n "$hosts" ] || hosts=$($SSL_CMD req -in $SSL_CERTS/$d.crt -noout -subject -nameopt sep_multiline | sed -ne '/^    CN=/s///p')
+	hosts=$($SSL_CMD x509 -in $SSL_CERTS/$d.crt -noout -text | sed -nEe '/^[[:blank:]]*X509v3 Subject Alternative Name:[[:blank:]]*$/{s///;N;s/^[[:space:]]*//;s/, / /;s/\<DNS://g;p;}')
+	[ -n "$hosts" ] || hosts=$($SSL_CMD x509 -in $SSL_CERTS/$d.crt -noout -subject -nameopt sep_multiline | sed -ne '/^    CN=/s///p')
 	for a in $hosts; do
 		dom_args="${dom_args:+$dom_args }-d $a"
 	done
