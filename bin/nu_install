@@ -314,6 +314,7 @@ EOF
 net.inet.ip.fw.one_pass=0
 security.bsd.unprivileged_read_msgbuf=0
 vfs.zfs.vol.recursive=1
+vfs.zfs.vdev.aggregation_limit=262144
 EOF
 	
 	cat > $POOL_MNT/etc/periodic.conf <<'EOF'
