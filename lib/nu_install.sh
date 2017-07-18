@@ -51,7 +51,7 @@ install_vars_init () {
 	echo 'target kern        TRGT_KERN      ' ${TRGT_KERN:=NUOS}
 	echo 'target optimize    TRGT_OPTZ      ' $TRGT_OPTZ
 	echo 'subversion server  SVN_SERVER     ' ${SVN_SERVER=svn.FreeBSD.org}
-	echo 'subversion path    SVN_PATH       ' ${SVN_PATH:=base/releng/11.0}
+	echo 'subversion path    SVN_PATH       ' ${SVN_PATH:=base/releng/11.1}
 	echo -n 'copy ports         COPY_PORTS      ' && [ -n "${COPY_PORTS-}" ] && echo set || echo null
 	echo -n 'copy all pkgs      COPY_DEV_PKGS   ' && [ -n "${COPY_DEV_PKGS-}" ] && echo set || echo null
 	echo -n 'copy src           COPY_SRC        ' && [ -n "${COPY_SRC-}" ] && echo set || echo null

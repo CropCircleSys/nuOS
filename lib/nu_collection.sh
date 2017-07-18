@@ -64,7 +64,6 @@ collection_vars_init () {
 		mail/postfix
 		mail/opendkim
 		mail/opendmarc
-		dns/djbdns
 		dns/knot2
 		security/acme.sh
 		net/openldap24-server
@@ -130,7 +129,6 @@ collection_vars_init () {
 		net-p2p/namecoin-stable
 		net-p2p/litecoin
 		net-p2p/bitmessage
-		net-p2p/retroshare
 		net/x11vnc
 		net/tightvnc
 		www/firefox
