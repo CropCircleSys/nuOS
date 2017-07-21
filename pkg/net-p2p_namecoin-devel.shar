@@ -171,9 +171,9 @@ X.include <bsd.port.post.mk>
 2af3a950e4839e8c888a3398ab2772ed
 echo x - namecoin-legacy/distinfo
 sed 's/^X//' >namecoin-legacy/distinfo << '49ed9bdd302dd888d2d428f815a95b71'
-XTIMESTAMP = 1493083515
-XSHA256 (namecoin-namecoin-nc0.3.80_GH0.tar.gz) = 3f5e5af95cea46111d3cf1663f0e84d5fda653917745e0607a3ca4773baea59c
-XSIZE (namecoin-namecoin-nc0.3.80_GH0.tar.gz) = 1471777
+XTIMESTAMP = 1500647737
+XSHA256 (namecoin-namecoin-nc0.3.80_GH0.tar.gz) = 16646061ffe756a7f8b35e8f9e1a5f133cea9239ca68c0d39edcc61fc4010b94
+XSIZE (namecoin-namecoin-nc0.3.80_GH0.tar.gz) = 1471934
 49ed9bdd302dd888d2d428f815a95b71
 echo c - namecoin-legacy/files
 mkdir -p namecoin-legacy/files > /dev/null 2>&1
@@ -543,12 +543,12 @@ X
 f1d879875fb00d7e699b91959a9f3c9e
 echo x - namecoin-stable/distinfo
 sed 's/^X//' >namecoin-stable/distinfo << '8e2bfbd54bf9e096b0881414ae38f8bd'
-XTIMESTAMP = 1492747937
-XSHA256 (namecoin-namecoin-core-0.13.99b1-5d526c4_GH0.tar.gz) = dfc33351af8b9dd99489e087ed7f5398092f0e17369a3824b9f0a13f8f4f376b
+XTIMESTAMP = 1500647487
+XSHA256 (namecoin-namecoin-core-0.13.99b1-5d526c4_GH0.tar.gz) = 16f53f88122198bdb7a39769f83f505384cf59c2c27f90ef2ea524f8848096d7
 XSIZE (namecoin-namecoin-core-0.13.99b1-5d526c4_GH0.tar.gz) = 5727952
 XSHA256 (indolering-namecoin-graphics-a13a73b_GH0.tar.gz) = 82f308a3527d96a202099feb96a754d036bbdaa875156ad002ba2747d75000c7
 XSIZE (indolering-namecoin-graphics-a13a73b_GH0.tar.gz) = 7364908
-XSHA256 (namecoin-namecoin-core-ab08f76_GH0.tar.gz) = 3974eb9ab145c845c23cd6940ab2aca134eab91b0ec619d3a157cc1f7c311192
+XSHA256 (namecoin-namecoin-core-ab08f76_GH0.tar.gz) = 27ee9f0fca2f9d98bfc298848ad2b899a895c0c7c8e63caca2ee317c927cd178
 XSIZE (namecoin-namecoin-core-ab08f76_GH0.tar.gz) = 5917889
 8e2bfbd54bf9e096b0881414ae38f8bd
 echo c - namecoin-stable/files
@@ -960,8 +960,8 @@ X
 4ab4d0ea590a5c14b8331dc369e866e1
 echo x - namecoin-devel/distinfo
 sed 's/^X//' >namecoin-devel/distinfo << '07a7c1020151e0b15c77fa9122dd7767'
-XTIMESTAMP = 1493083519
-XSHA256 (namecoin-namecoin-core-0.14.1p1-516c1fd_GH0.tar.gz) = 5173e9a0313f16b920e691d87d02dffff79a407ca700907c7bc587a09230028e
+XTIMESTAMP = 1500647753
+XSHA256 (namecoin-namecoin-core-0.14.1p1-516c1fd_GH0.tar.gz) = 93570be04337de4693cb75c23a63bde6bbb2040691ea8f34be699f750f0b271d
 XSIZE (namecoin-namecoin-core-0.14.1p1-516c1fd_GH0.tar.gz) = 7009924
 XSHA256 (indolering-namecoin-graphics-a13a73b_GH0.tar.gz) = 82f308a3527d96a202099feb96a754d036bbdaa875156ad002ba2747d75000c7
 XSIZE (indolering-namecoin-graphics-a13a73b_GH0.tar.gz) = 7364908
@@ -1358,8 +1358,8 @@ X
 5673f6987f368c2b27d135ff7358dddb
 echo x - namecoin-head/distinfo
 sed 's/^X//' >namecoin-head/distinfo << '00c2e5bc71ab44127159c8a9a21dcd86'
-XTIMESTAMP = 1493083523
-XSHA256 (namecoin-namecoin-core-0.14.99a1-516c1fd_GH0.tar.gz) = 5173e9a0313f16b920e691d87d02dffff79a407ca700907c7bc587a09230028e
+XTIMESTAMP = 1500647769
+XSHA256 (namecoin-namecoin-core-0.14.99a1-516c1fd_GH0.tar.gz) = 93570be04337de4693cb75c23a63bde6bbb2040691ea8f34be699f750f0b271d
 XSIZE (namecoin-namecoin-core-0.14.99a1-516c1fd_GH0.tar.gz) = 7009924
 XSHA256 (indolering-namecoin-graphics-a13a73b_GH0.tar.gz) = 82f308a3527d96a202099feb96a754d036bbdaa875156ad002ba2747d75000c7
 XSIZE (indolering-namecoin-graphics-a13a73b_GH0.tar.gz) = 7364908
