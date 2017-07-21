@@ -115,7 +115,6 @@ collection_vars_init () {
 	COLL_office='
 		server
 		print/gutenprint
-		print/hplip
 	'
 	
 	COLL_desktop='
