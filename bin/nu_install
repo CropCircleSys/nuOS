@@ -195,6 +195,12 @@ openssh_dsa_keygen_enable="NO"
 openssh_rsa_keygen_flags="-b 4096"
 openssh_ecdsa_keygen_flags="-b 521"
 EOF
+
+	mkdir -p $POOL_MNT/etc/rc.conf.d.off
+	
+	cat > $POOL_MNT/etc/rc.conf.d.off/ntpd <<'EOF'
+ntpd_sync_on_start="YES"
+EOF
 	
 	cat > $POOL_MNT/etc/rc.d/nuos_zpool <<'EOF'
 #!/bin/sh
@@ -771,6 +777,9 @@ zfs create -o mountpoint=/home $POOL_NAME/home
 admin_install -z $POOL_MNT
 
 if [ -n "${LOCAL_SCRIPT-}" ]; then
+	POOL=$POOL_NAME
+	TRGT=$POOL_MNT
+	NAME=${NEW_HOST%%.*}
 	if [ -d "${LOCAL_SCRIPT-}" ]; then
 		script_files=`rcorder "$LOCAL_SCRIPT"/*.sh`
 		for script_file in "$script_files"; do

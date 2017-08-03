@@ -16,10 +16,11 @@ set -e; set -u; set -C
 
 NUOS_VER=0.0.11.1a1
 
-while getopts C:fst:vV OPT; do case $OPT in
+while getopts C:fsSt:vV OPT; do case $OPT in
 	C) CHROOTDIR=$OPTARG;;
 	f) OPT_FORCE=y;;
 	s) OPT_SELF_SUFFICIENT=y;;
+	S) OPT_INSECURE_SEARCH=y;;
 	t) SOFTWARE=$OPTARG; case $SOFTWARE in
 		djb|unbound) ;; *) exit 22; esac;;
 	v) OPT_VERBOSE=y;;
@@ -35,10 +36,15 @@ nuos_init
 : ${SOFTWARE:=unbound}
 echo 'software        -t SOFTWARE            ' $SOFTWARE
 echo -n 'heavyweight     -s OPT_SELF_SUFFICIENT  ' && [ -n "${OPT_SELF_SUFFICIENT-}" ] && echo set || echo null
+echo -n 'default search  -S OPT_INSECURE_SEARCH  ' && [ -n "${OPT_INSECURE_SEARCH-}" ] && echo set || echo null
 echo -n 'accept poison   -V OPT_NOVERIFY         ' && [ -n "${OPT_NOVERIFY-}" ] && echo set || echo null
 echo
 
 maybe_yell
+
+if [ -z "${OPT_INSECURE_SEARCH-}" ]; then
+	secure_search=y
+fi
 
 
 case $SOFTWARE in
@@ -76,7 +82,10 @@ name_servers="127.0.0.1"
 EOF
 		
 		require_tmp tempfile
-		echo nameserver 127.0.0.1 >| "$tempfile"
+		cat >| "$tempfile" <<EOF
+${secure_search:+search .
+}nameserver 127.0.0.1
+EOF
 		if [ -f "${CHROOTDIR-}/etc/resolv.conf" ]; then
 			grep -Ev '^nameserver[[:blank:]]+127.0.0.1\>' "${CHROOTDIR-}/etc/resolv.conf" >> "$tempfile"
 		fi
@@ -121,9 +130,12 @@ EOF
 			fi
 		fi
 		
-		sister enable_svc ${CHROOTDIR:+-C "$CHROOTDIR"} unbound
+		cat >| "${CHROOTDIR-}/etc/resolv.conf" <<EOF
+${secure_search:+search .
+}nameserver 127.0.0.1
+EOF
 		
-		echo nameserver 127.0.0.1 >| "${CHROOTDIR-}/etc/resolv.conf"
+		sister enable_svc ${CHROOTDIR:+-C "$CHROOTDIR"} unbound
 	;;
 	
 esac
