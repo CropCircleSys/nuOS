@@ -46,6 +46,7 @@ collection_vars_init () {
 		sysutils/pipemeter
 		archivers/lzop
 		archivers/p7zip
+		sysutils/pciutils
 		sysutils/smartmontools
 		net/rsync
 		security/sudo
@@ -84,7 +85,6 @@ collection_vars_init () {
 		multimedia/ffmpeg
 		graphics/optipng
 		graphics/gifsicle
-		textproc/rubygem-compass
 		lang/expect
 		databases/postgresql96-server
 		databases/mysql57-server
@@ -99,7 +99,6 @@ collection_vars_init () {
 		net-im/ejabberd
 		lang/phantomjs
 		net/rabbitmq
-		textproc/rubygem-sass
 		emulators/virtualbox-ose
 		graphics/povray-meta
 		graphics/graphviz
