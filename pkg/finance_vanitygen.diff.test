@@ -1,0 +1,1 @@
+grep -q '(samr7-vanitygen-0\.22-cd1a728_GH0\.tar\.gz)' distinfo && grep -q '\$FreeBSD: head/finance/vanitygen/Makefile 442398 2017-06-02 15:43:32Z sunpoet \$' Makefile

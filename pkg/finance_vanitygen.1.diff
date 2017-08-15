@@ -1,0 +1,23 @@
+--- ../vanitygen.orig/Makefile	2017-06-03 17:32:09.000000000 -0400
++++ ./Makefile	2017-08-15 07:52:20.240218000 -0400
+@@ -2,7 +2,7 @@
+ # $FreeBSD: head/finance/vanitygen/Makefile 442398 2017-06-02 15:43:32Z sunpoet $
+ 
+ PORTNAME=	vanitygen
+-PORTVERSION=	0.22
++PORTVERSION=	0.22p1
+ PORTREVISION=	1
+ CATEGORIES=	finance
+ 
+@@ -15,8 +15,9 @@
+ LIB_DEPENDS=	libpcre.so:devel/pcre
+ 
+ USE_GITHUB=	yes
+-GH_ACCOUNT=	samr7
+-GH_TAGNAME=	cd1a728
++GH_ACCOUNT=	barrystyle
++GH_PROJECT=	vanitygen-litecoin
++GH_TAGNAME=	3d4a83e
+ 
+ USES=		gmake ssl
+ ALL_TARGET=	most
