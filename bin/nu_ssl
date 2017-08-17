@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e; set -u; set -C
 
-# nuOS 0.0.11.0b0.1 - bin/nu_ssl - LICENSE: MOZ_PUB
+# nuOS 0.0.11.1a1 - bin/nu_ssl - LICENSE: MOZ_PUB
 #
 # Copyright (c) 2008-2017 Chad Jacob Milios and Crop Circle Systems, Inc.
 # All rights reserved.
@@ -14,11 +14,11 @@ set -e; set -u; set -C
 # Official updates and community support available at https://nuos.org .
 # Other licensing options and professional services available at https://ccsys.com .
 
-NUOS_VER=0.0.11.0b0.1
+NUOS_VER=0.0.11.1a1
 
 . "$(dirname "$(realpath "$0")")/../lib/nu_system.sh"
 
-while getopts A:a:b:c:C:d:e:fh:l:Lm:n:o:p:stT:Su:vW OPT; do case $OPT in
+while getopts A:a:b:c:C:d:e:fh:l:Lm:Mn:o:p:stT:Su:vW OPT; do case $OPT in
 	A) KNOT_ALTERNATE=$OPTARG;;
 	a) AUTH_FILE=$OPTARG;;
 	b) KEY_BITS=$OPTARG;;
@@ -31,6 +31,7 @@ while getopts A:a:b:c:C:d:e:fh:l:Lm:n:o:p:stT:Su:vW OPT; do case $OPT in
 	l) CITY=$OPTARG;;
 	L) OPT_LETS_ENCRYPT=y;;
 	m) EMAIL=$OPTARG;;
+	M) OPT_MUST_STAPLE=y;;
 	n) COUNTRY=$OPTARG;;
 	o) COMPANY=$OPTARG;;
 	p) STATE=$OPTARG;;
@@ -216,7 +217,10 @@ EOF
 		echo "$1" | sed -e 's/ /\\ /g'
 	}
 	san_init
+<<<<<<< HEAD
 	#subj="/countryName=$COUNTRY/stateOrProvinceName=$(subj_enc "$STATE")/localityName=$(subj_enc "$CITY")/organizationName=$(subj_enc "$COMPANY")/organizationalUnitName=$(subj_enc "$DEPT")/commonName=$SSL_HOST/emailAddress=$EMAIL/subjectAltName=$san_value"
+=======
+>>>>>>> f13085d1ec259c3064c255f29bc90b3b66b71fb7
 	subj="/countryName=$COUNTRY/stateOrProvinceName=$(subj_enc "$STATE")/localityName=$(subj_enc "$CITY")/organizationName=$(subj_enc "$COMPANY")/organizationalUnitName=$(subj_enc "$DEPT")/commonName=$SSL_HOST/emailAddress=$EMAIL"
 	
 	if [ -n "${OPT_SELF_SIGNED-}" ]; then
@@ -236,9 +240,15 @@ EOF
 	require_tmp ssl_cnf
 	sed -e "
 		/^\\[ *v3_req *]\$/{
+<<<<<<< HEAD
 ${ca_signed:+			a\\
 1.3.6.1.5.5.7.1.24 = DER:30:03:02:01:05
 }			a\\
+=======
+${ca_signed:+${OPT_MUST_STAPLE:+			a\\
+1.3.6.1.5.5.7.1.24 = DER:30:03:02:01:05
+}}			a\\
+>>>>>>> f13085d1ec259c3064c255f29bc90b3b66b71fb7
 subjectAltName = @alt_names
 		}
 " $SSL_CONF >| "$ssl_cnf"

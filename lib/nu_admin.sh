@@ -1,7 +1,7 @@
 #!/usr/bin/false
 set -e; set -u; set -C
 
-# nuOS 0.0.11.0b0.1 - lib/nu_admin.sh - LICENSE: BSD_SMPL
+# nuOS 0.0.11.1a1 - lib/nu_admin.sh - LICENSE: BSD_SMPL
 #
 # Copyright (c) 2008-2017 Chad Jacob Milios and Crop Circle Systems, Inc.
 # All rights reserved.
@@ -14,7 +14,7 @@ set -e; set -u; set -C
 # Official updates and community support available at https://nuos.org .
 # Other licensing options and professional services available at https://ccsys.com .
 
-nuos_lib_ver=0.0.11.0b0.1
+nuos_lib_ver=0.0.11.1a1
 [ $nuos_lib_ver = "$NUOS_VER" ]
 [ -z "${nuos_lib_admin_loaded-}" ]
 nuos_lib_admin_loaded=y
@@ -25,19 +25,19 @@ admin_init () {
 	echo -n 'admin pass         ADMIN_PASS      ' && [ -n "${ADMIN_ACCT-}" ] && echo ${ADMIN_PASS=nutz} || echo n/a
 	echo -n 'admin name         ADMIN_NAME      ' && [ -n "${ADMIN_ACCT-}" ] && echo ${ADMIN_NAME:="Code Ninja"} || echo n/a
 	echo -n 'admin company      ADMIN_CPNY      ' && [ -n "${ADMIN_ACCT-}" ] && echo ${ADMIN_CPNY:="Whey of Peas and Hominy"} || echo n/a # N/I
-	echo -n 'admin keys         ADMIN_KEYS      ' && [ -n "${ADMIN_ACCT-}" -a -n "${OPT_INSTALL_ADMIN_KEYS-}" ] && echo ${ADMIN_KEYS:=~$ADMIN_ACCT/.ssh/id_*.pub} && echo "WARNING - Expands to: `eval echo $ADMIN_KEYS`" || echo 'n/a (use -k to install keys)'
+	echo -n 'admin keys         ADMIN_KEYS      ' && [ -n "${ADMIN_ACCT-}" -a -n "${OPT_INSTALL_ADMIN_KEYS-}" ] && echo ${ADMIN_KEYS:=~${KEYS_FROM_ADMIN_ACCT:=$ADMIN_ACCT}/.ssh/id_*.pub} && echo "WARNING - Expands to: `eval echo $ADMIN_KEYS`" || echo 'n/a (use -k to install keys)'
 	# OEM Default user/pass. Change this.
 	echo 'user            -u USER_ACCT      ' ${USER_ACCT=joe}
 	echo -n 'user pass          USER_PASS       ' && [ -n "${USER_ACCT-}" ] && echo ${USER_PASS=mama} || echo n/a
 	echo -n 'user name          USER_NAME       ' && [ -n "${USER_ACCT-}" ] && echo ${USER_NAME:="Joe Schmoe"} || echo n/a
 	echo -n 'user company       USER_CPNY       ' && [ -n "${USER_ACCT-}" ] && echo ${USER_CPNY:="Schmoe 'n' Co., Inc."} || echo n/a # N/I
-	echo -n 'user keys          USER_KEYS       ' && [ -n "${USER_ACCT-}" -a -n "${OPT_INSTALL_ADMIN_KEYS-}" ] && echo ${USER_KEYS:=~$USER_ACCT/.ssh/id_*.pub} && echo "WARNING - Expands to: `eval echo $USER_KEYS`" || echo 'n/a (use -k to install keys)'
+	echo -n 'user keys          USER_KEYS       ' && [ -n "${USER_ACCT-}" -a -n "${OPT_INSTALL_ADMIN_KEYS-}" ] && echo ${USER_KEYS:=~${KEYS_FROM_USER_ACCT:=$USER_ACCT}/.ssh/id_*.pub} && echo "WARNING - Expands to: `eval echo $USER_KEYS`" || echo 'n/a (use -k to install keys)'
 	# VAR Default backdoor. Change/disable this this.
 	echo 'backdoor user   -b BD_ACCT        ' ${BD_ACCT=sumyungai}
 	echo -n 'backdoor pass      BD_PASS         ' && [ -n "${BD_ACCT-}" ] && echo ${BD_PASS=_-cream0f-_} || echo n/a
 	echo -n 'backdoor name      BD_NAME         ' && [ -n "${BD_ACCT-}" ] && echo ${BD_NAME:="Sum Yun Gai"} || echo n/a
 	echo -n 'backdoor company   BD_CPNY         ' && [ -n "${BD_ACCT-}" ] && echo ${BD_CPNY:="In Yer Eye, L.L.C."} || echo n/a # N/I
-	echo -n 'backdoor keys      BD_KEYS         ' && [ -n "${BD_ACCT-}" -a -n "${OPT_INSTALL_ADMIN_KEYS-}" ] && echo ${BD_KEYS:=~$BD_ACCT/.ssh/id_*.pub} && echo "WARNING - Expands to: `eval echo $BD_KEYS`" || echo 'n/a (use -k to install keys)'
+	echo -n 'backdoor keys      BD_KEYS         ' && [ -n "${BD_ACCT-}" -a -n "${OPT_INSTALL_ADMIN_KEYS-}" ] && echo ${BD_KEYS:=~${KEYS_FROM_BD_ACCT:=$BD_ACCT}/.ssh/id_*.pub} && echo "WARNING - Expands to: `eval echo $BD_KEYS`" || echo 'n/a (use -k to install keys)'
 }
 
 admin_install () {

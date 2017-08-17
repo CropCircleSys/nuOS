@@ -1,7 +1,7 @@
 #!/usr/bin/false
 set -e; set -u; set -C
 
-# nuOS 0.0.11.0b0.1 - lib/nu_collection.sh - LICENSE: BSD_SMPL
+# nuOS 0.0.11.1a1 - lib/nu_collection.sh - LICENSE: BSD_SMPL
 #
 # Copyright (c) 2008-2017 Chad Jacob Milios and Crop Circle Systems, Inc.
 # All rights reserved.
@@ -14,7 +14,7 @@ set -e; set -u; set -C
 # Official updates and community support available at https://nuos.org .
 # Other licensing options and professional services available at https://ccsys.com .
 
-nuos_lib_ver=0.0.11.0b0.1
+nuos_lib_ver=0.0.11.1a1
 [ $nuos_lib_ver = "$NUOS_VER" ]
 [ -n "${nuos_lib_system_loaded-}" ]
 [ -z "${nuos_lib_collection_loaded-}" ]
@@ -46,6 +46,7 @@ collection_vars_init () {
 		sysutils/pipemeter
 		archivers/lzop
 		archivers/p7zip
+		sysutils/pciutils
 		sysutils/smartmontools
 		net/rsync
 		security/sudo
@@ -64,7 +65,6 @@ collection_vars_init () {
 		mail/postfix
 		mail/opendkim
 		mail/opendmarc
-		dns/djbdns
 		dns/knot2
 		security/acme.sh
 		net/openldap24-server
@@ -85,7 +85,6 @@ collection_vars_init () {
 		multimedia/ffmpeg
 		graphics/optipng
 		graphics/gifsicle
-		textproc/rubygem-compass
 		lang/expect
 		databases/postgresql96-server
 		databases/mysql57-server
@@ -100,7 +99,6 @@ collection_vars_init () {
 		net-im/ejabberd
 		lang/phantomjs
 		net/rabbitmq
-		textproc/rubygem-sass
 		emulators/virtualbox-ose
 		graphics/povray-meta
 		graphics/graphviz
@@ -116,7 +114,6 @@ collection_vars_init () {
 	COLL_office='
 		server
 		print/gutenprint
-		print/hplip
 	'
 	
 	COLL_desktop='
@@ -130,7 +127,6 @@ collection_vars_init () {
 		net-p2p/namecoin-stable
 		net-p2p/litecoin
 		net-p2p/bitmessage
-		net-p2p/retroshare
 		net/x11vnc
 		net/tightvnc
 		www/firefox

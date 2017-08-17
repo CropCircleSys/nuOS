@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e; set -u; set -C
 
-# nuOS 0.0.11.0b0.1 - bin/nu_php - LICENSE: MOZ_PUB
+# nuOS 0.0.11.1a1 - bin/nu_php - LICENSE: MOZ_PUB
 #
 # Copyright (c) 2008-2017 Chad Jacob Milios and Crop Circle Systems, Inc.
 # All rights reserved.
@@ -14,7 +14,7 @@ set -e; set -u; set -C
 # Official updates and community support available at https://nuos.org .
 # Other licensing options and professional services available at https://ccsys.com .
 
-NUOS_VER=0.0.11.0b0.1
+NUOS_VER=0.0.11.1a1
 
 while getopts C:m:t:v OPT; do case $OPT in
 	C) CHROOTDIR=$OPTARG;;

@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e; set -u; set -C
 
-# nuOS 0.0.11.0b0.1 - bin/nu_install - LICENSE: BSD_SMPL
+# nuOS 0.0.11.1a1 - bin/nu_install - LICENSE: BSD_SMPL
 #
 # Copyright (c) 2008-2017 Chad Jacob Milios and Crop Circle Systems, Inc.
 # All rights reserved.
@@ -14,7 +14,7 @@ set -e; set -u; set -C
 # Official updates and community support available at https://nuos.org .
 # Other licensing options and professional services available at https://ccsys.com .
 
-NUOS_VER=0.0.11.0b0.1
+NUOS_VER=0.0.11.1a1
 
 . "$(dirname "$(realpath "$0")")/../lib/nu_system.sh"
 
@@ -126,6 +126,7 @@ EOF
 	
 	cat > $POOL_MNT/etc/rc.conf <<'EOF'
 zfs_enable="YES"
+zfsd_enable="YES"
 EOF
 	
 	zfs snapshot -r $POOL_NAME/os/$BASEOS_TYPE/$BASEOS_VER/$TRGT_MACH@zfs_enabled
@@ -169,13 +170,6 @@ EOF
 	
 	cat >> $POOL_MNT/boot/loader.conf <<'EOF'
 autoboot_delay="3"
-aesni_load="YES"
-ipfw_load="YES"
-#linux_load="YES"
-sem_load="YES"
-accf_data_load="YES"
-accf_dns_load="YES"
-accf_http_load="YES"
 kern.ipc.shmmni="1024"
 kern.ipc.shmseg="1024"
 kern.racct.enable="1"
@@ -187,6 +181,7 @@ EOF
 	
 	cat >> $POOL_MNT/etc/rc.conf <<'EOF'
 #linux_enable="YES"
+kld_list="aesni ipfw sem accf_data accf_dns accf_http"
 entropy_file="/var/db/entropy/seed"
 firewall_enable="YES"
 firewall_type="open"
@@ -199,6 +194,12 @@ sendmail_msp_queue_enable="NO"
 openssh_dsa_keygen_enable="NO"
 openssh_rsa_keygen_flags="-b 4096"
 openssh_ecdsa_keygen_flags="-b 521"
+EOF
+
+	mkdir -p $POOL_MNT/etc/rc.conf.d.off
+	
+	cat > $POOL_MNT/etc/rc.conf.d.off/ntpd <<'EOF'
+ntpd_sync_on_start="YES"
 EOF
 	
 	cat > $POOL_MNT/etc/rc.d/nuos_zpool <<'EOF'
@@ -776,6 +777,9 @@ zfs create -o mountpoint=/home $POOL_NAME/home
 admin_install -z $POOL_MNT
 
 if [ -n "${LOCAL_SCRIPT-}" ]; then
+	POOL=$POOL_NAME
+	TRGT=$POOL_MNT
+	NAME=${NEW_HOST%%.*}
 	if [ -d "${LOCAL_SCRIPT-}" ]; then
 		script_files=`rcorder "$LOCAL_SCRIPT"/*.sh`
 		for script_file in "$script_files"; do
