@@ -43,10 +43,17 @@ maybe_yell
 cat >> "${CHROOTDIR-}/usr/local/etc/postfix/virtual" <<EOF
 $MAIL_ADDRESS	$USER_NAME@localhost
 EOF
-postmap "${CHROOTDIR-}/usr/local/etc/postfix/virtual"
 cat >> "${CHROOTDIR-}/usr/local/etc/postfix/senders" <<EOF
 $MAIL_ADDRESS	$USER_NAME@$HOST_NAME
 EOF
+require_tmp domains
+cut -w -f 1 < "${CHROOTDIR-}/usr/local/etc/postfix/virtual" | cut -d @ -f 2 | sort -u | sed -e 's/$/	OK/' >| "$domains"
+if ! cmp -z -s "${CHROOTDIR-}/usr/local/etc/postfix/domains" "$domains"; then
+	cat "$domains" >| "${CHROOTDIR-}/usr/local/etc/postfix/domains"
+	postmap "${CHROOTDIR-}/usr/local/etc/postfix/domains"
+fi
+retire_tmp domains
 postmap "${CHROOTDIR-}/usr/local/etc/postfix/senders"
+postmap "${CHROOTDIR-}/usr/local/etc/postfix/virtual"
 
 echo "Configured mail delivery to user $USER_NAME in the $HOST_NAME system domain for envelopes addressed to $MAIL_ADDRESS."
