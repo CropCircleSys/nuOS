@@ -217,6 +217,10 @@ EOF
 		echo "$1" | sed -e 's/ /\\ /g'
 	}
 	san_init
+<<<<<<< HEAD
+	#subj="/countryName=$COUNTRY/stateOrProvinceName=$(subj_enc "$STATE")/localityName=$(subj_enc "$CITY")/organizationName=$(subj_enc "$COMPANY")/organizationalUnitName=$(subj_enc "$DEPT")/commonName=$SSL_HOST/emailAddress=$EMAIL/subjectAltName=$san_value"
+=======
+>>>>>>> f13085d1ec259c3064c255f29bc90b3b66b71fb7
 	subj="/countryName=$COUNTRY/stateOrProvinceName=$(subj_enc "$STATE")/localityName=$(subj_enc "$CITY")/organizationName=$(subj_enc "$COMPANY")/organizationalUnitName=$(subj_enc "$DEPT")/commonName=$SSL_HOST/emailAddress=$EMAIL"
 	
 	if [ -n "${OPT_SELF_SIGNED-}" ]; then
