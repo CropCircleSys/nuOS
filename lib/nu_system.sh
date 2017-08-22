@@ -54,6 +54,35 @@ maybe_yell () {
 	fi
 }
 
+srsly () {
+	case "${1-}" in
+		y) return 0;;
+		'') return 1;;
+		*) echo CONFUSING BOOL: "$*"; exit 88;;
+	esac
+}
+
+canhas () {
+	if [ -n "${1-}" ]; then
+		return 0
+	else
+		return 1
+	fi
+}
+
+first () {
+	case "$2" in
+		of)
+			if [ "$1" = "${3%% *}" ]; then
+				return 0
+			else
+				return 1
+			fi
+		;;
+		*) exit 88;;
+	esac
+}
+
 incr () {
 	local var=$1; shift
 	local start=$1; shift

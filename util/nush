@@ -15,8 +15,10 @@ set -e; set -u; set -C
 # Other licensing options and professional services available at https://ccsys.com .
 
 NUOS_VER=0.0.11.1a1
+NUOS_CODE="$(dirname "$(realpath "$0")")/.."
 
-. "$(dirname "$(realpath "$0")")/../lib/nu_system.sh"
+. "$NUOS_CODE/lib/nu_system.sh"
+. "$NUOS_CODE/lib/nu_common.sh"
 
 while IFS= read _nush_interactive_line; do
 	eval "$_nush_interactive_line"
