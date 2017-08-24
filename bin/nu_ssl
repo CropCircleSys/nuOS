@@ -250,14 +250,6 @@ subjectAltName = @alt_names
 		i=$(($i + 1 ))
 	done
 	
-	echo $SSL_CMD req \
-		-config "$ssl_cnf" \
-		-new \
-		-subj '"'"$subj"'"' \
-		-key /etc/ssl/private/$SSL_HOST.key \
-		${OPT_SELF_SIGNED:+-x509 -nodes -sha$DGST_BITS -days $EXPIRE_DAYS} \
-		-reqexts v3_req \
-		-out /etc/ssl/${OPT_SELF_SIGNED:+certs}${ca_signed:+csrs}/$SSL_HOST.${OPT_SELF_SIGNED:+internal.crt}${ca_signed:+csr}
 	$SSL_CMD req \
 		-config "$ssl_cnf" \
 		-new \
