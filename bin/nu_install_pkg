@@ -62,7 +62,14 @@ fi
 os_compat=$BASEOS_TYPE-${BASEOS_VER%%-*}
 
 for port in $*; do
-	uni=`echo $port | tr / _`
+	port_=`echo $port | tr / _`
+	uni=${port_%%@*}
+	flavor=
+	case $port in
+		*@*)
+			flavor=${port##*@}
+		;;
+	esac
 	args="$metainfo_dir/$uni.args"
 	if [ -z "${OPT_ARG_SUBPROCESS-}" ] && [ -f "$args" ]; then
 		sh $0 ${OPT_NOMAKE:+-M} ${OPT_NORECURSE:+-R} ${OPT_VERBOSE:+-v} ${CHROOTDIR:+-C $CHROOTDIR} -A `cat "$args"` $port
@@ -74,6 +81,7 @@ for port in $*; do
 		if [ ! -e $pkg_file ] || ([ -z "${CHROOTDIR-}" -a ports-mgmt/pkg = $port ] && ! pkg info -e $pkg < /dev/null); then
 			[ -z "${OPT_NOMAKE-}" ]
 			if [ -z "${OPT_NORECURSE-}" ]; then
+				exit 78 # this needs updating for the more specific dep_types (build run -> lib run build fetch extract patch)
 				port_deps def_opts my_opts build_deps run_deps $port
 				retire_tmp def_opts
 				retire_tmp my_opts
@@ -93,11 +101,11 @@ for port in $*; do
 				. "$script"
 			fi
 			(
-				cd /usr/ports/$port
-				make -DNOCLEANDEPENDS clean
-				env `cat "$env" 2>/dev/null` make "__MAKE_CONF=$make_conf" PORT_DBDIR="$PORT_DBDIR" `cat "$makeargs" 2>/dev/null` -DBATCH -DNO_DEPENDS package
-				lockf "${CHROOTDIR-}/tmp/nu_install_pkg.pkgdb.lock" env `cat "$env" 2>/dev/null` make "__MAKE_CONF=$make_conf" PORT_DBDIR="$PORT_DBDIR" `cat "$makeargs" 2>/dev/null` -DBATCH -DNO_DEPENDS install
-				make -DNOCLEANDEPENDS clean
+				cd /usr/ports/${port%%@*}
+				make ${flavor:+FLAVOR=$flavor} -DNOCLEANDEPENDS clean
+				env `cat "$env" 2>/dev/null` make "__MAKE_CONF=$make_conf" PORT_DBDIR="$PORT_DBDIR" ${flavor:+FLAVOR=$flavor} `cat "$makeargs" 2>/dev/null` -DBATCH -DNO_DEPENDS package
+				lockf "${CHROOTDIR-}/tmp/nu_install_pkg.pkgdb.lock" env `cat "$env" 2>/dev/null` make "__MAKE_CONF=$make_conf" PORT_DBDIR="$PORT_DBDIR" ${flavor:+FLAVOR=$flavor} `cat "$makeargs" 2>/dev/null` -DBATCH -DNO_DEPENDS install
+				make ${flavor:+FLAVOR=$flavor} -DNOCLEANDEPENDS clean
 			)
 			[ -f $pkg_file ]
 			if [ -f "$script" ]; then
@@ -106,7 +114,7 @@ for port in $*; do
 			fi
 			if tag=`pkg_db_tag` && [ $tag = `ports_tag` ]; then
 				mkdir -p "/usr/ports/packages/Index.nuOS/$os_compat-$TRGT_MACH"
-				idx=`nuos_sha_fngr "$make_conf" "$env" "$makeargs" /var/db/nuos/pkg/$uni/settings /var/db/nuos/pkg/$uni/dependencies/all`
+				idx=`nuos_sha_fngr "$make_conf" "$env" "$makeargs" /var/db/nuos/pkg/$port_/settings /var/db/nuos/pkg/$port_/dependencies/all`
 				mv -v $pkg_file "/usr/ports/packages/Index.nuOS/$os_compat-$TRGT_MACH/$pkg.$tag.$idx.txz"
 				ln -s "../Index.nuOS/$os_compat-$TRGT_MACH/$pkg.$tag.$idx.txz" $pkg_file
 			fi

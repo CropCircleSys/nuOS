@@ -45,7 +45,7 @@ collection_vars_init
 maybe_yell
 
 if [ -n "${OPT_RUNONLY-}" ]; then
-	recurse=run
+	recurse=use
 else
 	recurse=all
 fi
@@ -127,15 +127,16 @@ main () {
 					if [ -z "${OPT_NONAME-}" -a ! -e "$work_dir/$arg_/name" ]; then
 						pkg_name $arg > "$work_dir/$arg_/name"
 					fi
-					
-					local def_opts= my_opts= build_deps= run_deps=
-					port_deps $opt_args build_deps run_deps $arg
-					local       all_deps=
-					sets_union  all_deps  "$build_deps" "$run_deps"
+
+					local def_opts= my_opts= lib_deps= run_deps= build_deps= fetch_deps= extract_deps= patch_deps=
+					port_deps $opt_args lib_deps run_deps build_deps fetch_deps extract_deps patch_deps $arg
+					local       all_deps= use_deps=
+					sets_union  use_deps "$lib_deps" "$run_deps"
+					sets_union  all_deps "$use_deps" "$build_deps" "$fetch_deps" "$extract_deps" "$patch_deps"
 					local          buildonly_deps=
-					sets_sym_diff  buildonly_deps  "$all_deps" "$run_deps"
-					
-					for dep_type in build run all buildonly; do
+					sets_sym_diff  buildonly_deps  "$all_deps" "$use_deps"
+
+					for dep_type in lib run build fetch extract patch all use buildonly; do
 						eval local dep_file=\"\$${dep_type}_deps\"
 						if [ -s "$dep_file" ]; then
 							cat "$dep_file" > "$work_dir/$arg_/dependencies/$dep_type"
@@ -146,11 +147,14 @@ main () {
 						fi
 					done
 					retire_tmp build_deps
+					retire_tmp fetch_deps
+					retire_tmp extract_deps
+					retire_tmp patch_deps
 					retire_tmp buildonly_deps
 					if [ -z "${OPT_NOSLAVE-}" ]; then
-						local slave=`cd /usr/ports/$arg && make PORT_DBDIR="$PORT_DBDIR" -V SLAVE_PORT`
+						local slave=`cd /usr/ports/${arg%%@*} && make PORT_DBDIR="$PORT_DBDIR" -V SLAVE_PORT`
 						if [ -n "$slave" -a "$slave" != no ]; then
-							local master=$(realpath "`cd /usr/ports/$arg && make PORT_DBDIR="$PORT_DBDIR" -V MASTERDIR`")
+							local master=$(realpath "`cd /usr/ports/${arg%%@*} && make PORT_DBDIR="$PORT_DBDIR" -V MASTERDIR`")
 							master=${master#/usr/ports/}
 							echo $master > "$work_dir/$arg_/master"
 							local master_=`echo $master | tr / _`
@@ -177,7 +181,9 @@ main () {
 					fi
 					eval local recurse_deps=\"\$${recurse}_deps\"
 					main `cat "$recurse_deps"`
+					retire_tmp lib_deps
 					retire_tmp run_deps
+					retire_tmp use_deps
 					retire_tmp all_deps
 					;;
 				[^/]*)

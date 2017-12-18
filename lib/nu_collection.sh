@@ -86,7 +86,7 @@ collection_vars_init () {
 		graphics/optipng
 		graphics/gifsicle
 		lang/expect
-		databases/postgresql96-server
+		databases/postgresql10-server
 		databases/mysql57-server
 		databases/mongodb34
 		databases/redis
@@ -103,8 +103,8 @@ collection_vars_init () {
 		graphics/povray-meta
 		graphics/graphviz
 		x11-fonts/webfonts
-		lang/php71-extensions
-		www/mod_php71
+		lang/php72-extensions
+		www/mod_php72
 		mail/roundcube-sieverules
 		irc/irssi
 		sysutils/lsof
@@ -133,5 +133,8 @@ collection_vars_init () {
 		mail/thunderbird
 		multimedia/vlc
 		net-im/jitsi
+		graphics/appleseed
+		graphics/luxrender
+		graphics/blender
 	'
 }
