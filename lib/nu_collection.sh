@@ -88,7 +88,7 @@ collection_vars_init () {
 		lang/expect
 		databases/postgresql10-server
 		databases/mysql57-server
-		databases/mongodb34
+		databases/mongodb36
 		databases/redis
 		lang/mono-basic
 		www/npm
