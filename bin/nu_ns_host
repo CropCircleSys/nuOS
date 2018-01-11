@@ -40,14 +40,15 @@ esac; done; shift $(($OPTIND-1))
 . "$(dirname "$(realpath "$0")")/../lib/nu_common.sh"
 
 if [ -n "${OPT_EXPORT_KEY_FINGERPRINTS-}" ]; then
-	ex=1
-	for k in `${CHROOTDIR:+chroot "$CHROOTDIR"} keymgr ${ALTERNATE:+-c /usr/local/etc/knot/knot_ALTERNATE.conf} zone key list $HOST_NAME | cut -w -f 3`; do
-		if [ 257 = `${CHROOTDIR:+chroot "$CHROOTDIR"} keymgr ${ALTERNATE:+-c /usr/local/etc/knot/knot_ALTERNATE.conf} zone key show $HOST_NAME $k | grep '^flags' | cut -w -f 2` ]; then
-			ex=0
-			${CHROOTDIR:+chroot "$CHROOTDIR"} keymgr ${ALTERNATE:+-c /usr/local/etc/knot/knot_ALTERNATE.conf} zone key ds $HOST_NAME $k
-		fi
-	done
-	exit $ex
+	out=$(${CHROOTDIR:+chroot "$CHROOTDIR"} keymgr ${ALTERNATE:+-c /usr/local/etc/knot/knot_ALTERNATE.conf} $HOST_NAME ds)
+	if [ -n "$out" ]; then
+		cat <<EOF
+$out
+EOF
+		exit 0
+	else
+		exit 1
+	fi
 fi
 
 if [ -n "${CA_ZONE-}" ]; then
