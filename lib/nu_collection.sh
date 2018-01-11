@@ -122,6 +122,7 @@ collection_vars_init () {
 		office
 		editors/libreoffice
 		graphics/gimp
+		graphics/inkscape
 		x11/xorg
 		x11/kde4
 		databases/virtuoso
