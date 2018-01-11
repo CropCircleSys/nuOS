@@ -69,6 +69,7 @@ collection_vars_init () {
 		security/acme.sh
 		net/openldap24-server
 		security/openvpn
+		net/mpd5
 		ftp/pure-ftpd
 		net/isc-dhcp43-server
 		net/netatalk3
@@ -100,6 +101,7 @@ collection_vars_init () {
 		lang/phantomjs
 		net/rabbitmq
 		emulators/virtualbox-ose
+		sysutils/vmdktool
 		graphics/povray-meta
 		graphics/graphviz
 		x11-fonts/webfonts
@@ -130,6 +132,7 @@ collection_vars_init () {
 		net/x11vnc
 		net/tightvnc
 		www/firefox
+		java/icedtea-web
 		mail/thunderbird
 		multimedia/vlc
 		net-im/jitsi

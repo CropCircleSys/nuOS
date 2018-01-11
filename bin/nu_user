@@ -121,7 +121,7 @@ $password
 EOF
 	if [ -n "${OPT_SAMBA-}" ]; then
 		if [ ! -f "${CHROOTDIR-}/usr/local/etc/smb4.conf" ]; then
-			cp -p "${CHROOTDIR-}/usr/local/etc/smb4.conf.sample" "${CHROOTDIR-}/usr/local/etc/smb4.conf" || touch "${CHROOTDIR-}/usr/local/etc/smb4.conf"
+			cp -n -p "${CHROOTDIR-}/usr/local/etc/smb4.conf.sample" "${CHROOTDIR-}/usr/local/etc/smb4.conf" || touch "${CHROOTDIR-}/usr/local/etc/smb4.conf"
 		fi
 		if [ ! -d "${CHROOTDIR-}/usr/local/etc/samba" ]; then
 			mkdir "${CHROOTDIR-}/usr/local/etc/samba"

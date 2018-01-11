@@ -241,3 +241,15 @@ sets_intrsctn () {
 rev_zone () {
 	echo $1 | awk 'FS=OFS="."{print $4,$3,$2,$1,"in-addr.arpa"}'
 }
+
+try () {
+	local tries=$1; shift
+	for n in `seq 1 $tries`; do
+		if "$@"; then
+			return
+		else
+			sleep 1
+		fi
+	done
+	return 1
+}
