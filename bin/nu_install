@@ -18,7 +18,7 @@ NUOS_VER=0.0.11.1a1
 
 . "$(dirname "$(realpath "$0")")/../lib/nu_system.sh"
 
-while getopts a:b:c:Bd:DeFh:i:kl:m:o:p:PqQs:St:u:vzZ OPT; do case $OPT in
+while getopts a:b:c:Bd:DeFh:i:kK:l:m:o:p:PqQs:St:u:vzZ OPT; do case $OPT in
 	a) ADMIN_ACCT=$OPTARG;;
 	b) BD_ACCT=$OPTARG;;
 	B) OPT_NOBRAND=y;;
@@ -36,6 +36,7 @@ while getopts a:b:c:Bd:DeFh:i:kl:m:o:p:PqQs:St:u:vzZ OPT; do case $OPT in
 	h) NEW_HOST=$OPTARG;;
 	i) INJECT_CACHE=$OPTARG;;
 	k) OPT_INSTALL_ADMIN_KEYS=y;;
+	K) push ALSO_INSTALL_KEYS $OPTARG;;
 	l) LOCAL_SCRIPT=$OPTARG;;
 	m) POOL_MNT=$OPTARG;;
 	o) POOL_OPTS=$OPTARG;;
