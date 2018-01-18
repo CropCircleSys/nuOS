@@ -1,0 +1,11 @@
+--- ../dhcpcd.orig/files/dhcpcd.in	2018-01-18 22:55:12.416618000 +0000
++++ ./files/dhcpcd.in	2018-01-18 22:46:06.636766000 +0000
+@@ -8,6 +8,8 @@
+ . /etc/network.subr
+ 
+ name="dhcpcd"
++rcvar=dhcpcd_enable
++: ${dhcpcd_enable="NO"}
+ ifn="$2"
+ command="%%PREFIX%%/sbin/dhcpcd"
+ command_args="$ifn"
