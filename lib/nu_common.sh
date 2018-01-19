@@ -103,3 +103,8 @@ ns_master_zone () {
 	done
 	echo $zone
 }
+
+clear_primary_if_from_conf () {
+	local rc_conf_file=$1
+	sed -i '' -E -e '/^ifconfig_.+_name="?net0"?/d' $rc_conf_file
+}
