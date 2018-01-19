@@ -41,7 +41,7 @@ ${primary_if:+ifconfig_${primary_if}_name="net0"
 defaultrouter="$defaultrouter"
 EOF
 
-sed -E -e '/^#VersionAddendum\>/a\
+sed -i '' -E -e '/^#VersionAddendum\>/a\
 ChallengeResponseAuthentication no\
 PasswordAuthentication no\
 AuthenticationMethods publickey,publickey,publickey
