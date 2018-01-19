@@ -1,0 +1,1 @@
+! grep -q ^rcvar= files/dhcpcd.in
