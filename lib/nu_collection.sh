@@ -76,6 +76,7 @@ collection_vars_init () {
 		net/samba46
 		security/tor
 		net-p2p/rtorrent
+		net-p2p/createtorrent
 		net-p2p/bitcoin-daemon
 		net-p2p/bitcoin-utils
 		finance/vanitygen
@@ -83,7 +84,9 @@ collection_vars_init () {
 		net-p2p/namecoin-stable-utils
 		net-p2p/litecoin-daemon
 		net-p2p/litecoin-utils
+		net-p2p/monero-cli
 		multimedia/ffmpeg
+		www/youtube_dl
 		graphics/optipng
 		graphics/gifsicle
 		lang/expect
