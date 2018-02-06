@@ -18,7 +18,7 @@ NUOS_VER=0.0.11.1a1
 
 . "$(dirname "$(realpath "$0")")/../lib/nu_system.sh"
 
-while getopts A:c:C:dh:i:klM:r:st:vw OPT; do case $OPT in
+while getopts A:c:C:dh:i:klM:nr:st:vw OPT; do case $OPT in
 	A) ALTERNATE=$OPTARG;;
 	c) CA_ZONE=$OPTARG;;
 	C) CHROOTDIR=$OPTARG;;
@@ -29,6 +29,7 @@ while getopts A:c:C:dh:i:klM:r:st:vw OPT; do case $OPT in
 	l) OPT_LITE=y;;
 	M) MODE=$OPTARG; case $MODE in
 		master|slave) ;; *) exit 22; esac;;
+	n) OPT_EXPORT_NAMECOIN_JSON_VALUE=y;;
 	r) REC_TYPE="`echo "$OPTARG" | tr '[:lower:]' '[:upper:]'`"; OPT_LITE=y;;
 	s) OPT_SINGLE_RECORD=y;;
 	t) TTL=$OPTARG;;
@@ -45,6 +46,49 @@ if [ -n "${OPT_EXPORT_KEY_FINGERPRINTS-}" ]; then
 		cat <<EOF
 $out
 EOF
+		exit 0
+	else
+		exit 1
+	fi
+fi
+
+: ${SOFTWARE:=knot}
+if [ $SOFTWARE = knot ]; then
+	knotc_cmd="$(echo ${CHROOTDIR:+chroot "$CHROOTDIR"} knotc ${ALTERNATE:+-c /usr/local/etc/knot/knot_$ALTERNATE.conf})"
+fi
+
+if [ -n "${OPT_EXPORT_NAMECOIN_JSON_VALUE-}" ]; then
+	ds=$(sister nu_ns_host ${CHROOTDIR:+-C "$CHROOTDIR"} ${ALTERNATE:+-A $ALTERNATE} -k -h $HOST_NAME | awk 'length($6) == 64 {print $3, $4, $5, $6}')
+	if [ -n "$ds" ]; then
+		read tag alg dig hex <<EOF
+$ds
+EOF
+		echo -n '{"ns":['
+		plur=
+		for ns in `$knotc_cmd zone-read $HOST_NAME @ NS | cut -w -f 5`; do
+			if [ -n "$plur" ]; then
+				echo -n ,
+			fi
+			echo -n '"'
+			ns=${ns%.$HOST_NAME.}
+			ip=`$knotc_cmd zone-read $HOST_NAME $ns A | cut -w -f 5`
+			echo -n $ip
+			echo -n '"'
+			plur=y
+		done
+		echo -n '],"ds":[['
+		echo -n $tag,$alg,$dig,\"
+		echo -n $hex | gawk '{
+			for (i = 0; i < length($0); i = i + 2) {
+				o=o sprintf("%c", strtonum("0x" substr($1, i, 2)));
+			}
+			printf o
+		}' | b64encode - | sed -ne '/^begin-base64 /{n;p;q;}' | tr -d '\n'
+		echo -n '"]]'
+		if [ $HOST_NAME = ${HOST_NAME%.bit} ]; then
+			echo -n ',"translate":"'$HOST_NAME'."'
+		fi
+		echo '}'
 		exit 0
 	else
 		exit 1
@@ -70,7 +114,6 @@ fi
 
 nuos_init
 
-: ${SOFTWARE:=knot}
 case $SOFTWARE in
 	djb)
 		if [ -z "${PUB_IPS-}" ]; then
@@ -127,7 +170,6 @@ case $SOFTWARE in
 	knot)
 		[ $MODE = $default_mode ]
 		zone=$HOST_NAME
-		knotc_cmd="$(echo ${CHROOTDIR:+chroot "$CHROOTDIR"} knotc ${ALTERNATE:+-c /usr/local/etc/knot/knot_$ALTERNATE.conf})"
 		case $MODE in
 			master)
 				if [ ! -d "${CHROOTDIR-}/var/db/knot${ALTERNATE:+_${ALTERNATE}}" ]; then
