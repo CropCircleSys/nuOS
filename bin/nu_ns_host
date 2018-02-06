@@ -40,7 +40,7 @@ esac; done; shift $(($OPTIND-1))
 . "$(dirname "$(realpath "$0")")/../lib/nu_common.sh"
 
 if [ -n "${OPT_EXPORT_KEY_FINGERPRINTS-}" ]; then
-	out=$(${CHROOTDIR:+chroot "$CHROOTDIR"} keymgr ${ALTERNATE:+-c /usr/local/etc/knot/knot_ALTERNATE.conf} $HOST_NAME ds)
+	out=$(${CHROOTDIR:+chroot "$CHROOTDIR"} keymgr ${ALTERNATE:+-c /usr/local/etc/knot/knot_$ALTERNATE.conf} $HOST_NAME ds)
 	if [ -n "$out" ]; then
 		cat <<EOF
 $out
