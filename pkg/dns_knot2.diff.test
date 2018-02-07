@@ -1,1 +1,0 @@
-grep -q '(knot-2\.6\.1\.tar\.xz)' distinfo

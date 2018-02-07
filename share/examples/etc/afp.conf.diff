@@ -1,0 +1,16 @@
+--- /usr/local/etc/afp.conf.sample	2017-07-13 06:17:29.000000000 +0000
++++ /usr/local/etc/afp.conf	2018-02-01 16:43:41.892072000 +0000
+@@ -4,9 +4,11 @@
+ 
+ [Global]
+ ; Global server settings
++afp interfaces = tun0
+ 
+-; [Homes]
+-; basedir regex = /xxxx
++[Homes]
++home name = $u@$h
++basedir regex = /home
+ 
+ ; [My AFP Volume]
+ ; path = /path/to/volume
