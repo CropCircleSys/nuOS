@@ -102,6 +102,10 @@ require_ports_tree () {
 		port_=${port_diff%.1.diff}
 		port=`echo $port_ | sed -e 's|_|/|'`
 		if (cd /usr/ports/$port && . "$pkg_meta"/$port_.diff.test); then
+			if [ -f /usr/ports/$port/.nuOS_diff_test ]; then
+				echo "WARNING: patch for $port seems to have been applied yet still passes need-to-apply test." >&2
+				sleep 15
+			fi
 			i=1
 			while [ -f "$pkg_meta"/$port_.$i.diff ]; do
 				targ=`head -n 2 "$pkg_meta"/$port_.$i.diff | tail -n 1 | cut -w -f 2`
@@ -109,6 +113,10 @@ require_ports_tree () {
 				patch -F 0 -E -t -N -d /usr/ports/$port -i "$pkg_meta"/$port_.$i.diff $targ
 				i=$(($i+1))
 			done
+			sha256 -q "$pkg_meta"/$port_.diff.test >| /usr/ports/$port/.nuOS_diff_test
+		elif [ ! -f /usr/ports/$port/.nuOS_diff_test ]; then
+			echo "WARNING: patch for $port does not pass its need-to-apply test but does not seem to have been applied." >&2
+			sleep 15
 		fi
 	done
 }
