@@ -1,7 +1,7 @@
 domain=cargobay.net
 
 ip_1=23.111.168.34 # jack
-ip_2=199.188.207.210 # chol
+ip_2=104.219.250.194 # chol
 ip_3=168.235.81.21 # iron
 ip_4=168.235.71.47 # mcfly
 
@@ -13,9 +13,9 @@ case $NAME in
 		primary_if=igb0
 	;;
 	chol)
-		my_ip=$ip_2 # 199.188.207.210
-		netmask=0xfffffff8
-		defaultrouter=199.188.207.209
+		my_ip=$ip_2 # 104.219.250.194
+		netmask=0xffffff80
+		defaultrouter=104.219.250.129
 		primary_if=bge1
 	;;
 	iron)
