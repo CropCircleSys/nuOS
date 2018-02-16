@@ -16,7 +16,7 @@ case $NAME in
 		my_ip=$ip_2 # 104.219.250.194
 		netmask=0xffffff80
 		defaultrouter=104.219.250.129
-		primary_if=bge1
+		primary_if=igb1
 	;;
 	iron)
 		my_ip=$ip_3 # 168.235.81.21
