@@ -114,6 +114,7 @@ collection_vars_init () {
 		irc/irssi
 		sysutils/lsof
 		net/kamailio
+		sysutils/ipfs-go
 	'
 	
 	COLL_office='
