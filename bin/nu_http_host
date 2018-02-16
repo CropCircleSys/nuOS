@@ -16,10 +16,12 @@ set -e; set -u; set -C
 
 NUOS_VER=0.0.11.1a1
 
-while getopts C:h:Hp:su:vW OPT; do case $OPT in
+while getopts C:h:HgGp:su:vW OPT; do case $OPT in
 	C) CHROOTDIR=$OPTARG;;
 	h) HOST_NAME=$OPTARG;;
 	H) OPT_NO_HTTP2=y;;
+	g) OPT_GZIP=y;;
+	G) OPT_STATIC_GZIP=y;;
 	p) PROXY_TO=$OPTARG;;
 	s) [ -n "${OPT_SSL-}" ] && OPT_STRICT=y || OPT_SSL=y;;
 	u) USER_NAME=$OPTARG;;
@@ -35,6 +37,22 @@ nuos_init
 
 echo 'host name       -h HOST_NAME      ' ${HOST_NAME:=$HOST}
 echo 'user name       -u USER_NAME      ' ${USER_NAME:=$(pw -V "${CHROOTDIR-}/etc" usershow $((`pw -V "${CHROOTDIR-}/etc" usernext | cut -d : -f 1`-1)) | cut -d : -f 1)}
+echo -n 'dynamic gzip    -g OPT_GZIP        ' && [ -n "${OPT_GZIP-}" ] && echo set || echo null
+echo -n 'static gzip     -G OPT_STATIC_GZIP ' && [ -n "${OPT_STATIC_GZIP-}" ] && echo set || echo null
+if [ -n "${OPT_GZIP-}" -o -n "${OPT_STATIC_GZIP-}" ]; then
+	cat <<'EOF'
+    * ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** *
+    ** ** ** ** ** ** ** ** **
+     ** ** ** ** ** ** ** ** * WARNING: Enabling compression can open up your
+    * ** ** ** ** ** ** ** **           application to a whole class of attack
+    ** ** ** ** ** ** ** ** **          vectors collectively known as BREACH
+     ** ** ** ** ** ** ** ** *          attacks. Be sure this type of attack
+    * ** ** ** ** ** ** ** **           doesn't apply to your use case or else
+    ** ** ** ** ** ** ** ** **          implement sufficient mitigations.
+     ** ** ** ** ** ** ** ** *
+    * ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** *
+EOF
+fi
 echo -n 'ssl             -s OPT_SSL         ' && [ -n "${OPT_SSL-}" ] && echo set || echo null
 echo -n 'hsts (rfc6797) -ss OPT_STRICT      ' && [ -n "${OPT_STRICT-}" ] && echo set || echo null
 if [ -n "${OPT_STRICT-}" ]; then
@@ -143,6 +161,20 @@ ${OPT_STRICT:+	Header always set Strict-Transport-Security "max-age=$((5*365*24*
 ${OPT_SSL:+	CustomLog "/var/log/httpd-vhost/$HOST_NAME-ssl_request.log" "%t %h %{SSL_PROTOCOL\}x %{SSL_CIPHER\}x \"%r\" %b"
 }	ErrorLog "/var/log/httpd-vhost/$HOST_NAME-error.log"
 ${h2:+	Protocols h2${no_ssl:+c} http/1.1
+}${OPT_GZIP:+	AddOutputFilterByType DEFLATE application/javascript application/xml text/css text/html text/plain
+}${OPT_STATIC_GZIP:+	RewriteEngine On
+	RewriteCond "%{HTTP:Accept-encoding\}" "\bgzip\b"
+	RewriteCond "%{LA-U:REQUEST_FILENAME\}\.gz" -s
+	RewriteRule "^/(.*)\.(html?|js|css|te?xt|x[ms]l)\$" "%{CONTEXT_DOCUMENT_ROOT\}/\$1.\$2.gz" [nocase,env=static-gzip:1]
+	<If "%{ENV:static-gzip\} -eq 1">
+		RewriteRule "\.(?i:html?)\.gz\$" "-" [type=text/html,env=no-gzip:1]
+		RewriteRule "\.(?i:js)\.gz\$" "-" [type=application/javascript,env=no-gzip:1]
+		RewriteRule "\.(?i:css)\.gz\$" "-" [type=text/css,env=no-gzip:1]
+		RewriteRule "\.(?i:te?xt)\.gz\$" "-" [type=text/plain,env=no-gzip:1]
+		RewriteRule "\.(?i:x[ms]l)\.gz\$" "-" [type=application/xml,env=no-gzip:1]
+		Header append Content-Encoding gzip
+		Header append Vary Accept-Encoding
+	</If>
 }</VirtualHost>
 ${OPT_SSL:+<VirtualHost _default_:443>
 	ServerName www.$HOST_NAME:443
