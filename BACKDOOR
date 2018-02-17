@@ -13,15 +13,3 @@ WARNING: It should be noted that nu_install and nu_jail by default install three
 All of this is easily customizable with a few command line options when you stage a real build or deployment. To disable all three, you would add these options to your command: -a '' -u '' -b ''
 
 The code that does this is in lib/admin.sh where the applicable command line options and/or [environment] variables are also defined. 
-
-+-----------------------------------------------------------------------------+
-|   nuOS association root bitcoin donation addresses (valid during 2015 UTC)  |
-+--------------------------------------+--------------------------------------+
-|  1nuos6oMuvb9gspmJq4fm3xFeQAtk6xvz   |  1nuosQVdwGrU5x4zGn9jFMm4WQsrUP5Nw   |
-+--------------------------------------+--------------------------------------+
-|  1nuosCVmpQYjeo3ViYNTcTN3f7NrDhqHy   |  1nuosTUDUoSNAmWCSqnruokWQkdS1ogLG   |
-+--------------------------------------+--------------------------------------+
-|  1nuosDEBWtGr7tKQiPhRYgiMNKj83GfTx   |  1nuosZ6fKohRL3vCjdy3kFge7tbL17QcN   |
-+--------------------------------------+--------------------------------------+
-|  1nuosGLBua3mZXtBdHrzU559NaLodMdGK   |  - more addresses in PLANNING doc -  |
-+--------------------------------------+--------------------------------------+
