@@ -243,17 +243,24 @@ EOF
 			: ${zone:=$HOST_NAME}
 			[ -n "${conf_began-}" ] || { $knotc_cmd conf-begin && conf_began=y; }
 			if [ -n "${OPT_DELETE-}" ]; then
-				$knotc_cmd conf-unset "zone[$zone]"
-				zone_escd="$(echo $zone | sed -e 's/\./\\./g')"
-				sed -i '' -e "/^[[:blank:]]*-[[:blank:]]*domain:[[:blank:]]*$zone_escd[[:blank:]]*\$/d" \
-					"${CHROOTDIR-}/usr/local/etc/knot/knot${ALTERNATE:+_${ALTERNATE}}.conf"
+				if $knotc_cmd conf-unset "zone[$zone]"; then
+					zone_escd="$(echo $zone | sed -e 's/\./\\./g')"
+					sed -i '' -e "/^[[:blank:]]*-[[:blank:]]*domain:[[:blank:]]*$zone_escd[[:blank:]]*\$/d" \
+						"${CHROOTDIR-}/usr/local/etc/knot/knot${ALTERNATE:+_${ALTERNATE}}.conf"
+				else
+					conf_failed=y
+				fi
 			else
-				$knotc_cmd conf-set "zone[$zone]"
-				cat >> "${CHROOTDIR-}/usr/local/etc/knot/knot${ALTERNATE:+_${ALTERNATE}}.conf" <<EOF
+				if $knotc_cmd conf-set "zone[$zone]"; then
+					cat >> "${CHROOTDIR-}/usr/local/etc/knot/knot${ALTERNATE:+_${ALTERNATE}}.conf" <<EOF
   - domain: $zone
 EOF
+				else
+					conf_failed=y
+				fi
 			fi
 		fi
+		[ -z "${conf_failed-}" ] || { $knotc_cmd conf-abort && exit 1; }
 		[ -z "${conf_began-}" ] || $knotc_cmd conf-commit
 	;;
 esac
