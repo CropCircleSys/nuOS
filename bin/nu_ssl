@@ -18,7 +18,7 @@ NUOS_VER=0.0.11.1a1
 
 . "$(dirname "$(realpath "$0")")/../lib/nu_system.sh"
 
-while getopts A:a:b:c:C:d:e:fh:kl:Lm:Mn:o:p:stT:Su:vW OPT; do case $OPT in
+while getopts A:a:b:c:C:d:e:fh:kK:l:Lm:Mn:o:p:stT:Su:vW OPT; do case $OPT in
 	A) KNOT_ALTERNATE=$OPTARG;;
 	a) AUTH_FILE=$OPTARG;;
 	b) KEY_BITS=$OPTARG;;
@@ -29,6 +29,7 @@ while getopts A:a:b:c:C:d:e:fh:kl:Lm:Mn:o:p:stT:Su:vW OPT; do case $OPT in
 	f) OPT_FORCE=y;;
 	h) SSL_HOST=$OPTARG;;
 	k) OPT_EXPORT_HPKP=y;;
+	K) NEXT_PUBKEY=$OPTARG;;
 	l) CITY=$OPTARG;;
 	L) OPT_LETS_ENCRYPT=y;;
 	m) EMAIL=$OPTARG;;
@@ -67,7 +68,6 @@ san_init () {
 }
 
 if [ -n "${OPT_EXPORT_TLSA-}" -o -n "${OPT_EXPORT_HPKP-}" ]; then
-	san_init
 	: ${KEY_BITS:=256}
 	case $KEY_BITS in
 		256) type=1;;
@@ -75,21 +75,36 @@ if [ -n "${OPT_EXPORT_TLSA-}" -o -n "${OPT_EXPORT_HPKP-}" ]; then
 		512) type=2;;
 		*) exit 85;;
 	esac
-	if [ -f "${CHROOTDIR-}/etc/ssl/certs/$SSL_HOST.crt" ]; then
-		sufx=crt
-		usage=1
-	elif [ -f "${CHROOTDIR-}/etc/ssl/certs/$SSL_HOST.internal.crt" ]; then
-		sufx=internal.crt
-		usage=3
-	else
-		echo "$0: /etc/ssl/certs/$SSL_HOST.crt: No such file or directory" >&2
-		exit 1
+	if [ -z "${NEXT_PUBKEY-}" -o -n "${OPT_EXPORT_TLSA-}" ]; then
+		if [ -f "${CHROOTDIR-}/etc/ssl/certs/$SSL_HOST.crt" ]; then
+			sufx=crt
+			usage=1
+		elif [ -f "${CHROOTDIR-}/etc/ssl/certs/$SSL_HOST.internal.crt" ]; then
+			sufx=internal.crt
+			usage=3
+		else
+			echo "$0: /etc/ssl/certs/$SSL_HOST.crt: No such file or directory" >&2
+			exit 1
+		fi
 	fi
-	selector=1
-	require_tmp pub_key
-	$SSL_CMD x509 -in "${CHROOTDIR-}/etc/ssl/certs/$SSL_HOST.$sufx" -noout -pubkey >| "$pub_key"
+	if [ -z "${NEXT_PUBKEY-}" ]; then
+		require_tmp pub_key
+		$SSL_CMD x509 -in "${CHROOTDIR-}/etc/ssl/certs/$SSL_HOST.$sufx" -noout -pubkey >| "$pub_key"
+	else
+		if [ "$NEXT_PUBKEY" != "${NEXT_PUBKEY%.crt}" ]; then
+			require_tmp pub_key
+			$SSL_CMD x509 -in "$NEXT_PUBKEY" -noout -pubkey >| "$pub_key"
+		elif [ "$NEXT_PUBKEY" != "${NEXT_PUBKEY%.csr}" ]; then
+			require_tmp pub_key
+			$SSL_CMD req -in "$NEXT_PUBKEY" -noout -pubkey >| "$pub_key"
+		fi
+	fi
+	key_in="${pub_key:-$NEXT_PUBKEY}"
+	$SSL_CMD rsa -pubin -in "$key_in" -noout 2>/dev/null
 	if [ -n "${OPT_EXPORT_TLSA-}" ]; then
-		hash=`$SSL_CMD rsa -pubin -in "$pub_key" -outform DER 2>/dev/null | sha$KEY_BITS`
+		selector=1
+		san_init
+		hash=`$SSL_CMD rsa -pubin -in "$key_in" -outform DER 2>/dev/null | sha$KEY_BITS`
 		record_data="$usage $selector $type $hash"
 		if [ 2 -le $OPT_EXPORT_TLSA ]; then
 			port=${STATE-} # XXX repurpose the (-p)rovince option to mean (-p)ort
@@ -105,10 +120,12 @@ if [ -n "${OPT_EXPORT_TLSA-}" -o -n "${OPT_EXPORT_HPKP-}" ]; then
 		fi
 	fi
 	if [ -n "${OPT_EXPORT_HPKP-}" ]; then
-		hash=`$SSL_CMD rsa -pubin -in "$pub_key" -outform DER 2>/dev/null | $SSL_CMD dgst -sha$KEY_BITS -binary | $SSL_CMD enc -base64 | tr -d '[[:space:]]'`
+		hash=`$SSL_CMD rsa -pubin -in "$key_in" -outform DER 2>/dev/null | $SSL_CMD dgst -sha$KEY_BITS -binary | $SSL_CMD enc -base64 | tr -d '[[:space:]]'`
 		echo pin-sha$KEY_BITS=\"$hash\"
 	fi
-	retire_tmp pub_key
+	if [ -n "${pub_key-}" ]; then
+		retire_tmp pub_key
+	fi
 	exit 0
 fi
 
