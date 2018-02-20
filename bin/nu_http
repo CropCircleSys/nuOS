@@ -16,9 +16,12 @@ set -e; set -u; set -C
 
 NUOS_VER=0.0.11.1a1
 
-while getopts c:C:o:sv OPT; do case $OPT in
+. "$(dirname "$(realpath "$0")")/../lib/nu_system.sh"
+
+while getopts c:C:Io:sv OPT; do case $OPT in
 	c) SSL_SESSION_CACHE_KB=$OPTARG;;
 	C) CHROOTDIR=$OPTARG;;
+	I) incr OPT_HIDE_SERVER_INFO 1;;
 	o) SSL_STAPLING_CACHE_KB=$OPTARG;;
 	s) OPT_SSL=y;;
 	v) OPT_VERBOSE=y;;
@@ -27,7 +30,17 @@ esac; done; shift $(($OPTIND-1))
 
 [ -z "${CHROOTDIR-}" ] || exit 43 # CHROOTDIR is unsupported, though we want to some day so most of the code is still written with support
 
-. "$(dirname "$(realpath "$0")")/../lib/nu_system.sh"
+if [ -n "${OPT_HIDE_SERVER_INFO-}" ]; then
+	case $OPT_HIDE_SERVER_INFO in
+		1) server_tokens=OS;;
+		2) server_tokens=Min;;
+		3) server_tokens=Minor;;
+		4) server_tokens=Major;;
+		5) server_tokens=Prod;;
+		*) exit 85;;
+	esac
+fi
+
 . "$(dirname "$(realpath "$0")")/../lib/nu_common.sh"
 
 baseos_init
@@ -78,6 +91,10 @@ sed -i '' -Ee '
 	/^#ServerName /a\
 ServerName localhost
 ' "${CHROOTDIR-}/usr/local/etc/$service/httpd.conf"
+
+if [ -n "${OPT_HIDE_SERVER_INFO-}" ]; then
+	sed -i '' -Ee "s/^#?(ServerTokens[[:blank:]]*).*\$/\1$server_tokens/" "${CHROOTDIR-}/usr/local/etc/$service/extra/httpd-default.conf"
+fi
 
 if [ -n "${OPT_SSL-}" ]; then
 	mkdir "${CHROOTDIR-}/usr/local/etc/$service/ssl"
