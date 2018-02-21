@@ -16,14 +16,18 @@ set -e; set -u; set -C
 
 NUOS_VER=0.0.11.1a1
 
-while getopts C:h:HgGp:su:vW OPT; do case $OPT in
+while getopts aC:fh:HgGkp:su:vW OPT; do case $OPT in
+	a) OPT_APP_HARD=y;;
 	C) CHROOTDIR=$OPTARG;;
+	f) OPT_HPKP_FORCE=y;;
 	h) HOST_NAME=$OPTARG;;
 	H) OPT_NO_HTTP2=y;;
 	g) OPT_GZIP=y;;
 	G) OPT_STATIC_GZIP=y;;
+	k) [ -n "${OPT_HPKP-}" ] && OPT_HPKPSUBDOM=y || OPT_HPKP=y;;
+	K) HPKP_BACKUP=$OPTARG;;
 	p) PROXY_TO=$OPTARG;;
-	s) [ -n "${OPT_SSL-}" ] && OPT_STRICT=y || OPT_SSL=y;;
+	s) [ -n "${OPT_SSL-}" ] && { [ -n "${OPT_HSTS-}" ] && { [ -n "${OPT_HSTSSUBDOM-}" ] && OPT_HSTSPRELOAD=y || OPT_HSTSSUBDOM=y; } || OPT_HSTS=y; } || OPT_SSL=y;;
 	u) USER_NAME=$OPTARG;;
 	v) OPT_VERBOSE=y;;
 	W) OPT_NO_WEBSOCKET=y;;
@@ -37,10 +41,38 @@ nuos_init
 
 echo 'host name       -h HOST_NAME      ' ${HOST_NAME:=$HOST}
 echo 'user name       -u USER_NAME      ' ${USER_NAME:=$(pw -V "${CHROOTDIR-}/etc" usershow $((`pw -V "${CHROOTDIR-}/etc" usernext | cut -d : -f 1`-1)) | cut -d : -f 1)}
-echo -n 'dynamic gzip    -g OPT_GZIP        ' && [ -n "${OPT_GZIP-}" ] && echo set || echo null
-echo -n 'static gzip     -G OPT_STATIC_GZIP ' && [ -n "${OPT_STATIC_GZIP-}" ] && echo set || echo null
+echo -n 'hardened app    -a OPT_APP_HARD    ' && [ -n "${OPT_APP_HARD-}" ] && echo set || echo null
+echo -n 'dynamic comprsn -g OPT_GZIP        ' && [ -n "${OPT_GZIP-}" ] && echo set || echo null
+echo -n 'static comprsn  -G OPT_STATIC_GZIP ' && [ -n "${OPT_STATIC_GZIP-}" ] && echo set || echo null
+echo -n 'pubkey pinning  -k OPT_HPKP        ' && [ -n "${OPT_HPKP-}" ] && echo set || echo null
+if [ -n "${OPT_HPKP-}" ]; then
+	echo -n 'hpkp subdoms   -kk OPT_HPKPSUBDOM  ' && [ -n "${OPT_HPKPSUBDOM-}" ] && echo set || echo null
+	echo 'backup key      -K HPKP_BACKUP    ' "${HPKP_BACKUP:=${CHROOTDIR-}/etc/ssl/csrs.next/$HOST_NAME.csr}"
+	echo -n 'enable hpkp     -f OPT_HPKP_FORCE  ' && [ -n "${OPT_HPKP_FORCE-}" ] && echo set || echo 'null (preconfigured, commented out)'
+fi
+echo -n 'ssl             -s OPT_SSL         ' && [ -n "${OPT_SSL-}" ] && echo set || echo null
+echo -n 'hsts (rfc6797) -ss OPT_HSTS        ' && [ -n "${OPT_HSTS-}" ] && echo set || echo null
+echo -n 'hsts subdoms  -sss OPT_HSTSSUBDOM  ' && [ -n "${OPT_HSTSSUBDOM-}" ] && echo set || echo null
+echo -n 'hsts preload -ssss OPT_HSTSPRELOAD ' && [ -n "${OPT_HSTSPRELOAD-}" ] && echo set || echo null
+if [ -z "${OPT_APP_HARD-}" ]; then
+	loose_app_security=y
+	cat <<'EOF'
+
+    * ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** *
+    ** ** ** ** ** ** ** ** **
+     ** ** ** ** ** ** ** ** * WARNING: You've left our hardened app security
+    * ** ** ** ** ** ** ** **           defaults unselected. We've inserted
+    ** ** ** ** ** ** ** ** **          them into the configuration file for
+     ** ** ** ** ** ** ** ** *          you, just commented out. Remember to
+    * ** ** ** ** ** ** ** **           inspect and adjust them to suit your
+    ** ** ** ** ** ** ** ** **          specific needs.
+     ** ** ** ** ** ** ** ** *
+    * ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** *
+EOF
+fi
 if [ -n "${OPT_GZIP-}" -o -n "${OPT_STATIC_GZIP-}" ]; then
 	cat <<'EOF'
+
     * ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** *
     ** ** ** ** ** ** ** ** **
      ** ** ** ** ** ** ** ** * WARNING: Enabling compression can open up your
@@ -53,33 +85,60 @@ if [ -n "${OPT_GZIP-}" -o -n "${OPT_STATIC_GZIP-}" ]; then
     * ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** *
 EOF
 fi
-echo -n 'ssl             -s OPT_SSL         ' && [ -n "${OPT_SSL-}" ] && echo set || echo null
-echo -n 'hsts (rfc6797) -ss OPT_STRICT      ' && [ -n "${OPT_STRICT-}" ] && echo set || echo null
-if [ -n "${OPT_STRICT-}" ]; then
+if [ -n "${OPT_HSTS-}" ]; then
+	: ${HSTS_DURATION:=$((365*24*60*60))}
+	[ -z "${OPT_HSTSPRELOAD-}" ] || [ "$HSTS_DURATION" -ge 31536000 ]
 	cat <<EOF
+
     * ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** *
     ** ** ** ** ** ** ** ** **
-     ** ** ** ** ** ** ** ** * WARNING: $HOST_NAME AND ALL SUBDOMAINS
-    * ** ** ** ** ** ** ** **           can NEVER EVER go back once you enable
-    ** ** ** ** ** ** ** ** **          HSTS even once, even by obliterating
-     ** ** ** ** ** ** ** ** *          all servers and starting from scratch.
-    * ** ** ** ** ** ** ** **           You darn sure better know what you're
-    ** ** ** ** ** ** ** ** **          getting into. Read RFC 6797 for info.
-     ** ** ** ** ** ** ** ** *
-    * ** ** ** ** ** ** ** **  NOTICE:  Consider registering $HOST_NAME
-    ** ** ** ** ** ** ** ** **          at https://hstspreload.appspot.com for
-     ** ** ** ** ** ** ** ** *          added first-visit security (inclusion
-    * ** ** ** ** ** ** ** **           in built-in lists of participating
-    ** ** ** ** ** ** ** ** **          browsers and clients).
-     ** ** ** ** ** ** ** ** *
+     ** ** ** ** ** ** ** ** * WARNING: Once you enable HSTS, EVEN JUST ONCE,
+    * ** ** ** ** ** ** ** **           $HOST_NAME ${OPT_HSTSSUBDOM:+AND ALL SUBDOMAINS}
+    ** ** ** ** ** ** ** ** **          CAN'T back out for $(($HSTS_DURATION/86400)) days.
+     ** ** ** ** ** ** ** ** *          You darn sure better know what you're
+    * ** ** ** ** ** ** ** **           getting into. Read RFC 6797 for info.
+    ** ** ** ** ** ** ** ** **
+     ** ** ** ** ** ** ** ** * NOTICE:  Consider registering $HOST_NAME
+    * ** ** ** ** ** ** ** **           at https://hstspreload.appspot.com for
+    ** ** ** ** ** ** ** ** **          added first-visit security (inclusion
+     ** ** ** ** ** ** ** ** *          in built-in lists of participating
+    * ** ** ** ** ** ** ** **           browsers and clients).
+    ** ** ** ** ** ** ** ** **
+     ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** **
+EOF
+fi
+if [ -n "${OPT_HPKP-}" ]; then
+	: ${HPKP_DURATION:=$((60*24*60*60))}
+	[ "$HPKP_DURATION" -le 5184000 ]
+	cat <<EOF
+
     * ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** *
+    ** ** ** ** ** ** ** ** **
+     ** ** ** ** ** ** ** ** * WARNING: Once you enable HPKP, EVEN JUST ONCE,
+    * ** ** ** ** ** ** ** **           $HOST_NAME ${OPT_HPKPSUBDOM:+AND ALL SUBDOMAINS}
+    ** ** ** ** ** ** ** ** **          CAN'T back out for $(($HPKP_DURATION/86400)) days.
+     ** ** ** ** ** ** ** ** *          You darn sure better know what you're
+    * ** ** ** ** ** ** ** **           getting into. Read RFC 7469 for info.
+    ** ** ** ** ** ** ** ** **          Spread 99 encrypted copies of your
+     ** ** ** ** ** ** ** ** *          backup key to all four corners of the
+    * ** ** ** ** ** ** ** **           earth. Don't say we did't warn you.
+    ** ** ** ** ** ** ** ** **
+     ** ** ** ** ** ** ** ** * NOTICE:  Check that the following HPKP header
+    * ** ** ** ** ** ** ** **           immediately below looks sane.
+    ** ** ** ** ** ** ** ** **
+     ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** **
 EOF
 fi
 echo
 
 maybe_yell
 
-[ -n "${OPT_SSL-}" ] || [ -z "${OPT_STRICT-}" ]
+[ -n "${OPT_SSL-}" ] || [ -z "${OPT_HSTS-}" ]
+[ -n "${OPT_HSTS-}" ] || [ -z "${OPT_HSTSSUBDOM-}" ]
+[ -n "${OPT_HSTSSUBDOM-}" ] || [ -z "${OPT_HSTSPRELOAD-}" ]
+[ -n "${OPT_SSL-}" ] || [ -z "${OPT_HPKP-}" ]
+[ -z "${OPT_HPKP-}" ] || [ -f "$HPKP_BACKUP" ]
+[ -n "${OPT_HPKP-}" ] || [ -z "${OPT_HPKPSUBDOM-}" ]
 
 service=apache24
 
@@ -104,6 +163,18 @@ if [ -n "${OPT_SSL-}" ]; then
 		ln -s -f "/usr/local/etc/$service/ssl/$HOST_NAME.ca.crt" "${CHROOTDIR-}/etc/ssl/certs.installed/localhost/$HOST_NAME.ca.crt/$service"
 	else
 		self_signed=y
+	fi
+	if [ -n "${OPT_HPKP-}" ]; then
+		[ -n "${OPT_HPKP_FORCE-}" ] || hpkp_commented=y
+		hpkp_header_value="`sister nu_ssl -k -h $HOST_NAME`; `sister nu_ssl -k -K "$HPKP_BACKUP"`; max-age=$HPKP_DURATION${OPT_HPKPSUBDOM:+; includeSubDomains}"
+		echo "The very next line is the exact HTTP header to enable HPKP which will be included in every HTTP response:"
+		echo "Public-Key-Pins: $hpkp_header_value"
+		echo
+		echo "The very next line is the exact Apache configuration directive used to ${hpkp_commented:+configure}${OPT_HPKP_FORCE:+enable} HPKP which will be included in the VirtualHost context:"
+		cat <<EOF
+${hpkp_commented:+#}Header always set Public-Key-Pins '$hpkp_header_value'
+EOF
+		echo
 	fi
 else
 	no_ssl=y
@@ -138,7 +209,10 @@ cat > "${CHROOTDIR-}/usr/local/etc/$service/Includes/$HOST_NAME.conf" <<EOF
 	ServerName $HOST_NAME${OPT_SSL:+:443}
 	ServerAdmin webmaster@$HOST_NAME
 	DocumentRoot "$user_home/$HOST_NAME/www/public"
-	Header always setifempty X-Frame-Options SAMEORIGIN
+	${loose_app_security:+#}Header always setifempty Content-Security-Policy "default-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'; plugin-types null/void"
+	${loose_app_security:+#}Header always setifempty X-Frame-Options SAMEORIGIN
+	${loose_app_security:+#}Header always setifempty X-XSS-Protection "1; mode=block"
+	${loose_app_security:+#}Header always set X-Content-Type-Options nosniff
 ${PROXY_TO:+${ws:+	RewriteEngine On
 	RewriteCond %{HTTP:Connection\} Upgrade [nocase]
 	RewriteCond %{HTTP:Upgrade\} websocket [nocase]
@@ -156,7 +230,8 @@ ${backend_ssl:+	SSLProxyEngine on
 	SSLCertificateKeyFile "/usr/local/etc/$service/ssl/private/$HOST_NAME.key"
 ${self_signed:+	SSLUseStapling off
 #}	SSLCertificateChainFile "/usr/local/etc/$service/ssl/$HOST_NAME.ca.crt"
-${OPT_STRICT:+	Header always set Strict-Transport-Security "max-age=$((5*365*24*60*60)); includeSubdomains; preload"
+${OPT_HSTS:+	Header always set Strict-Transport-Security "max-age=$HSTS_DURATION${OPT_HSTSSUBDOM:+; includeSubDomains${OPT_HSTSPRELOAD:+; preload}}"
+}${OPT_HPKP:+	${hpkp_commented:+#}Header always set Public-Key-Pins '$hpkp_header_value'
 }}	CustomLog "/var/log/httpd-vhost/$HOST_NAME-access.log" common
 ${OPT_SSL:+	CustomLog "/var/log/httpd-vhost/$HOST_NAME-ssl_request.log" "%t %h %{SSL_PROTOCOL\}x %{SSL_CIPHER\}x \"%r\" %b"
 }	ErrorLog "/var/log/httpd-vhost/$HOST_NAME-error.log"
@@ -183,19 +258,19 @@ ${OPT_SSL:+<VirtualHost _default_:443>
 	SSLCertificateKeyFile "/usr/local/etc/$service/ssl/private/$HOST_NAME.key"
 ${self_signed:+	SSLUseStapling off
 #}	SSLCertificateChainFile "/usr/local/etc/$service/ssl/$HOST_NAME.ca.crt"
-${OPT_STRICT:+	Header always set Strict-Transport-Security "max-age=$((5*365*24*60*60)); includeSubdomains; preload"
-}	Header always setifempty X-Frame-Options SAMEORIGIN
+${OPT_HSTS:+	Header always set Strict-Transport-Security "max-age=$HSTS_DURATION${OPT_HSTSSUBDOM:+; includeSubDomains${OPT_HSTSPRELOAD:+; preload}}"
+}${OPT_HPKP:+	${hpkp_commented:+#}Header always set Public-Key-Pins '$hpkp_header_value'
+}	${loose_app_security:+#}Header always set Content-Security-Policy "frame-ancestors 'none'"
+	${loose_app_security:+#}Header always set X-Frame-Options DENY
 	Redirect permanent / https://$HOST_NAME/
 </VirtualHost>
 }<VirtualHost *:80>
 	ServerName ${no_ssl:+www.}$HOST_NAME
 ${OPT_SSL:+	ServerAlias www.$HOST_NAME
-}	Header always setifempty X-Frame-Options SAMEORIGIN
+}	${loose_app_security:+#}Header always set Content-Security-Policy "frame-ancestors 'none'"
+	${loose_app_security:+#}Header always set X-Frame-Options DENY
 	Redirect permanent / http${OPT_SSL:+s}://$HOST_NAME/
 </VirtualHost>
-EOF
-
-cat >> "${CHROOTDIR-}/usr/local/etc/$service/Includes/$HOST_NAME.conf" <<EOF
 <Directory "$user_home/$HOST_NAME/www/public">
 	Options Indexes FollowSymLinks
 	AllowOverride None
@@ -203,4 +278,4 @@ cat >> "${CHROOTDIR-}/usr/local/etc/$service/Includes/$HOST_NAME.conf" <<EOF
 </Directory>
 EOF
 
-echo "Configured $HOST_NAME for ${OPT_STRICT:+strict }http${OPT_SSL:+s} service."
+echo "Configured $HOST_NAME for ${OPT_HSTS:+strict }http${OPT_SSL:+s} service."
