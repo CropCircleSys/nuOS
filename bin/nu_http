@@ -90,6 +90,9 @@ sed -i '' -Ee '
 	s/^#(Include[[:>:]].*[[:<:]]httpd-(mpm|vhosts|default).conf)$/\1/
 	/^#ServerName /a\
 ServerName localhost
+	/^Include .*\/Includes\/\*\.conf[[:>:]]/i\
+TraceEnable off\
+
 ' "${CHROOTDIR-}/usr/local/etc/$service/httpd.conf"
 
 if [ -n "${OPT_HIDE_SERVER_INFO-}" ]; then
