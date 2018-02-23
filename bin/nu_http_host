@@ -16,12 +16,13 @@ set -e; set -u; set -C
 
 NUOS_VER=0.0.11.1a1
 
-while getopts aC:fh:HgGkp:su:vW OPT; do case $OPT in
+while getopts aC:fh:HigGkp:su:vW OPT; do case $OPT in
 	a) OPT_APP_HARD=y;;
 	C) CHROOTDIR=$OPTARG;;
 	f) OPT_HPKP_FORCE=y;;
 	h) HOST_NAME=$OPTARG;;
 	H) OPT_NO_HTTP2=y;;
+	i) OPT_IMMUTABLE=y;;
 	g) OPT_GZIP=y;;
 	G) OPT_STATIC_GZIP=y;;
 	k) [ -n "${OPT_HPKP-}" ] && OPT_HPKPSUBDOM=y || OPT_HPKP=y;;
@@ -236,6 +237,10 @@ ${OPT_HSTS:+	Header always set Strict-Transport-Security "max-age=$HSTS_DURATION
 ${OPT_SSL:+	CustomLog "/var/log/httpd-vhost/$HOST_NAME-ssl_request.log" "%t %h %{SSL_PROTOCOL\}x %{SSL_CIPHER\}x \"%r\" %b"
 }	ErrorLog "/var/log/httpd-vhost/$HOST_NAME-error.log"
 ${h2:+	Protocols h2${no_ssl:+c} http/1.1
+}${OPT_IMMUTABLE:+	<Location "/${IMMUTABLE_DIR:=static}/">
+		Options -Indexes
+		Header onsuccess set Cache-Control "max-age=31536000, immutable"
+	</Location>
 }${OPT_GZIP:+	AddOutputFilterByType DEFLATE application/javascript application/xml text/css text/html text/plain
 }${OPT_STATIC_GZIP:+	RewriteEngine On
 	RewriteCond "%{HTTP:Accept-encoding\}" "\bgzip\b"
