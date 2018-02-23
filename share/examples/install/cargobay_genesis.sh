@@ -106,6 +106,8 @@ for z in $zones; do
     nu_imap -s -e -h $z
   fi
   
+  nu_smtp_host -h $z
+  
   case $z in
     cropcircle.systems|nu.zone|nu.click)
       strict=;;
