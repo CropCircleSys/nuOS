@@ -21,6 +21,9 @@ module.exports = {
   ],
   // add your custom rules here
   rules: {
+    // Richard Hendricks knows what's up
+    'no-tabs': 'off',
+    'indent': ["error", "tab"],
     // allow async-await
     'generator-star-spacing': 'off',
     // allow debugger during development
