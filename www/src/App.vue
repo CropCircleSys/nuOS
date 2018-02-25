@@ -13,12 +13,12 @@ export default {
 
 <style>
 body {
-	background: black;
+	background: Black;
 }
 #app {
 	text-align: center;
 	font-family: "Lucida Bright", Georgia, serif;
-	color: white;
+	color: White;
 }
 h1, h2, h3 {
 	font-family: Baskerville, "Hoefler Text", Garamond, "Times New Roman", serif;

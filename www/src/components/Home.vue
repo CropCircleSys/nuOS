@@ -28,8 +28,6 @@ export default {
 </script>
 
 <style scoped>
-.home {
-}
 div.title {
 	font-size: 3.5vmin;
 }
@@ -46,15 +44,18 @@ h1.title {
 }
 .wimpy {
 	font-variant: small-caps;
+	font-size: 50%;
+	letter-spacing: 0.33em;
+	margin: 0.5em 0 0.33em;
 }
 .wimpy:before, .wimpy:after {
 	content: '⟵⟶';
-	margin: 0 1em;
+	margin: 0 2.75em;
 	letter-spacing: -0.15em;
 }
 .legacy {
 	text-transform: uppercase;
-	transform: scaleY(1.33);
+	transform: scaleY(1.5);
 	font-size: 140%;
 }
 .shy {
