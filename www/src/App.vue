@@ -14,6 +14,7 @@ export default {
 <style>
 body {
 	background: Black;
+	font-size: 0;
 }
 #app {
 	text-align: center;
