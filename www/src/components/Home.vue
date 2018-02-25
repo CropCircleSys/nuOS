@@ -1,16 +1,18 @@
 <template>
 	<div class="home">
-		<h1 class="title"><em>nu</em>OS</h1>
-		<h2>
-			<span class="title strong">never underestimate</span>
-			<span class="title wimpy">the</span>
-			<span class="title legacy">old school</span>
-		</h2>
-		<h3>
-			<span class="title shyest">sooner or later</span>
-			<span class="title shyer">everything old</span>
-			<span class="title shy">is <em>nu</em> again</span>
-		</h3>
+		<div class="title">
+			<h1 class="title"><em>nu</em>OS</h1>
+			<h2>
+				<span class="title strong">never underestimate</span>
+				<span class="title wimpy">the</span>
+				<span class="title legacy">old school</span>
+			</h2>
+			<h3>
+				<span class="title shyest">sooner or later</span>
+				<span class="title shyer">everything old</span>
+				<span class="title shy">is <em>nu</em> again</span>
+			</h3>
+		</div>
 	</div>
 </template>
 
@@ -25,17 +27,18 @@ export default {
 }
 </script>
 
-<!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
 .home {
-  font-size: 250%;
 }
-h1.title {
-	font-size: 575%;
-	margin: 0.33em 0;
+div.title {
+	font-size: 3.5vmin;
 }
 .title {
 	display: block;
+}
+h1.title {
+	font-size: 575%;
+	margin: 0.5em 0 0.33em;
 }
 .strong {
 	transform: scaleY(2);
