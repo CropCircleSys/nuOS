@@ -3,14 +3,14 @@
 		<div class="title">
 			<h1 class="title"><em>nu</em>OS</h1>
 			<h2>
-				<span class="title strong">never underestimate</span>
-				<span class="title wimpy">the</span>
-				<span class="title legacy">old school</span>
+				<span class="bl strong">never underestimate</span>
+				<span class="bl wimpy">the</span>
+				<span class="bl legacy">old school</span>
 			</h2>
 			<h3>
-				<span class="title shyest">sooner or later</span>
-				<span class="title shyer">everything old</span>
-				<span class="title shy">is <em>nu</em> again</span>
+				<span class="bl shyest">sooner or later</span>
+				<span class="bl shyer">everything old</span>
+				<span class="bl shy">is <em>nu</em> again</span>
 			</h3>
 		</div>
 	</div>
@@ -30,8 +30,9 @@ export default {
 <style scoped>
 div.title {
 	font-size: 3.5vmin;
+	color: LightGray;
 }
-.title {
+.bl {
 	display: block;
 }
 h1.title {
@@ -41,6 +42,7 @@ h1.title {
 .strong {
 	transform: scaleY(2);
 	font-style: italic;
+	color: White;
 }
 .wimpy {
 	font-variant: small-caps;
@@ -57,10 +59,14 @@ h1.title {
 	text-transform: uppercase;
 	transform: scaleY(1.5);
 	font-size: 140%;
+	color: White;
 }
 .shy {
 	font-size: 175%;
 	letter-spacing: 0.175em;
+}
+.shy em, h1.title em {
+	color: White;
 }
 .shyer {
 	font-size: 140%;
