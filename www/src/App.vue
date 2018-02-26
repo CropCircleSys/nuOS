@@ -5,9 +5,10 @@
 			<nav>
 				<ul>
 					<li>home</li>
-					<li>information</li>
-					<li>download</li>
-					<li>source-code</li>
+					<li>info</li>
+					<li>log</li>
+					<li>get</li>
+					<li>src</li>
 				</ul>
 			</nav>
 		</header>
