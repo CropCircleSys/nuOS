@@ -1,7 +1,7 @@
 <template>
 	<div id="app">
 		<header>
-			<div class="title"><strong><em>nu</em>OS</strong>.<span class="sm-cap">org</span></div>
+			<div class="title"><strong><em>nu</em>OS</strong><span class="sm-cap">.org</span></div>
 			<nav>
 				<ul class="west">
 					<li>home</li>
@@ -98,6 +98,7 @@ header .title em {
 }
 .title .sm-cap {
 	font-size: 87.5%;
+	font-weight: 600;
 }
 nav {
 	display: inline-block;
