@@ -1,8 +1,8 @@
 <template>
 	<div id="app">
 		<header>
-			<div class="title"><strong><em>nu</em>OS</strong><span class="sm-cap">.org</span></div>
 			<nav>
+				<div class="title"><strong><em>nu</em>OS</strong><span class="sm-cap">.org</span></div>
 				<ul class="west">
 					<li>home</li>
 					<li>info</li>
