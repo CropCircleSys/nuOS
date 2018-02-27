@@ -1,7 +1,7 @@
 <template>
 	<div id="app">
 		<header>
-			<span class="title"><strong><em>nu</em>OS</strong>.org</span>
+			<div class="title"><strong><em>nu</em>OS</strong>.<span class="sm-cap">org</span></div>
 			<nav>
 				<ul class="west">
 					<li>home</li>
@@ -10,7 +10,7 @@
 					<li>get</li>
 					<li>src</li>
 				</ul>
-				<ul class="east">
+				<ul class="sm-cap east">
 					<li>sign in</li>
 					<li>sign up</li>
 				</ul>
@@ -82,6 +82,7 @@ header {
 header .title {
 	font-size: 2.5vmax;
 	display: block;
+	margin: -0.1875em 0.875em 0 0;
 }
 header .title strong {
 	color: LightGray;
@@ -92,6 +93,12 @@ header .title em {
 .title, header {
 	font-family: Baskerville, "Times New Roman", serif;
 }
+.sm-cap {
+	font-variant: small-caps;
+}
+.title .sm-cap {
+	font-size: 87.5%;
+}
 nav {
 	display: inline-block;
 /*
@@ -100,17 +107,23 @@ nav {
 }
 nav ul {
 	margin: 0;
+	padding: 0;
 	font-size: 2vmax;
-	padding: 0 0 0 0.5em;
+}
+header nav {
+	position: fixed;
+}
+header nav ul.east {
+	position: fixed;
+	text-align: right;
+	right: 0;
+	top: 0;
+	margin: 1rem;
 }
 nav ul li {
 	list-style: none;
 	margin: 0 0.5em;
 	font-weight: bold;
-}
-nav ul.east {
-	text-align: right;
-	margin: 1rem 1rem 0 2.125em;
 }
 footer {
 	bottom: 0;
@@ -130,7 +143,7 @@ footer {
 	}
 	header .title {
 		font-size: 3.75vw;
-		display: initial;
+		display: inline-block;
 	}
 	nav ul {
 		font-size: 3vw;
@@ -144,11 +157,6 @@ footer {
 	}
 }
 @media screen and (max-width: 768px) {
-	nav ul.east {
-		position: fixed;
-		right: 0;
-		top: 0;
-	}
 	nav ul.east li {
 		margin: 0;
 	}
