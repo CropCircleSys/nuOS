@@ -412,7 +412,7 @@ Edit /etc/motd to change this login announcement.
 EOF
 
 		mkdir $POOL_MNT/usr/nuos
-		tar -cf - -C "$(dirname "$(realpath "$0")")/.." --exclude ^conf --exclude '.?*' . | tar -xvf - -C $POOL_MNT/usr/nuos
+		tar -cf - -C "$(dirname "$(realpath "$0")")/.." --exclude .DS_Store --exclude .directory --exclude ^conf --exclude '^.?*' --exclude ^www/dist --exclude ^www/node_modules --exclude '^www/*.log' . | tar -xvf - -C $POOL_MNT/usr/nuos
 		chown -R root:wheel $POOL_MNT/usr/nuos
 		conf=usr/nuos/conf
 
