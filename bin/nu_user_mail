@@ -40,6 +40,10 @@ echo
 
 maybe_yell
 
+if grep -q "^$MAIL_ADDRESS	" "${CHROOTDIR-}/usr/local/etc/postfix/virtual"; then
+	exit 1
+fi
+
 cat >> "${CHROOTDIR-}/usr/local/etc/postfix/virtual" <<EOF
 $MAIL_ADDRESS	$USER_NAME@localhost
 EOF
