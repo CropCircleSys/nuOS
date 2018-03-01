@@ -73,7 +73,7 @@ collection_vars_init () {
 		ftp/pure-ftpd
 		net/isc-dhcp43-server
 		net/netatalk3
-		net/samba46
+		net/samba47
 		security/tor
 		net-p2p/rtorrent
 		net-p2p/createtorrent
