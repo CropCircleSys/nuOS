@@ -3,16 +3,31 @@
 		<header>
 			<nav>
 				<div class="title"><strong><em>nu</em>OS</strong><span class="sm-cap">.org</span></div>
-				<ul class="west">
-					<li>home</li>
+				<ul class="north west">
+					<li><router-link to="/">home</router-link></li>
 					<li>info</li>
 					<li>log</li>
 					<li>get</li>
 					<li>src</li>
 				</ul>
-				<ul class="sm-cap east">
+				<ul class="sm-cap north east">
+					<li><a href="mailto:join@nuos.org">sign up</a></li>
 					<li>sign in</li>
-					<li>sign up</li>
+				</ul>
+				<ul class="ext west">
+					<li><em>nu</em><span class="cap">.<span class="sqz x-zone">zone</span></span></li>
+					<li><em>nu</em><span class="cap">.<span class="sqz x-place">place</span></span></li>
+					<li><em>nu</em><span class="cap">.<span class="sqz x-software">software</span></span></li>
+					<li><em>nu</em><span class="cap">.<span class="sqz x-email">email</span></span></li>
+					<li><em>nu</em><span class="cap">.<span class="sqz x-chat">chat</span></span></li>
+					<li><em>nu</em><span class="cap">.<span class="sqz x-team">team</span></span></li>
+					<li><em>nu</em><span class="cap">.<span class="sqz x-show">show</span></span></li>
+					<li><em>nu</em><span class="cap">.<span class="sqz x-live">live</span></span></li>
+					<li><em>nu</em><span class="cap">.<span class="sqz x-lol">lol</span></span></li>
+					<li><em>nu</em><span class="cap">.<span class="sqz x-click">click</span></span></li>
+					<li><em>nu</em><span class="cap">.<span class="sqz x-money">money</span></span></li>
+					<li><em>nu</em><span class="cap">.<span class="sqz x-gold">gold</span></span></li>
+					<li><em>nu</em><span class="cap">.<span class="sqz x-cash">cash</span></span></li>
 				</ul>
 			</nav>
 		</header>
@@ -37,12 +52,38 @@ export default {
 </script>
 
 <style>
+.sqz {
+	display: inline-block;
+	transform-origin: 0 50% 0;
+}
+.sqz.x-zone { transform: scaleX(0.713); }
+.sqz.x-place { transform: scaleX(0.638); }
+.sqz.x-software { transform: scaleX(0.373); }
+.sqz.x-email { transform: scaleX(0.627); }
+.sqz.x-chat { transform: scaleX(0.726); }
+.sqz.x-team { transform: scaleX(0.699); }
+.sqz.x-show { transform: scaleX(0.658); }
+.sqz.x-live { transform: scaleX(0.876); }
+.sqz.x-lol { transform: scaleX(1); }
+.sqz.x-click { transform: scaleX(0.622); }
+.sqz.x-money { transform: scaleX(0.527); }
+.sqz.x-gold { transform: scaleX(0.693); }
+.sqz.x-cash { transform: scaleX(0.754); }
 html {
 	font-size: 12pt;
 	line-height: 1.125;
 	text-size-adjust: none;
 	-webkit-text-size-adjust: none;
 	-ms-text-size-adjust: none;
+}
+body {
+	background: Black;
+	font-size: 0;
+	color: Gray;
+}
+#app {
+	text-align: center;
+	font-family: "Lucida Bright", Georgia, serif;
 }
 a {
 	color: LightGray;
@@ -56,14 +97,8 @@ a:hover {
 .brought a:hover {
 	color: DarkGray;
 }
-body {
-	background: Black;
-	font-size: 0;
-	color: Gray;
-}
-#app {
-	text-align: center;
-	font-family: "Lucida Bright", Georgia, serif;
+nav a {
+	text-decoration: none;
 }
 header, article
 {
@@ -96,6 +131,9 @@ header .title em {
 .sm-cap {
 	font-variant: small-caps;
 }
+.cap {
+	text-transform: uppercase;
+}
 .title .sm-cap {
 	font-size: 87.5%;
 	font-weight: 600;
@@ -126,6 +164,13 @@ nav ul li {
 	margin: 0 0.5em;
 	font-weight: bold;
 }
+nav ul.ext {
+	margin: 0.75em 0 0;
+}
+nav ul.ext li {
+	margin: 0;
+	display: block;
+}
 footer {
 	bottom: 0;
 	width: 100%;
@@ -148,7 +193,9 @@ footer {
 	}
 	nav ul {
 		font-size: 3vw;
-		display: inline;
+	}
+	nav ul.north {
+		display: inline-block;
 	}
 	nav ul li {
 		display: inline-block;
