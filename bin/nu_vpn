@@ -94,7 +94,7 @@ key private/${ALTERNATE:+${ALTERNATE}_}server.key
 dh ${ALTERNATE:+${ALTERNATE}_}dh$KEY_BITS.pem
 tls-auth private/${ALTERNATE:+${ALTERNATE}_}ta.key 0
 cipher $CIPHER
-comp-lzo
+compress lz4
 user nobody
 group nobody
 persist-key
