@@ -41,6 +41,26 @@ ${primary_if:+ifconfig_${primary_if}_name="net0"
 defaultrouter="$defaultrouter"
 EOF
 
+cat >> $TRGT/etc/sysctl.conf <<'EOF'
+net.inet.tcp.recvbuf_inc=65536
+net.inet.tcp.recvbuf_max=16777216
+net.inet.tcp.recvspace=131072
+net.inet.tcp.sendbuf_inc=65536
+net.inet.tcp.sendbuf_max=16777216
+net.inet.tcp.sendspace=131072
+net.inet.tcp.cc.algorithm=htcp
+net.inet.tcp.cc.htcp.adaptive_backoff=1
+net.inet.tcp.cc.htcp.rtt_scaling=1
+net.inet.tcp.mssdflt=1240
+net.inet.tcp.minmss=536
+net.inet.tcp.rfc6675_pipe=1
+net.inet.tcp.syncache.rexmtlimit=0
+net.inet.ip.maxfragpackets=0
+net.inet.ip.maxfragsperpacket=0
+net.inet.tcp.abc_l_var=44
+net.inet.tcp.initcwnd_segments=44
+EOF
+
 sed -i '' -E -e '/^#VersionAddendum\>/a\
 ChallengeResponseAuthentication no\
 PasswordAuthentication no\

@@ -182,7 +182,7 @@ EOF
 
 	cat >> $POOL_MNT/etc/rc.conf <<'EOF'
 #linux_enable="YES"
-kld_list="aesni ipfw sem accf_data accf_dns accf_http"
+kld_list="aesni ipfw sem accf_data accf_dns accf_http cc_htcp"
 entropy_file="/var/db/entropy/seed"
 firewall_enable="YES"
 firewall_type="open"
