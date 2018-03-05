@@ -56,19 +56,19 @@ export default {
 	display: inline-block;
 	transform-origin: 0 50% 0;
 }
-.sqz.x-zone { transform: scaleX(0.713); }
-.sqz.x-place { transform: scaleX(0.638); }
-.sqz.x-software { transform: scaleX(0.373); }
-.sqz.x-email { transform: scaleX(0.627); }
-.sqz.x-chat { transform: scaleX(0.726); }
-.sqz.x-team { transform: scaleX(0.699); }
-.sqz.x-show { transform: scaleX(0.658); }
-.sqz.x-live { transform: scaleX(0.876); }
-.sqz.x-lol { transform: scaleX(1); }
-.sqz.x-click { transform: scaleX(0.622); }
-.sqz.x-money { transform: scaleX(0.527); }
-.sqz.x-gold { transform: scaleX(0.693); }
-.sqz.x-cash { transform: scaleX(0.754); }
+.sqz.x-zone { transform: scaleX(0.956); }
+.sqz.x-place { transform: scaleX(0.855); }
+.sqz.x-software { transform: scaleX(0.5); }
+.sqz.x-email { transform: scaleX(0.840); }
+.sqz.x-chat { transform: scaleX(0.973); }
+.sqz.x-team { transform: scaleX(0.937); }
+.sqz.x-show { transform: scaleX(0.882); }
+.sqz.x-live { transform: scaleX(1.174); }
+.sqz.x-lol { transform: scaleX(1.340); }
+.sqz.x-click { transform: scaleX(0.834); }
+.sqz.x-money { transform: scaleX(0.706); }
+.sqz.x-gold { transform: scaleX(0.929); }
+.sqz.x-cash { transform: scaleX(1.011); }
 html {
 	font-size: 12pt;
 	line-height: 1.125;
