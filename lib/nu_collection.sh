@@ -95,6 +95,7 @@ collection_vars_init () {
 		databases/mongodb36
 		databases/redis
 		lang/mono-basic
+		lang/python
 		www/npm
 		www/apache24
 		www/nginx
