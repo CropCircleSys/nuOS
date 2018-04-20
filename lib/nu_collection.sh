@@ -116,6 +116,8 @@ collection_vars_init () {
 		sysutils/lsof
 		net/kamailio
 		sysutils/ipfs-go
+		net-im/mastodon
+		lang/go
 	'
 	
 	COLL_office='
@@ -145,5 +147,6 @@ collection_vars_init () {
 		graphics/appleseed
 		graphics/luxrender
 		graphics/blender
+		games/sdlpop
 	'
 }
