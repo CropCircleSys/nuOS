@@ -212,5 +212,8 @@ footer {
 	nav ul.east li {
 		margin: 0;
 	}
+	.router-view {
+		margin: 0 0 0 12vw;
+	}
 }
 </style>
