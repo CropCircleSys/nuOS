@@ -8,7 +8,7 @@
 					<li>info</li>
 					<li>log</li>
 					<li>get</li>
-					<li>src</li>
+					<li><a href="https://github.com/CropCircleSys/nuOS/">src</a></li>
 				</ul>
 				<ul class="sm-cap north east">
 					<li><a href="mailto:join@nuos.org">sign up</a></li>
@@ -170,6 +170,10 @@ nav ul.ext {
 nav ul.ext li {
 	margin: 0;
 	display: block;
+}
+nav ul.ext li em {
+	font-size: 125%;
+	line-height: 66.67%;
 }
 footer {
 	bottom: 0;
