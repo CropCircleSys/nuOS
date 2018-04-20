@@ -180,10 +180,10 @@ if [ -n "${OPT_LETS_ENCRYPT-}" ]; then
 	${CHROOTDIR:+chroot "$CHROOTDIR"} knotc ${KNOT_ALTERNATE:+-c /usr/local/etc/knot/knot_$KNOT_ALTERNATE.conf} zone-flush $parent_zone
 	sleep 1
 	${CHROOTDIR:+chroot "$CHROOTDIR"} knotc ${KNOT_ALTERNATE:+-c /usr/local/etc/knot/knot_$KNOT_ALTERNATE.conf} zone-reload $parent_zone
-	echo acme.sh --signcsr --csr /etc/ssl/csrs/$SSL_HOST.csr --dns $dom_args ${OPT_FORCE:+--force}
+	echo acme.sh --signcsr --csr /etc/ssl/csrs/$SSL_HOST.csr --dns $dom_args --yes-I-know-dns-manual-mode-enough-go-ahead-please ${OPT_FORCE:+--force}
 	sleep 90
 	require_tmp acme_output
-	acme.sh --signcsr --csr /etc/ssl/csrs/$SSL_HOST.csr --dns $dom_args ${OPT_FORCE:+--force} >| "$acme_output" 2>&1 || true
+	acme.sh --signcsr --csr /etc/ssl/csrs/$SSL_HOST.csr --dns $dom_args --yes-I-know-dns-manual-mode-enough-go-ahead-please ${OPT_FORCE:+--force} >| "$acme_output" 2>&1 || true
 	require_tmp acme_challenge
 	sed -n -E -e "/^\\[[^\]+\\] Domain: '([[:alnum:]\\._\\-]+)'$/{s//\\1/;N;{/\\n\\[[^\]+\\] TXT value: '([[:alnum:]_\\-]+)'$/s// \\1/p;};}" "$acme_output" >| "$acme_challenge"
 	#retire_tmp acme_output
@@ -199,9 +199,9 @@ if [ -n "${OPT_LETS_ENCRYPT-}" ]; then
 	${CHROOTDIR:+chroot "$CHROOTDIR"} knotc ${KNOT_ALTERNATE:+-c /usr/local/etc/knot/knot_$KNOT_ALTERNATE.conf} zone-flush $parent_zone
 	sleep 1
 	${CHROOTDIR:+chroot "$CHROOTDIR"} knotc ${KNOT_ALTERNATE:+-c /usr/local/etc/knot/knot_$KNOT_ALTERNATE.conf} zone-reload $parent_zone
-	echo acme.sh --renew $dom_args ${OPT_FORCE:+--force}
+	echo acme.sh --renew $dom_args --yes-I-know-dns-manual-mode-enough-go-ahead-please ${OPT_FORCE:+--force}
 	sleep 90
-	acme.sh --renew $dom_args ${OPT_FORCE:+--force} 2>&1 || true
+	acme.sh --renew $dom_args --yes-I-know-dns-manual-mode-enough-go-ahead-please ${OPT_FORCE:+--force} 2>&1 || true
 	sister nu_ns_host ${CHROOTDIR:+-C "$CHROOTDIR"} ${KNOT_ALTERNATE:+-A $KNOT_ALTERNATE} -h $SSL_HOST -c -d
 	CERT_FILE=$HOME/.acme.sh/$SSL_HOST/$SSL_HOST.cer
 	AUTH_FILE=$HOME/.acme.sh/$SSL_HOST/ca.cer
