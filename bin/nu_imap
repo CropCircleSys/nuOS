@@ -85,7 +85,7 @@ if [ -n "${OPT_SSL-}" ]; then
 		internal=y
 	fi
 	mkdir -p "${CHROOTDIR-}/etc/ssl/certs.installed/localhost/$HOST_NAME.${internal:+internal.}crt"
-	ln -s "/usr/local/etc/cyrus/ssl/$HOST_NAME.crt" "${CHROOTDIR-}/etc/ssl/certs.installed/localhost/$HOST_NAME.${internal:+internal.}crt/cyrus"
+	ln -s "/usr/local/etc/cyrus/ssl/$HOST_NAME.crt" "${CHROOTDIR-}/etc/ssl/certs.installed/localhost/$HOST_NAME.${internal:+internal.}crt/imapd"
 	cp "${CHROOTDIR-}/etc/ssl/private/$HOST_NAME.key" "${CHROOTDIR-}/usr/local/etc/cyrus/ssl/private/"
 	chown cyrus "${CHROOTDIR-}/usr/local/etc/cyrus/ssl/private/$HOST_NAME.key"
 	cat >> "${CHROOTDIR-}/usr/local/etc/imapd.conf" <<EOF
@@ -94,7 +94,7 @@ tls_server_key: /usr/local/etc/cyrus/ssl/private/$HOST_NAME.key
 EOF
 	if cp "${CHROOTDIR-}/etc/ssl/certs/$HOST_NAME.ca.crt" "${CHROOTDIR-}/usr/local/etc/cyrus/ssl/"; then
 		mkdir -p "${CHROOTDIR-}/etc/ssl/certs.installed/localhost/$HOST_NAME.ca.crt"
-		ln -s "/usr/local/etc/cyrus/ssl/$HOST_NAME.ca.crt" "${CHROOTDIR-}/etc/ssl/certs.installed/localhost/$HOST_NAME.ca.crt/cyrus"
+		ln -s "/usr/local/etc/cyrus/ssl/$HOST_NAME.ca.crt" "${CHROOTDIR-}/etc/ssl/certs.installed/localhost/$HOST_NAME.ca.crt/imapd"
 		cat >> "${CHROOTDIR-}/usr/local/etc/imapd.conf" <<EOF
 tls_client_ca_file: /usr/local/etc/cyrus/ssl/$HOST_NAME.ca.crt
 EOF
