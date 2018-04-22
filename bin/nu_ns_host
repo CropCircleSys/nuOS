@@ -247,6 +247,7 @@ EOF
 					zone_escd="$(echo $zone | sed -e 's/\./\\./g')"
 					sed -i '' -e "/^[[:blank:]]*-[[:blank:]]*domain:[[:blank:]]*$zone_escd[[:blank:]]*\$/d" \
 						"${CHROOTDIR-}/usr/local/etc/knot/knot${ALTERNATE:+_${ALTERNATE}}.conf"
+					mv "${CHROOTDIR-}/var/db/knot${ALTERNATE:+_${ALTERNATE}}/$HOST_NAME.zone" "${CHROOTDIR-}/var/db/knot${ALTERNATE:+_${ALTERNATE}}/$HOST_NAME.zone.`env TZ=UTC date +%Y-%m-%d-%H%M%S`.removed_from_service"
 				else
 					conf_failed=y
 				fi

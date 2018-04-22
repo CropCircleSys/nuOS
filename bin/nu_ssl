@@ -59,11 +59,14 @@ check_ns_server () {
 
 san_init () {
 	san=y
-	i=1
+	san_value="DNS.1=$SSL_HOST"
+	i=2
 	SAN_LIST="$(echo $SAN_LIST | sed -e s/%/$SSL_HOST/g)"
-	for a in $SSL_HOST $SAN_LIST; do
-		san_value="${san_value:+$san_value, }DNS.$i=$a"
-		i=$(($i + 1 ))
+	for h in $SAN_LIST; do
+		if [ "$SSL_HOST" != $h ]; then
+			san_value="$san_value, DNS.$i=$h"
+			i=$(($i + 1))
+		fi
 	done
 }
 
@@ -297,10 +300,9 @@ else
 	grep -q -- '-BEGIN CERTIFICATE-' "$AUTH_FILE"
 	[ -e "${CHROOTDIR-}/etc/ssl/private/$SSL_HOST.key" ] || exit 2
 	for x in crt ca.crt; do
-		if [ -n "${OPT_FORCE-}" ] && [ -e "${CHROOTDIR-}/etc/ssl/certs/$SSL_HOST.$x" ]; then
-			mv "${CHROOTDIR-}/etc/ssl/certs/$SSL_HOST.$x" "${CHROOTDIR-}/etc/ssl/certs/$SSL_HOST.$x.bak"
+		if [ -e "${CHROOTDIR-}/etc/ssl/certs/$SSL_HOST.$x" ]; then
+			mv "${CHROOTDIR-}/etc/ssl/certs/$SSL_HOST.$x" "${CHROOTDIR-}/etc/ssl/certs/$SSL_HOST.$x.${now:=`env TZ=UTC date +%Y-%m-%d-%H%M%S`}.removed_from_service"
 		fi
-		[ ! -e "${CHROOTDIR-}/etc/ssl/certs/$SSL_HOST.$x" ] || exit 17
 	done
 	[ $SSL_HOST = `$SSL_CMD x509 -noout -subject -nameopt sep_multiline -in $CERT_FILE | sed -ne '/^    CN=/s///p'` ] || exit 85
 	cat $CERT_FILE > "${CHROOTDIR-}/etc/ssl/certs/$SSL_HOST.crt"
