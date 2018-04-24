@@ -115,8 +115,8 @@ if [ -n "${OPT_EXPORT_TLSA-}" -o -n "${OPT_EXPORT_HPKP-}" ]; then
 			: ${TLSA_TRANSPORT:=tcp}
 			check_ns_server
 			for h in $SSL_HOST $SAN_LIST; do
-				sister nu_ns_host ${CHROOTDIR:+-C "$CHROOTDIR"} ${KNOT_ALTERNATE:+-A $KNOT_ALTERNATE} -dd -h _$port._$TLSA_TRANSPORT.$h -r tlsa
-				sister nu_ns_host ${CHROOTDIR:+-C "$CHROOTDIR"} ${KNOT_ALTERNATE:+-A $KNOT_ALTERNATE} -h _$port._$TLSA_TRANSPORT.$h -r tlsa -s -i "$record_data"
+				sister nu_ns_host ${CHROOTDIR:+-C "$CHROOTDIR"} ${OPT_VERBOSE:+-v} ${KNOT_ALTERNATE:+-A $KNOT_ALTERNATE} -dd -h _$port._$TLSA_TRANSPORT.$h -r tlsa
+				sister nu_ns_host ${CHROOTDIR:+-C "$CHROOTDIR"} ${OPT_VERBOSE:+-v} ${KNOT_ALTERNATE:+-A $KNOT_ALTERNATE} -h _$port._$TLSA_TRANSPORT.$h -r tlsa -s -i "$record_data"
 			done
 		else
 			echo "$record_data"
@@ -177,14 +177,14 @@ if [ -n "${OPT_LETS_ENCRYPT-}" ]; then
 	for a in $SSL_HOST $SAN_LIST; do
 		dom_args="${dom_args:+$dom_args }-d $a"
 	done
-	sister nu_ns_host ${CHROOTDIR:+-C "$CHROOTDIR"} ${KNOT_ALTERNATE:+-A $KNOT_ALTERNATE} -h $SSL_HOST -c letsencrypt.org
-	sleep 1
+	sister nu_ns_host ${CHROOTDIR:+-C "$CHROOTDIR"} ${OPT_VERBOSE:+-v} ${KNOT_ALTERNATE:+-A $KNOT_ALTERNATE} -h $SSL_HOST -c letsencrypt.org
+	sleep 2
 	parent_zone=$(ns_master_zone ${CHROOTDIR:+-c} ${KNOT_ALTERNATE:+-A $KNOT_ALTERNATE} $SSL_HOST)
-	${CHROOTDIR:+chroot "$CHROOTDIR"} knotc ${KNOT_ALTERNATE:+-c /usr/local/etc/knot/knot_$KNOT_ALTERNATE.conf} zone-flush $parent_zone
-	sleep 1
-	${CHROOTDIR:+chroot "$CHROOTDIR"} knotc ${KNOT_ALTERNATE:+-c /usr/local/etc/knot/knot_$KNOT_ALTERNATE.conf} zone-reload $parent_zone
+	#${CHROOTDIR:+chroot "$CHROOTDIR"} knotc ${KNOT_ALTERNATE:+-c /usr/local/etc/knot/knot_$KNOT_ALTERNATE.conf} zone-flush $parent_zone
+	sleep 2
+	#${CHROOTDIR:+chroot "$CHROOTDIR"} knotc ${KNOT_ALTERNATE:+-c /usr/local/etc/knot/knot_$KNOT_ALTERNATE.conf} zone-reload $parent_zone
 	echo acme.sh --signcsr --csr /etc/ssl/csrs/$SSL_HOST.csr --dns $dom_args --yes-I-know-dns-manual-mode-enough-go-ahead-please ${OPT_FORCE:+--force}
-	sleep 90
+	sleep 75
 	require_tmp acme_output
 	acme.sh --signcsr --csr /etc/ssl/csrs/$SSL_HOST.csr --dns $dom_args --yes-I-know-dns-manual-mode-enough-go-ahead-please ${OPT_FORCE:+--force} >| "$acme_output" 2>&1 || true
 	require_tmp acme_challenge
@@ -194,18 +194,18 @@ if [ -n "${OPT_LETS_ENCRYPT-}" ]; then
 		h=_acme-challenge.$a
 		txt=$(grep "^$h " "$acme_challenge" | cut -w -f 2)
 		if [ -n "$txt" ]; then
-			sister nu_ns_host ${CHROOTDIR:+-C "$CHROOTDIR"} ${KNOT_ALTERNATE:+-A $KNOT_ALTERNATE} -d -r txt -h $h || true
-			sister nu_ns_host ${CHROOTDIR:+-C "$CHROOTDIR"} ${KNOT_ALTERNATE:+-A $KNOT_ALTERNATE} -r txt -h $h -i $txt
-			sleep 1
+			sister nu_ns_host ${CHROOTDIR:+-C "$CHROOTDIR"} ${OPT_VERBOSE:+-v} ${KNOT_ALTERNATE:+-A $KNOT_ALTERNATE} -d -r txt -h $h || true
+			sister nu_ns_host ${CHROOTDIR:+-C "$CHROOTDIR"} ${OPT_VERBOSE:+-v} ${KNOT_ALTERNATE:+-A $KNOT_ALTERNATE} -r txt -h $h -i $txt
+			sleep 2
 		fi
 	done
-	${CHROOTDIR:+chroot "$CHROOTDIR"} knotc ${KNOT_ALTERNATE:+-c /usr/local/etc/knot/knot_$KNOT_ALTERNATE.conf} zone-flush $parent_zone
-	sleep 1
-	${CHROOTDIR:+chroot "$CHROOTDIR"} knotc ${KNOT_ALTERNATE:+-c /usr/local/etc/knot/knot_$KNOT_ALTERNATE.conf} zone-reload $parent_zone
+	#${CHROOTDIR:+chroot "$CHROOTDIR"} knotc ${KNOT_ALTERNATE:+-c /usr/local/etc/knot/knot_$KNOT_ALTERNATE.conf} zone-flush $parent_zone
+	sleep 2
+	#${CHROOTDIR:+chroot "$CHROOTDIR"} knotc ${KNOT_ALTERNATE:+-c /usr/local/etc/knot/knot_$KNOT_ALTERNATE.conf} zone-reload $parent_zone
 	echo acme.sh --renew $dom_args --yes-I-know-dns-manual-mode-enough-go-ahead-please ${OPT_FORCE:+--force}
-	sleep 90
+	sleep 75
 	acme.sh --renew $dom_args --yes-I-know-dns-manual-mode-enough-go-ahead-please ${OPT_FORCE:+--force} 2>&1 || true
-	sister nu_ns_host ${CHROOTDIR:+-C "$CHROOTDIR"} ${KNOT_ALTERNATE:+-A $KNOT_ALTERNATE} -h $SSL_HOST -c -d
+	sister nu_ns_host ${CHROOTDIR:+-C "$CHROOTDIR"} ${OPT_VERBOSE:+-v} ${KNOT_ALTERNATE:+-A $KNOT_ALTERNATE} -h $SSL_HOST -c -d
 	CERT_FILE=$HOME/.acme.sh/$SSL_HOST/$SSL_HOST.cer
 	AUTH_FILE=$HOME/.acme.sh/$SSL_HOST/ca.cer
 	if [ ! -e "$CERT_FILE" -o "${CHROOTDIR-}/etc/ssl/certs/$SSL_HOST.crt" -nt "$CERT_FILE" ]; then

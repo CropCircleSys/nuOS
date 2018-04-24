@@ -96,7 +96,7 @@ EOF
 fi
 
 if [ -n "${CA_ZONE-}" ]; then
-	sister nu_ns_host ${CHROOTDIR:+-C "$CHROOTDIR"} ${ALTERNATE:+-A $ALTERNATE} -d -r caa -h $HOST_NAME
+	sister nu_ns_host ${CHROOTDIR:+-C "$CHROOTDIR"} ${OPT_VERBOSE:+-v} ${ALTERNATE:+-A $ALTERNATE} -d -r caa -h $HOST_NAME
 	if [ x-d != "x${CA_ZONE-}" -a d != "${CA_ZONE-}" -a -z "${OPT_DELETE-}" ]; then
 		if [ -n "${OPT_CA_WILDCARD-}" ]; then
 			wild_zone=$CA_ZONE
@@ -107,8 +107,8 @@ if [ -n "${CA_ZONE-}" ]; then
 		CA_ZONE=";"
 		wild_zone=";"
 	fi
-	sister nu_ns_host ${CHROOTDIR:+-C "$CHROOTDIR"} ${ALTERNATE:+-A $ALTERNATE} -s -r caa -h $HOST_NAME -i "128 issue \"$CA_ZONE\""
-	sister nu_ns_host ${CHROOTDIR:+-C "$CHROOTDIR"} ${ALTERNATE:+-A $ALTERNATE} -s -r caa -h $HOST_NAME -i "128 issuewild \"$wild_zone\""
+	sister nu_ns_host ${CHROOTDIR:+-C "$CHROOTDIR"} ${OPT_VERBOSE:+-v} ${ALTERNATE:+-A $ALTERNATE} -s -r caa -h $HOST_NAME -i "128 issue \"$CA_ZONE\""
+	sister nu_ns_host ${CHROOTDIR:+-C "$CHROOTDIR"} ${OPT_VERBOSE:+-v} ${ALTERNATE:+-A $ALTERNATE} -s -r caa -h $HOST_NAME -i "128 issuewild \"$wild_zone\""
 	exit 0
 fi
 
@@ -190,10 +190,14 @@ case $SOFTWARE in
 						default_ttl=3600
 					fi
 					: ${TTL:=$default_ttl}
+					if [ -n "${OPT_DELETE-}" ]; then
+						$knotc_cmd zone-read $zone $host $([ A = $REC_TYPE -o AAAA = $REC_TYPE ] || echo $REC_TYPE) >| /dev/null || { sleep 5; service knot restart; sleep 5; exit 0; }
+					fi
 					$knotc_cmd zone-begin $zone
+					sleep 2
 					if [ -n "${OPT_SINGLE_RECORD-}" ]; then
 						if [ -n "${OPT_DELETE-}" ]; then
-							$knotc_cmd zone-unset $zone $host $REC_TYPE "$PUB_IPS"
+							$knotc_cmd zone-unset $zone $host $REC_TYPE "$PUB_IPS" || ex=1
 						else
 							$knotc_cmd zone-set $zone $host $TTL $REC_TYPE "$PUB_IPS"
 						fi
@@ -206,7 +210,12 @@ case $SOFTWARE in
 							done
 						fi
 					fi
-					$knotc_cmd zone-commit $zone
+					sleep 2
+					if [ 1 = "${ex-}" ]; then
+						$knotc_cmd zone-abort $zone
+					else
+						$knotc_cmd zone-commit $zone
+					fi
 				else
 					if [ -z "${OPT_DELETE-}" ]; then
 						sed -E -e "
@@ -261,6 +270,7 @@ EOF
 				fi
 			fi
 		fi
+		sleep 2
 		[ -z "${conf_failed-}" ] || { $knotc_cmd conf-abort && exit 1; }
 		[ -z "${conf_began-}" ] || $knotc_cmd conf-commit
 	;;
