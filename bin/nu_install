@@ -84,7 +84,7 @@ if [ -z "${OPT_SKIP_INIT_ZPOOL-}" ]; then
 		i=$(($i + 1))
 	done
 	require_tmp -d tempdir
-	zpool create -o altroot=$POOL_MNT -o "cachefile=$tempdir/zpool.cache" -O mountpoint=none -O canmount=off -O devices=off $POOL_OPTS $POOL_NAME $POOL_TYPE $devlist
+	zpool create ${SLOPPY_POOL:+-f} -o altroot=$POOL_MNT -o "cachefile=$tempdir/zpool.cache" -O mountpoint=none -O canmount=off -O devices=off $POOL_OPTS $POOL_NAME $POOL_TYPE $devlist
 	zpool_id=`zpool get -H -p -o value guid $POOL_NAME`
 	zpool export $POOL_NAME
 	try 3 gnop destroy $devlist
