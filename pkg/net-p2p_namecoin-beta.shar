@@ -14,10 +14,6 @@
 #	namecoin-beta/distinfo
 #	namecoin-beta/files
 #	namecoin-beta/files/namecoind.in
-#	namecoin-beta/off
-#	namecoin-beta/off/patch-configure.ac
-#	namecoin-beta/off/patch-src_miner.h
-#	namecoin-beta/off/patch-src_txmempool.h
 #	namecoin-beta/pkg-descr
 #	namecoin-stable
 #	namecoin-stable-daemon
@@ -416,98 +412,6 @@ X}
 X
 Xrun_rc_command "$1"
 e3906e044656b0002eafeea14b880dcf
-echo c - namecoin-beta/off
-mkdir -p namecoin-beta/off > /dev/null 2>&1
-echo x - namecoin-beta/off/patch-configure.ac
-sed 's/^X//' >namecoin-beta/off/patch-configure.ac << '8f68a533b5ff2674232549d64e45f4c7'
-X--- configure.ac.orig	2017-04-21 03:43:55 UTC
-X+++ configure.ac
-X@@ -2,9 +2,9 @@ dnl require autoconf 2.60 (AS_ECHO/AS_EC
-X AC_PREREQ([2.60])
-X define(_CLIENT_VERSION_MAJOR, 0)
-X define(_CLIENT_VERSION_MINOR, 13)
-X-define(_CLIENT_VERSION_REVISION, 2)
-X+define(_CLIENT_VERSION_REVISION, 99)
-X define(_CLIENT_VERSION_BUILD, 0)
-X-define(_CLIENT_VERSION_IS_RELEASE, true)
-X+define(_CLIENT_VERSION_IS_RELEASE, false)
-X define(_COPYRIGHT_YEAR, 2016)
-X define(_COPYRIGHT_HOLDERS,[The %s developers])
-X define(_COPYRIGHT_HOLDERS_SUBSTITUTION,[[Bitcoin Core and Namecoin]])
-8f68a533b5ff2674232549d64e45f4c7
-echo x - namecoin-beta/off/patch-src_miner.h
-sed 's/^X//' >namecoin-beta/off/patch-src_miner.h << '51b42b7059244468c4b0e962dbc8bc30'
-X--- src/miner.h.orig	2018-04-24 04:37:21.864362000 +0000
-X+++ src/miner.h	2018-04-24 04:40:05.741249000 +0000
-X@@ -73,7 +73,7 @@
-X // except operating on CTxMemPoolModifiedEntry.
-X // TODO: refactor to avoid duplication of this logic.
-X struct CompareModifiedEntry {
-X-    bool operator()(const CTxMemPoolModifiedEntry &a, const CTxMemPoolModifiedEntry &b)
-X+    bool operator()(const CTxMemPoolModifiedEntry &a, const CTxMemPoolModifiedEntry &b) const
-X     {
-X         double f1 = (double)a.nModFeesWithAncestors * b.nSizeWithAncestors;
-X         double f2 = (double)b.nModFeesWithAncestors * a.nSizeWithAncestors;
-X@@ -88,7 +88,7 @@
-X // This is sufficient to sort an ancestor package in an order that is valid
-X // to appear in a block.
-X struct CompareTxIterByAncestorCount {
-X-    bool operator()(const CTxMemPool::txiter &a, const CTxMemPool::txiter &b)
-X+    bool operator()(const CTxMemPool::txiter &a, const CTxMemPool::txiter &b) const
-X     {
-X         if (a->GetCountWithAncestors() != b->GetCountWithAncestors())
-X             return a->GetCountWithAncestors() < b->GetCountWithAncestors();
-51b42b7059244468c4b0e962dbc8bc30
-echo x - namecoin-beta/off/patch-src_txmempool.h
-sed 's/^X//' >namecoin-beta/off/patch-src_txmempool.h << 'bd0274dd7d8f31164ab14d1be8bb1b56'
-X--- src/txmempool.h.orig	2018-04-24 04:37:41.878225000 +0000
-X+++ src/txmempool.h	2018-04-24 04:44:33.142062000 +0000
-X@@ -255,7 +255,7 @@
-X class CompareTxMemPoolEntryByDescendantScore
-X {
-X public:
-X-    bool operator()(const CTxMemPoolEntry& a, const CTxMemPoolEntry& b)
-X+    bool operator()(const CTxMemPoolEntry& a, const CTxMemPoolEntry& b) const
-X     {
-X         bool fUseADescendants = UseDescendantScore(a);
-X         bool fUseBDescendants = UseDescendantScore(b);
-X@@ -277,7 +277,7 @@
-X     }
-X 
-X     // Calculate which score to use for an entry (avoiding division).
-X-    bool UseDescendantScore(const CTxMemPoolEntry &a)
-X+    bool UseDescendantScore(const CTxMemPoolEntry &a) const
-X     {
-X         double f1 = (double)a.GetModifiedFee() * a.GetSizeWithDescendants();
-X         double f2 = (double)a.GetModFeesWithDescendants() * a.GetTxSize();
-X@@ -292,7 +292,7 @@
-X class CompareTxMemPoolEntryByScore
-X {
-X public:
-X-    bool operator()(const CTxMemPoolEntry& a, const CTxMemPoolEntry& b)
-X+    bool operator()(const CTxMemPoolEntry& a, const CTxMemPoolEntry& b) const
-X     {
-X         double f1 = (double)a.GetModifiedFee() * b.GetTxSize();
-X         double f2 = (double)b.GetModifiedFee() * a.GetTxSize();
-X@@ -306,7 +306,7 @@
-X class CompareTxMemPoolEntryByEntryTime
-X {
-X public:
-X-    bool operator()(const CTxMemPoolEntry& a, const CTxMemPoolEntry& b)
-X+    bool operator()(const CTxMemPoolEntry& a, const CTxMemPoolEntry& b) const
-X     {
-X         return a.GetTime() < b.GetTime();
-X     }
-X@@ -315,7 +315,7 @@
-X class CompareTxMemPoolEntryByAncestorFee
-X {
-X public:
-X-    bool operator()(const CTxMemPoolEntry& a, const CTxMemPoolEntry& b)
-X+    bool operator()(const CTxMemPoolEntry& a, const CTxMemPoolEntry& b) const
-X     {
-X         double aFees = a.GetModFeesWithAncestors();
-X         double aSize = a.GetSizeWithAncestors();
-bd0274dd7d8f31164ab14d1be8bb1b56
 echo x - namecoin-beta/pkg-descr
 sed 's/^X//' >namecoin-beta/pkg-descr << '83b40f1591896508ba4a57515b2a01ab'
 XNamecoin is an open source decentralized key/value registration and transfer
