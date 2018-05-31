@@ -55,7 +55,7 @@ else
 	: ${HOST_NAME:=$hostname}
 	echo -n 'user domain     -h HOST_NAME       ' && [ -n "${OPT_SASL-}" -o -z "${OPT_NOMAIL-}" ] && echo $HOST_NAME || echo n/a
 	echo -n 'no mail inbox   -M OPT_NOMAIL      ' && [ -n "${OPT_NOMAIL-}" ] && echo set || echo null
-	echo 'mail delivery   -d DELIVER_MAIL    ' ${DELIVER_MAIL:=local}
+	echo 'mail delivery   -d DELIVER_MAIL   ' ${DELIVER_MAIL:=local}
 	[ "${DELIVER_HOST:=localhost}" != $HOST_NAME ] || DELIVER_HOST=localhost
 	echo -n 'mailbox host    -D DELIVER_HOST    ' && [ $DELIVER_MAIL = net ] && echo $DELIVER_HOST || echo n/a
 fi
@@ -78,12 +78,12 @@ fi
 
 if [ $DELIVER_MAIL = net ]; then
 	if [ localhost = $DELIVER_HOST ]; then
-		lmtp_nexthop=unix:/var/imap/socket/lmtp
+		nexthop=lmtp:unix:/var/imap/socket/lmtp
 	else
-		lmtp_nexthop=inet:$DELIVER_HOST
+		nexthop=inet:$DELIVER_HOST
 	fi
 	cat >> "${CHROOTDIR-}/usr/local/etc/postfix/transport" <<EOF
-$USER_NAME	$lmtp_nexthop
+$USER_NAME	$nexthop
 EOF
 	postmap "${CHROOTDIR-}/usr/local/etc/postfix/transport"
 fi
