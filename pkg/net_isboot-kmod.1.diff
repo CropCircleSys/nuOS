@@ -1,0 +1,23 @@
+--- ../isboot-kmod.orig/Makefile	2018-05-31 20:57:02.314770000 +0000
++++ Makefile	2018-05-31 15:12:49.077701000 +0000
+@@ -2,7 +2,7 @@
+ 
+ PORTNAME=	isboot-kmod
+ PORTVERSION=	0.2.13
+-PORTREVISION=	1
++PORTREVISION=	2
+ CATEGORIES=	net
+ MASTER_SITES=	http://www.peach.ne.jp/archives/isboot/
+ DISTNAME=	isboot-${PORTVERSION}
+@@ -23,9 +23,10 @@
+ PLIST_FILES=	${KMODDIR}/isboot.ko
+ PORTDOCS=	README
+ 
+-OPTIONS_DEFINE=	DOCS VIMAGE
++OPTIONS_DEFINE=	DOCS VIMAGE DEBUG
+ VIMAGE_DESC=	Build for a kernel with 'options VIMAGE'
+ VIMAGE_CFLAGS=	-DVIMAGE
++DEBUG_CFLAGS=	-DDEBUG
+ 
+ post-install-DOCS-on:
+ 	${MKDIR} ${STAGEDIR}${DOCSDIR}

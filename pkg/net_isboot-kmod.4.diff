@@ -1,0 +1,91 @@
+--- /dev/null	2018-06-09 12:22:00.000000000 +0000
++++ files/patch-iscsi.c	2018-06-09 12:16:30.921800000 +0000
+@@ -0,0 +1,88 @@
++--- iscsi.c.orig	2015-11-05 16:50:51 UTC
+++++ iscsi.c
++@@ -1070,26 +1070,25 @@ isboot_append_param(pdu_t *pp, char *for
++ 	return (n);
++ }
++ 
++-
++-#if __FreeBSD_version >= 1100000
+++#if __FreeBSD_version >= 1200051
+++static void
+++isboot_free_mbufext(struct mbuf *m)
+++{
+++       void *p = m->m_ext.ext_arg1;
+++#elif __FreeBSD_version >= 1100000
++ static void
++ isboot_free_mbufext(struct mbuf *m, void *p, void *optarg)
+++{
++ #elif __FreeBSD_version >= 1000050 && __FreeBSD_version < 1100000
++ static int
++ isboot_free_mbufext(struct mbuf *m, void *p, void *optarg)
+++{
++ #else
++ static void
++ isboot_free_mbufext(void *p, void *optarg)
++-#endif
++ {
++-
++-	ISBOOT_TRACE("isboot_free_mbufext\n");
++-	if (p == NULL)
++-#if __FreeBSD_version >= 1000050 && __FreeBSD_version < 1100000
++-		return (EXT_FREE_OK);
++-#else
++-		return;
++ #endif
+++	ISBOOT_TRACE("isboot_free_mbufext\n");
++ 	isboot_free_mext(p);
++ #if __FreeBSD_version >= 1000050 && __FreeBSD_version < 1100000
++ 	return (EXT_FREE_OK);
++@@ -1224,7 +1223,8 @@ isboot_recv_pdu(struct isboot_sess *sess
++ 		return (error);
++ 	}
++ 	if (uio.uio_resid != 0) {
++-		ISBOOT_ERROR("soreceive BHS is not complete\n");
+++		ISBOOT_ERROR("soreceive BHS is not complete, remaining "
+++			"byte(s)=%d\n", (int) uio.uio_resid);
++ 		return (EIO);
++ 	}
++ 	m_copydata(mp, 0, ISCSI_BHS_LEN, (caddr_t)&pp->ipdu.bhs);
++@@ -1737,7 +1737,8 @@ isboot_do_login(struct isboot_sess *sess)
++ {
++ 	pdu_t pdu, *pp;
++ 	uint8_t *req;
++-	int I_bit;
+++	// SOLO PR0VA
+++	static int I_bit = 1;
++ 	int T_bit, C_bit;
++ 	int CSG, NSG;
++ 	int error;
++@@ -1770,7 +1771,10 @@ next_loginpdu:
++ 	req = (uint8_t *)&pdu.ipdu.bhs;
++ 	memset(req, 0, ISCSI_BHS_LEN);
++ 	req[0] = ISCSI_OP_LOGIN_REQ;
++-	I_bit = 1;
+++	// SOLO PROVA
+++	I_bit ^= 1;
+++	ISBOOT_ERROR("*********************** I_bit = %d\n", I_bit);
+++	// FSP
++ 	T_bit = C_bit = 0;
++ 	CSG = NSG = 0;
++ 	BDADD8(&req[0], I_bit, 7);
++@@ -2061,7 +2061,7 @@ isboot_cam_set_devices(struct isboot_ses
++ 			ISBOOT_TRACE("found device=%s%d@lun=%d\n",
++ 			    ccb.cgdl.periph_name,
++ 			    ccb.cgdl.unit_number,
++-			    ccb.ccb_h.target_lun);
+++			    (int)ccb.ccb_h.target_lun);
++ 		}
++ 
++ 		memset(&ccb, 0, sizeof(ccb));
++@@ -2325,7 +2325,7 @@ isboot_action(struct cam_sim *sim, union
++ 
++ 		ISBOOT_TRACE("XPT_CALC_GEOMETRY\n");
++ 		ISBOOT_TRACE("target=%d, lun=%d vsize=%d, bsize=%d\n",
++-		    ccb->ccb_h.target_id, ccb->ccb_h.target_lun,
+++		    ccb->ccb_h.target_id, (int)ccb->ccb_h.target_lun,
++ 		    (int)ccg->volume_size, (int)ccg->block_size);
++ 		cam_calc_geometry(ccg, /*extended*/1);
++ 		break;

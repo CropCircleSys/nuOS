@@ -30,6 +30,8 @@ collection_vars_init () {
 	
 	COLL_bare='
 		blank
+		net/ipxe
+		net/isboot-kmod
 		sysutils/pefs-kmod
 		security/openssh-portable
 		security/gnupg
@@ -73,7 +75,7 @@ collection_vars_init () {
 		ftp/pure-ftpd
 		net/isc-dhcp43-server
 		net/netatalk3
-		net/samba47
+		net/samba48
 		security/tor
 		net-p2p/rtorrent
 		net-p2p/createtorrent
@@ -91,11 +93,10 @@ collection_vars_init () {
 		graphics/gifsicle
 		lang/expect
 		databases/postgresql10-server
-		databases/mysql57-server
+		databases/mysql80-server
 		databases/mongodb36
 		databases/redis
 		lang/mono-basic
-		lang/python
 		www/npm
 		www/apache24
 		www/nginx
@@ -131,7 +132,7 @@ collection_vars_init () {
 		graphics/gimp
 		graphics/inkscape
 		x11/xorg
-		x11/kde4
+		x11/kde5
 		databases/virtuoso
 		net-p2p/bitcoin
 		net-p2p/namecoin-beta

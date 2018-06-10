@@ -1,0 +1,92 @@
+--- ../isboot-kmod.orig/files/patch-isboot.c	2018-05-31 20:57:02.310916000 +0000
++++ files/patch-isboot.c	2018-05-31 04:01:08.150428000 +0000
+@@ -1,6 +1,14 @@
+ --- isboot.c.orig	2015-11-05 16:50:51 UTC
+ +++ isboot.c
+-@@ -347,9 +347,9 @@ isboot_set_v4gw(struct sockaddr_in *gate
++@@ -30,6 +30,7 @@ __FBSDID("$FreeBSD$");
++ 
++ #include <sys/param.h>
++ #include <sys/kernel.h>
+++#include <sys/proc.h>
++ #include <sys/module.h>
++ #include <sys/endian.h>
++ #include <sys/systm.h>
++@@ -347,9 +348,9 @@ isboot_set_v4gw(struct sockaddr_in *gateway)
+  	netmask.sin_addr.s_addr = htonl(0);
+  
+  	/* delete gateway if exists */
+@@ -12,7 +20,7 @@
+  	if (error) {
+  		if (error != ESRCH) {
+  			printf("rtrequest RTM_DELETE error %d\n",
+-@@ -359,9 +359,9 @@ isboot_set_v4gw(struct sockaddr_in *gate
++@@ -359,9 +360,9 @@ isboot_set_v4gw(struct sockaddr_in *gateway)
+  	}
+  
+  	/* set new default gateway */
+@@ -24,7 +32,7 @@
+  	if (error) {
+  		printf("rtrequest RTM_ADD error %d\n", error);
+  		return (error);
+-@@ -391,9 +391,9 @@ isboot_set_v6gw(struct sockaddr_in6 *gat
++@@ -391,9 +392,9 @@ isboot_set_v6gw(struct sockaddr_in6 *gateway)
+  	memset(&netmask.sin6_addr, 0, 16);
+  
+  	/* delete gateway if exists */
+@@ -36,7 +44,7 @@
+  	if (error) {
+  		if (error != ESRCH) {
+  			printf("rtrequest RTM_DELETE error %d\n",
+-@@ -403,9 +403,9 @@ isboot_set_v6gw(struct sockaddr_in6 *gat
++@@ -403,9 +404,9 @@ isboot_set_v6gw(struct sockaddr_in6 *gateway)
+  	}
+  
+  	/* set new default gateway */
+@@ -48,3 +56,46 @@
+  	if (error) {
+  		printf("rtrequest RTM_ADD error %d\n", error);
+  		return (error);
++@@ -416,29 +417,36 @@ isboot_set_v6gw(struct sockaddr_in6 *gateway)
++ static int
++ isboot_ifup(struct ifnet *ifp)
++ {
+++	struct socket *so;
++ 	struct ifreq ifr;
++ 	struct thread *td;
++ 	int error;
++ 
++-	memset(&ifr, 0, sizeof(ifr));
++ 	td = curthread;
+++	error = socreate(AF_INET, &so, SOCK_DGRAM, 0, td->td_ucred, td);
+++	if (error) {
+++	    printf("%s: socreate, error=%d\n", __func__, error);
+++	    return (error);
+++	}
++ 
++ 	/* boot NIC */
+++	memset(&ifr, 0, sizeof(ifr));
++ 	strlcpy(ifr.ifr_name, ifp->if_xname, sizeof(ifr.ifr_name));
++ 
++ 	/* set IFF_UP */
++-	error = ifioctl(NULL, SIOCGIFFLAGS, (caddr_t)&ifr, td);
+++	error = ifioctl(so, SIOCGIFFLAGS, (caddr_t)&ifr, td);
++ 	if (error) {
++-		printf("ifioctl SIOCGIFFLAGS\n");
+++		printf("%s: ifioctl SIOCGIFFLAGS, error=%d\n", __func__, error);
++ 		return (error);
++ 	}
+++
++ 	ifr.ifr_flags |= IFF_UP;
++-	error = ifioctl(NULL, SIOCSIFFLAGS, (caddr_t)&ifr, td);
+++	error = ifioctl(so, SIOCSIFFLAGS, (caddr_t)&ifr, td);
++ 	if (error) {
++-		printf("ifioctl SIOCSIFFLAGS\n");
+++		printf("%s, ifioctl SIOCSIFFLAGS, error=%d\n", __func__, error);
++ 		return (error);
++ 	}
++-
+++	soclose(so);
++ 	return (0);
++ }
++ 

@@ -1,0 +1,13 @@
+--- /dev/null	2018-06-09 12:22:00.000000000 +0000
++++ files/patch-Makefile	2018-05-31 18:30:17.681678000 +0000
+@@ -0,0 +1,10 @@
++--- Makefile.orig	2015-09-24 04:33:04 UTC
+++++ Makefile
++@@ -6,6 +6,7 @@ KMOD=	isboot
++ SRCS=	isboot.c ibft.c iscsi.c
++ SRCS+=	isboot.h ibft.h iscsi_compat.h
++ SRCS+=	opt_cam.h
+++SRCS+=  device_if.h bus_if.h
++ #CFLAGS+= -DVIMAGE
++ #CFLAGS+= -DIBFT_VERBOSE
++ #CFLAGS+= -DDEBUG
