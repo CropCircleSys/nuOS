@@ -85,11 +85,9 @@ first () {
 
 incr () {
 	local var=$1; shift
-	local start=$1; shift
-	local end=${1-9223372036854775806}
 	if eval [ -z "\"\${$var-}\"" ]; then
-		setvar $var $start
-	elif eval [ \$$var -ge $end ]; then
+		setvar $var $1
+	elif eval [ \$$var -ge ${2-9223372036854775806} ]; then
 		return 1
 	else
 		eval setvar $var "\$((1+\$$var))"

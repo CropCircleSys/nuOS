@@ -1,1 +1,1 @@
-sister enable_svc ${POOL_MNT:+-C $POOL_MNT} hald kdm4
+sister enable_svc ${POOL_MNT:+-C $POOL_MNT} dbus hald sddm

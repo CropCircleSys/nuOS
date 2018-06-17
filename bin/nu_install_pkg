@@ -16,12 +16,17 @@ set -e; set -u; set -C
 
 NUOS_VER=0.0.11.1a1
 
-while getopts AC:d:MRvyY OPT; do case $OPT in
+while getopts ABC:d:fFMRStvyY OPT; do case $OPT in
 	A) OPT_ARG_SUBPROCESS=y;;
+	B) OPT_NOBUILD=y;;
 	C) CHROOTDIR=$OPTARG;;
 	d) PORT_DBDIR=$OPTARG;;
+	f) OPT_NOCLEAN_BEFORE=y;;
+	F) OPT_NOCLEAN_AFTER=y;;
 	M) OPT_NOMAKE=y;;
 	R) OPT_NORECURSE=y;;
+	S) OPT_NOSCRIPT=y;;
+	t) OPT_TAGPKG=y;;
 	v) OPT_VERBOSE=y;;
 	y) OPT_YES=y;;
 	Y) OPT_YES_SUBPROCESS=y;;
@@ -41,7 +46,7 @@ make_vars_init
 collection_vars_init
 
 if [ -n "${OPT_YES-}" ]; then
-	yes | sh $0 ${OPT_ARG_SUBPROCESS:+-A} ${OPT_NOMAKE:+-M} ${OPT_NORECURSE:+-R} ${OPT_VERBOSE:+-v} ${CHROOTDIR:+-C "$CHROOTDIR"} -Y $@
+	yes | sh $0 ${OPT_ARG_SUBPROCESS:+-A} ${OPT_NOBUILD:+-B} ${OPT_NOCLEAN_BEFORE:+-f} ${OPT_NOCLEAN_AFTER:+-F} ${OPT_NOMAKE:+-M} ${OPT_NORECURSE:+-R} ${OPT_NOSCRIPT:+-S} ${OPT_TAGPKG:+-t} ${OPT_VERBOSE:+-v} ${CHROOTDIR:+-C "$CHROOTDIR"} -Y $@
 	exit $?
 fi
 
@@ -72,13 +77,13 @@ for port in $*; do
 	esac
 	args="$metainfo_dir/$uni.args"
 	if [ -z "${OPT_ARG_SUBPROCESS-}" ] && [ -f "$args" ]; then
-		sh $0 ${OPT_NOMAKE:+-M} ${OPT_NORECURSE:+-R} ${OPT_VERBOSE:+-v} ${CHROOTDIR:+-C $CHROOTDIR} -A `cat "$args"` $port
+		sh $0 ${OPT_NOBUILD:+-B} ${OPT_NOCLEAN_BEFORE:+-f} ${OPT_NOCLEAN_AFTER:+-F} ${OPT_NOMAKE:+-M} ${OPT_NORECURSE:+-R} ${OPT_NOSCRIPT:+-S} ${OPT_TAGPKG:+-t} ${OPT_VERBOSE:+-v} ${CHROOTDIR:+-C $CHROOTDIR} -A `cat "$args"` $port
 	else
 		script="$metainfo_dir/$uni.sh"
 		pkg=`pkg_name $port`
 		env="$metainfo_dir/$uni.env"
 		pkg_file=/usr/ports/packages/All/$pkg.txz
-		if [ ! -e $pkg_file ] || ([ -z "${CHROOTDIR-}" -a ports-mgmt/pkg = $port ] && ! pkg info -e $pkg < /dev/null); then
+		if [ -n "${OPT_TAGPKG-}" ] || [ ! -e $pkg_file ] || ([ -z "${CHROOTDIR-}" -a ports-mgmt/pkg = $port ] && ! pkg info -e $pkg < /dev/null); then
 			[ -z "${OPT_NOMAKE-}" ]
 			if [ -z "${OPT_NORECURSE-}" ]; then
 				exit 78 # this needs updating for the more specific dep_types (build run -> lib run build fetch extract patch)
@@ -96,19 +101,19 @@ for port in $*; do
 			fi
 			destdir=
 			makeargs="$metainfo_dir/$uni.makeargs"
-			if [ -f "$script" ]; then
+			if [ -z "${OPT_NOSCRIPT-}" ] && [ -f "$script" ]; then
 				pkg_step=pre-build
 				. "$script"
 			fi
 			(
 				cd /usr/ports/${port%%@*}
-				make ${flavor:+FLAVOR=$flavor} -DNOCLEANDEPENDS clean
-				env `cat "$env" 2>/dev/null` make "__MAKE_CONF=$make_conf" PORT_DBDIR="$PORT_DBDIR" ${flavor:+FLAVOR=$flavor} `cat "$makeargs" 2>/dev/null` -DBATCH -DNO_DEPENDS package
-				lockf "${CHROOTDIR-}/tmp/nu_install_pkg.pkgdb.lock" env `cat "$env" 2>/dev/null` make "__MAKE_CONF=$make_conf" PORT_DBDIR="$PORT_DBDIR" ${flavor:+FLAVOR=$flavor} `cat "$makeargs" 2>/dev/null` -DBATCH -DNO_DEPENDS install
-				make ${flavor:+FLAVOR=$flavor} -DNOCLEANDEPENDS clean
+				[ -n "${OPT_NOCLEAN_BEFORE-}" ] || make ${flavor:+FLAVOR=$flavor} -DNOCLEANDEPENDS clean
+				[ -n "${OPT_NOBUILD-}" ] || env `cat "$env" 2>/dev/null` make "__MAKE_CONF=$make_conf" PORT_DBDIR="$PORT_DBDIR" ${flavor:+FLAVOR=$flavor} `cat "$makeargs" 2>/dev/null` -DBATCH -DNO_DEPENDS package
+				[ -n "${OPT_NOBUILD-}" ] || lockf "${CHROOTDIR-}/tmp/nu_install_pkg.pkgdb.lock" env `cat "$env" 2>/dev/null` make "__MAKE_CONF=$make_conf" PORT_DBDIR="$PORT_DBDIR" ${flavor:+FLAVOR=$flavor} `cat "$makeargs" 2>/dev/null` -DBATCH -DNO_DEPENDS install
+				[ -n "${OPT_NOCLEAN_AFTER-}" ] || make ${flavor:+FLAVOR=$flavor} -DNOCLEANDEPENDS clean
 			)
 			[ -f $pkg_file ]
-			if [ -f "$script" ]; then
+			if [ -z "${OPT_NOSCRIPT-}" ] && [ -f "$script" ]; then
 				pkg_step=post-build
 				. "$script"
 			fi

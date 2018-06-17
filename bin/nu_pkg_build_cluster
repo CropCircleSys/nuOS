@@ -47,7 +47,7 @@ getwork () {
 	local _retvar=$1 _port= _idle=
 	[ -n "`cd "$data_graph" && find . -depth 1 -name '*_*' | head -n 1`" ] || return 1
 	while [ -z "$_port" ]; do
-		_port=`cd "$data_graph" && find . -name dependencies -and -empty 2> /dev/null | sed -Ee 's%./([^_]+)_(.*)/dependencies%\1/\2%' | head -n 1`
+		_port=`cd "$data_graph" && find . -name dependencies -and -empty 2> /dev/null | sed -Ee 's:^./([^_]+)_(.*)/dependencies$:\1/\2:' | head -n 1`
 		if [ -z "$_port" ]; then
 			if [ -n "`find "$workers" -depth 2 -type d`" ]; then
 				_idle=

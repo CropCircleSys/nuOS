@@ -93,7 +93,7 @@ collection_vars_init () {
 		graphics/gifsicle
 		lang/expect
 		databases/postgresql10-server
-		databases/mysql80-server
+		databases/mysql57-server
 		databases/mongodb36
 		databases/redis
 		lang/mono-basic
@@ -133,7 +133,7 @@ collection_vars_init () {
 		graphics/inkscape
 		x11/xorg
 		x11/kde5
-		databases/virtuoso
+		x11/sddm
 		net-p2p/bitcoin
 		net-p2p/namecoin-beta
 		net-p2p/litecoin
