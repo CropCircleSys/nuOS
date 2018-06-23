@@ -423,7 +423,7 @@ EOF
 
 	cat > $POOL_MNT/etc/nuos/backup <<'EOF'
 home
-svc
+?svc
 EOF
 
 	cat >> $POOL_MNT/$conf <<EOF

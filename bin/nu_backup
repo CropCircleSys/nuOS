@@ -52,6 +52,12 @@ fi
 
 require_tmp output_backlist
 while read ds; do
+	case "$ds" in
+		\?*)
+			ds="${ds#\?}"
+			optional=y;;
+		*) optional=;;
+	esac
 	ds=$POOL_NAME/$ds
 	while printf %s "$ds" | grep -q '('; do
 		tdds=`printf %s "$ds" | sed -E -e 's/^([^(]*)\(([^)]*)\)(.*)$/\1	\2	\3/'`
@@ -62,7 +68,11 @@ EOF
 		[ -n "$val" -a "$val" != - ]
 		ds="$left$val$right"
 	done
-	printf '%s\n' "$ds" >> "$output_backlist"
+	if zfs list "$ds" > /dev/null 2> /dev/null; then
+		printf '%s\n' "$ds" >> "$output_backlist"
+	else
+		[ -n "$optional" ] || { echo "FATAL: cannot open '$ds': dataset does not exist"; exit 1; }
+	fi
 done < "$backlist"
 retire_tmp backlist
 
