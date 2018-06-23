@@ -1,9 +1,9 @@
 #!/usr/bin/false
 set -e; set -u; set -C
 
-# nuOS 0.0.11.1a1 - lib/nu_jail.sh - LICENSE: BSD_SMPL
+# nuOS 0.0.11.2a1 - lib/nu_jail.sh
 #
-# Copyright (c) 2008-2017 Chad Jacob Milios and Crop Circle Systems, Inc.
+# Copyright (c) 2008-2018 Chad Jacob Milios and Crop Circle Systems.
 # All rights reserved.
 #
 # This Source Code Form is subject to the terms of the Simplified BSD License.
@@ -12,9 +12,9 @@ set -e; set -u; set -C
 # project is not affiliated with the FreeBSD Project.
 #
 # Official updates and community support available at https://nuos.org .
-# Other licensing options and professional services available at https://ccsys.com .
+# Professional services available at https://ccsys.com .
 
-nuos_lib_ver=0.0.11.1a1
+nuos_lib_ver=0.0.11.2a1
 [ $nuos_lib_ver = "$NUOS_VER" ]
 [ -n "${nuos_lib_common_loaded-}" ]
 [ -z "${nuos_lib_jail_loaded-}" ]

@@ -1,9 +1,9 @@
 #!/bin/sh
 set -e; set -u; set -C
 
-# nuOS 0.0.11.1a1 - bin/nu_backup - LICENSE: BSD_SMPL
+# nuOS 0.0.11.2a1 - bin/nu_backup
 #
-# Copyright (c) 2008-2017 Chad Jacob Milios and Crop Circle Systems, Inc.
+# Copyright (c) 2008-2018 Chad Jacob Milios and Crop Circle Systems.
 # All rights reserved.
 #
 # This Source Code Form is subject to the terms of the Simplified BSD License.
@@ -12,9 +12,9 @@ set -e; set -u; set -C
 # project is not affiliated with the FreeBSD Project.
 #
 # Official updates and community support available at https://nuos.org .
-# Other licensing options and professional services available at https://ccsys.com .
+# Professional services available at https://ccsys.com .
 
-NUOS_VER=0.0.11.1a1
+NUOS_VER=0.0.11.2a1
 
 while getopts f:l:p:sv OPT; do case $OPT in
 	f) FROM_SNAP=$OPTARG;;

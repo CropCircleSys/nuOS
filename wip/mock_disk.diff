@@ -1,0 +1,59 @@
+diff -ru /pakkun/.zfs/snapshot/sys_birth/usr/nuos/bin/nu_install ./bin/nu_install
+--- /pakkun/.zfs/snapshot/sys_birth/usr/nuos/bin/nu_install	2018-03-05 18:03:39.275864000 +0000
++++ ./bin/nu_install	2018-05-07 20:42:16.636364000 +0000
+@@ -75,20 +75,52 @@
+ 	for dev in $POOL_DEVS; do
+ 		gpart create -s GPT /dev/$dev
+ 		gpart add -a $PART_ALIGN -t freebsd-boot -s 256 /dev/$dev
+-		gpart add -a $PART_ALIGN -t freebsd-zfs -l $POOL_NAME$i /dev/$dev
++
++		gpart show /dev/$dev
++		echo gpart add -a $PART_ALIGN -t freebsd-zfs -l $POOL_NAME$i /dev/$dev
++		read _
++		#gpart add -a $PART_ALIGN -t freebsd-zfs -l $POOL_NAME$i /dev/$dev
+ 		try 3 gpart set -a bootme -i 2 /dev/$dev
+ 		gpart bootcode -b /boot/pmbr -p /boot/gptzfsboot -i 1 /dev/$dev
+-		gnop create -S 4096 /dev/gpt/$POOL_NAME$i
++		push devsizes `gpart show /dev/$dev | grep -E '\b2[[:space:]]+freebsd-zfs[[:space:]]+\[bootme\][[:space:]]+'|xargs|cut -w -f 2`
+ 		nextdev=/dev/gpt/$POOL_NAME$i.nop
++		push physdevlist $nextdev
+ 		push devlist $nextdev
+ 		i=$(($i + 1))
+ 	done
++	if [ $i -ge 2 ]; then
++		smallestpart=`echo $devsizes | xargs -n 1 | sort -n | head -n 1`
++		#partsize=$(($smallestpart - ${RAID_DEADBEEF:=2097152}))
++		partsize=$smallestpart
++	fi
++	i=0
++	for dev in $POOL_DEVS; do
++		#[ "x$POOL_TYPE" = x ] || gpart resize -s $partsize -i 2 /dev/$dev
++		gnop create -S 4096 /dev/gpt/$POOL_NAME$i
++		i=$(($i + 1))
++	done
++	i=0
++	while [ $i -lt ${MOCK_DEVS:=0} ]; do
++		mock_vol=$POOL_BOOT_NAME/${POOL_NAME}_tmp$i
++		mock_dev=/dev/zvol/$mock_vol
++		zfs create -s -b 4K -V $((partsize/2))K $mock_vol
++		push mock_vols $mock_vol 
++		push mock_devs $mock_dev
++		push devlist $mock_dev
++		i=$(($i + 1))
++	done
+ 	require_tmp -d tempdir
+ 	zpool create -o altroot=$POOL_MNT -o "cachefile=$tempdir/zpool.cache" -O mountpoint=none -O canmount=off -O devices=off $POOL_OPTS $POOL_NAME $POOL_TYPE $devlist
+ 	zpool_id=`zpool get -H -p -o value guid $POOL_NAME`
+ 	zpool export $POOL_NAME
+-	try 3 gnop destroy $devlist
++	try 3 gnop destroy $physdevlist
+ 	zpool import -o altroot=$POOL_MNT -o "cachefile=$tempdir/zpool.cache" $zpool_id
++	for md in $mock_devs; do
++		zpool offline $POOL_NAME $md
++	done
++	for mv in $mock_vols; do
++		zfs destroy $mv
++	done
+ fi
+ if [ -n "${OPT_ONLY_INIT_ZPOOL-}" ]; then
+ 	[ -z "${OPT_SKIP_INIT_ZPOOL-}" ]

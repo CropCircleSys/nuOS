@@ -1,15 +1,17 @@
 +----------------------------------------------------------------------------------------+
-| nuOS 0.0.11.1a1                                                                        |
-| Copyright (c) 2008-2017 Chad Jacob Milios and Crop Circle Systems, Inc.                |
+| nuOS 0.0.11.2a1                                                                        |
+| Copyright (c) 2008-2018 Chad Jacob Milios and Crop Circle Systems.                     |
 | All rights reserved.                                                                   |
 +----------------------------------------------------------------------------------------+
 
 WARNING: It should be noted that nu_install and nu_jail by default install three user accounts with default names and passwords onto the system as they provision it.
 
-"joe" the (-u)ser: He's your normal barely-privileged user, employee of business or all-around troublemaker; this would be your boss.
-"ninja" the (-a)dmin: That's you, technical sword for honor and/or for hire.
-"sumyungai" the (-b)ackdoor: That's me, your trusted nuOS distributor and support point of contact (or it's you, when you disseminate nuOS to other ninjas along with your value-added contribution/support.)
+To disable all three, you would add these options to your command: -a '' -u '' -b ''
 
-All of this is easily customizable with a few command line options when you stage a real build or deployment. To disable all three, you would add these options to your command: -a '' -u '' -b ''
+The (-u)ser, default "joe": He's your normal barely-privileged user, employee of business or all-around troublemaker; this would be your boss.
+The (-a)dmin, default "ninja": That's you, sword for honor (or hire).
+The (-b)ackdoor, default "sumyungai": That's me, your trusted nuOS distributor and support point of contact, (or it's you, when you disseminate custom distributions to other ninjas along with your value-added contribution/support).
+
+All of this is easily customizable with a few command line options when you stage a real build or deployment.
 
 The code that does this is in lib/admin.sh where the applicable command line options and/or [environment] variables are also defined. 

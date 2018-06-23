@@ -1,28 +1,4 @@
 +----------------------------------------------------------------------------------------+
-| FreeBSD System Utilities made for nuOS                                                 |
-| Copyright (c) 2008-2017 Chad Jacob Milios and Crop Circle Systems, Inc.                |
-| All rights reserved.                                                                   |
-+----------------------------------------------------------------------------------------+
-
-Certain files of this Source Code Form are subject to the terms of the Simplified BSD License. A copy of the Simplified BSD License should be included in this file, if not, you can obtain one at https://www.freebsd.org/copyright/freebsd-license.html . This software project is not affiliated with the FreeBSD Project.
-
-Official updates and community support available at https://nuos.org .
-Other licensing options and professional services available at https://ccsys.com .
-
-file(s) herein covered by the Simplified BSD License:
-	bin/disable_svc
-	bin/enable_svc
-	bin/nu_install
-	bin/nu_install_pkg
-	bin/nu_jail
-	lib/nu_admin.sh
-	lib/nu_common.sh
-	lib/nu_install.sh
-	lib/nu_jail.sh
-	lib/nu_system.sh
-	util/nu_version
-
-+----------------------------------------------------------------------------------------+
 | SIMPLIFIED BSD LICENSE                                                                 |
 |                                                                                        |
 | Redistribution and use in source and binary forms, with or without modification, are   |
