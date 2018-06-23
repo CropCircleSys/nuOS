@@ -1,1 +1,0 @@
-grep -q multimedia/vlc-qt4 Makefile

@@ -1,0 +1,43 @@
+--- Makefile.orig	2018-06-11 03:01:32.323028000 +0000
++++ Makefile	2018-06-11 03:28:41.233281000 +0000
+@@ -20,13 +20,14 @@
+ USES=		fortran tar:bzip2
+ USE_GCC=	yes
+ 
+-CONFLICTS=	atlas-devel-[0-9]* cblas-[0-9]*
++CONFLICTS=	atlas-devel-[0-9]*
+ MANUAL_PACKAGE_BUILD=	Optimizes for the local machine.
+ 
+-OPTIONS_DEFINE=		DOCS DATA ARCHDEF TSC WALL_TIMER
++OPTIONS_DEFINE=		DOCS DATA ARCHDEF NO_CONFLICT TSC WALL_TIMER
+ OPTIONS_DEFAULT=	DATA
+ ARCHDEF_DESC=		Use a specified architectural default
+ DATA_DESC=		Install tuning data and logs from the build
++NO_CONFLICT_DESC=	Tuck cblas away into atlas/cblas
+ TSC_DESC=		If WALL_TIMER is enabled, use the TSC
+ WALL_TIMER_DESC=	Use less robust timing with higher resolution
+ 
+@@ -35,6 +36,10 @@
+ 
+ .include <bsd.port.options.mk>
+ 
++.if ! ${PORT_OPTIONS:MNO_CONFLICT}
++CONFLICTS+=	cblas-[0-9]*
++.endif
++
+ #Increase ATLAS_MAXMALLOC if the atlas threaded libraries perform poorly on large problems:
+ # http://math-atlas.sourceforge.net/errata.html#MaxMalloc
+ ATLAS_MAXMALLOC?=	67108864
+@@ -233,5 +238,12 @@
+ 	@${MKDIR} ${STAGEDIR}${DOCSDIR}
+ 	${INSTALL_DATA} ${WRKSRC}/doc/* ${STAGEDIR}${DOCSDIR}
+ .endif
++.if ${PORT_OPTIONS:MNO_CONFLICT}
++	${MV} ${STAGEDIR}${PREFIX}/include/cblas.h ${STAGEDIR}${PREFIX}/include/atlas/
++	@${MKDIR} ${STAGEDIR}${PREFIX}/lib/atlas
++	${MV} ${STAGEDIR}${PREFIX}/lib/libcblas.a ${STAGEDIR}${PREFIX}/lib/atlas/
++	${MV} ${STAGEDIR}${PREFIX}/lib/libcblas.so.2 ${STAGEDIR}${PREFIX}/lib/atlas/
++	${MV} ${STAGEDIR}${PREFIX}/lib/libcblas_pic.a ${STAGEDIR}${PREFIX}/lib/atlas/
++.endif
+ 
+ .include <bsd.port.mk>

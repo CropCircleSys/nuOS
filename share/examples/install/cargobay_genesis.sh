@@ -1,4 +1,4 @@
-zones='cargobay.net nuos.org nu.zone nu.software nu.email nu.place nu.chat nu.team nu.show nu.live nu.lol nu.click nu.money nu.gold nu.cash cropcircle.systems ccsys.com uhax.tv pawnbase.com unblind.date blindish.date dominatrixbunny.com dominatrixbunnies.com dominatrixbunnys.com daddyoh.life daddyoh.org'
+zones='cargobay.net nuos.org nuos.net nu.zone nu.software nu.email nu.place nu.chat nu.team nu.show nu.live nu.lol nu.click nu.parts nu.money nu.gold nu.cash cropcircle.systems ccsys.com uhax.tv pawnbase.com unblind.date blindish.date dominatrixbunny.com dominatrixbunnies.com dominatrixbunnys.com daddyoh.life daddyoh.org'
 
 for z in $zones; do
   
@@ -27,9 +27,11 @@ for z in $zones; do
     ccsys.com)
       department='Sales and Customer Support';;
     nuos.org)
-      department='Community Outreach and Service';;
+      department='Next Underground Operating System';;
+    nuos.net)
+      department='National Union Online Service';;
     nu.zone)
-      department='Authority Delegation and Name Assignment';;
+      department='Authority Registration';;
     nu.software)
       department='Software Distribution Center';;
     nu.place)
@@ -47,11 +49,13 @@ for z in $zones; do
     nu.lol)
       department='Social Media Archival and Chronology';;
     nu.click)
-      department='Advertising and Trend Analysis Network';;
+      department='Advertising and Trend Analysis';;
+    nu.parts)
+      department='Construction and Manufacturing';;
     nu.money)
       department='Financial News and Services';;
     nu.gold)
-      department='Cryptographic Democratic Service';;
+      department='Cryptographic Assets and Democratic Service';;
     nu.cash)
       department='Cryptographic Monetary Products';;
     uhax.tv)

@@ -109,7 +109,7 @@ require_ports_tree () {
 			i=1
 			while [ -f "$pkg_meta"/$port_.$i.diff ]; do
 				targ=`head -n 2 "$pkg_meta"/$port_.$i.diff | tail -n 1 | cut -w -f 2`
-				patch -s -C -F 0 -E -t -N -d /usr/ports/$port -i "$pkg_meta"/$port_.$i.diff $targ
+				patch -s -C -F 0 -E -t -N -d /usr/ports/$port -i "$pkg_meta"/$port_.$i.diff $targ || { echo "ERORR: patch for $port failed." >&2 && exit 1; }
 				patch -F 0 -E -t -N -d /usr/ports/$port -i "$pkg_meta"/$port_.$i.diff $targ
 				i=$(($i+1))
 			done

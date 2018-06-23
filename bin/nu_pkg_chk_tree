@@ -83,7 +83,7 @@ for white in `ls -d *_*/dependencies | sed -e 's:/dependencies$::'`; do
 		break
 	fi
 done
-#retire_tmp gray
-#retire_tmp black
-#retire_tmp data_graph
+retire_tmp gray
+retire_tmp black
+retire_tmp data_graph
 exit ${ex-0}
