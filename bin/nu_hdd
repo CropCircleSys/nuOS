@@ -1,0 +1,164 @@
+#!/bin/sh
+set -e; set -u; set -C
+
+# nuOS 0.0.11.2a1 - bin/nu_hdd
+#
+# Copyright (c) 2008-2018 Chad Jacob Milios and Crop Circle Systems.
+# All rights reserved.
+#
+# This Source Code Form is subject to the terms of the Simplified BSD License.
+# If a copy of the Simplified BSD License was not distributed alongside this file, you can
+# obtain one at https://www.freebsd.org/copyright/freebsd-license.html . This software
+# project is not affiliated with the FreeBSD Project.
+#
+# Official updates and community support available at https://nuos.org .
+# Professional services available at https://ccsys.com .
+
+NUOS_VER=0.0.11.2a1
+
+. "$(dirname "$(realpath "$0")")/../lib/nu_system.sh"
+
+while getopts a:bfm:o:p:qt:u:v OPT; do case $OPT in
+	a) PART_ALIGN=$OPTARG;;
+	b) OPT_BOOTABLE=y;;
+#	d) OPT_DELETE=y;;
+	f) OPT_FORCE=y;;
+	m) POOL_MNT=$OPTARG;;
+	o) POOL_OPTS=$OPTARG;;
+	p) POOL_NAME=$OPTARG;;
+	q) OPT_QUICK=y;;
+	t) POOL_TYPE=$OPTARG;;
+	u) UTILIZE_PCT=$OPTARG;;
+	v) OPT_VERBOSE=y;;
+esac; done; shift $(($OPTIND-1))
+[ $# -ge 1 ] || { echo 'ERROR: You must specify at least one device.' >&2 && exit 1; }
+
+maybe_yell
+
+case $# in
+	1) : ${POOL_TYPE:=};;
+	2) : ${POOL_TYPE:=mirror};;
+	*) : ${POOL_TYPE:=raidz};;
+esac
+
+case $POOL_TYPE in
+	[Ss][Tt][Rr][Ii][Pp][Ee]*|[Rr][Aa][Ii][Dd]0|0)
+		POOL_TYPE=;;
+	[Mm][Ii][Rr][Rr][Oo][Rr]*|[Rr][Aa][Ii][Dd]1|1)
+		POOL_TYPE=mirror;;
+	[Rr][Aa][Ii][Dd][Zz]|[Rr][Aa][Ii][Dd]5|5)
+		POOL_TYPE=raidz;;
+	[Rr][Aa][Ii][Dd][Zz]2|[Rr][Aa][Ii][Dd]6|6)
+		POOL_TYPE=raidz2;;
+	[Rr][Aa][Ii][Dd][Zz]3|[Rr][Aa][Ii][Dd]7|7)
+		POOL_TYPE=raidz3;;
+esac
+
+if [ -z "$POOL_TYPE" -a $# -eq 1 ]; then
+	pool_display_type=n/a
+elif [ -z "$POOL_TYPE" -a $# -gt 1 ]; then
+	pool_display_type=stripe
+else
+	pool_display_type=$POOL_TYPE
+fi
+
+while [ $# -gt 0 ]; do
+	push POOL_DEVS ${1#/dev/}
+	shift
+done
+
+. "$(dirname "$(realpath "$0")")/../lib/nu_common.sh"
+
+baseos_init
+nuos_init
+
+echo 'pool devs          POOL_DEVS      ' $POOL_DEVS
+#echo -n 'delete          -d OPT_DELETE      ' && [ -n "${OPT_DELETE-}" ] && echo set || echo null
+if [ -z "${OPT_DELETE-}" ]; then
+	echo -n 'bootable        -b OPT_BOOTABLE    ' && [ -n "${OPT_BOOTABLE-}" ] && echo set || echo null
+	echo 'pool name       -p POOL_NAME      ' ${POOL_NAME:=thumb}
+	echo 'pool mnt pt     -m POOL_MNT       ' ${POOL_MNT:=/$POOL_NAME}
+	echo 'pool type       -t POOL_TYPE      ' $pool_display_type
+	echo 'partition align -a PART_ALIGN     ' ${PART_ALIGN:=8192} " (i.e. `humanize $((512 * $PART_ALIGN))`)"
+	echo 'utilize percent -u UTILIZE_PCT    ' ${UTILIZE_PCT:=99.95}
+	echo 'pool options    -o POOL_OPTS      ' ${POOL_OPTS="-O atime=off -O compression=lz4"}
+fi
+maybe_pause
+
+undo_exit () {
+	for dev in $phys_devs; do
+		gpart undo /dev/$dev || true
+	done
+	echo 'ERROR: An unknown error occurred.' >&2
+	exit 1
+}
+
+if [ -z "${OPT_DELETE-}" ]; then
+	if [ -n "${OPT_BOOTABLE-}" ]; then
+		zfsidx=2
+	else
+		zfsidx=1
+	fi
+	i=0
+	for dev in $POOL_DEVS; do
+		if [ x != $dev -a X != $dev ] && [ -e "/dev/$dev" ]; then
+			push phys_devs $dev
+			gpart create -s GPT -f x /dev/$dev || undo_exit
+			if [ -n "${OPT_BOOTABLE-}" ]; then
+				gpart add -a $PART_ALIGN -t freebsd-boot -s 256 -f x /dev/$dev || undo_exit
+			fi
+			gpart add -a $PART_ALIGN -t freebsd-zfs -l $POOL_NAME$i -f x /dev/$dev
+		elif [ x != $dev -a X != $dev ]; then
+			undo_exit
+		fi
+		i=$(($i + 1))
+	done
+	
+	for dev in $phys_devs; do
+		sz=`gpart show /dev/$dev | grep "$zfsidx  freebsd-zfs  (" | xargs | cut -w -f 2`
+		[ -n "$sz" -a "$sz" -ge 4 ] || undo_exit
+		push avail_szs $sz
+	done
+	
+	smallest=`echo "$avail_szs" | xargs -n1 | sort -n | head -n 1`
+	echo smallest part: $smallest sectors
+	safesz=$((`echo "$(($smallest / $PART_ALIGN)) * $UTILIZE_PCT / 100" | bc` * $PART_ALIGN))
+	echo safe size: $safesz sectors
+	
+	for dev in $phys_devs; do
+		try 3 gpart resize -a $PART_ALIGN -s $safesz -i $zfsidx -f x /dev/$dev || undo_exit
+		if [ -n "${OPT_BOOTABLE-}" ]; then
+			try 3 gpart set -a bootme -i 2 -f x /dev/$dev || undo_exit
+		fi
+	done
+	
+	i=0
+	for dev in $POOL_DEVS; do
+		if [ x = $dev -o X = $dev ]; then
+			mock_node=`mdconfig -a -t swap -o noreserve -o compress -S 4096 -s $safesz`
+			push pool_devs /dev/$mock_node
+			push mock_nodes $mock_node
+		else
+			try 3 gpart commit /dev/$dev
+			if [ -n "${OPT_BOOTABLE-}" ]; then
+				gpart bootcode -b /boot/pmbr -p /boot/gptzfsboot -i 1 /dev/$dev
+			fi
+			gnop create -S 4096 /dev/gpt/$POOL_NAME$i
+			next_dev=/dev/gpt/$POOL_NAME$i.nop
+			push pool_devs $next_dev
+			push nop_devs $next_dev
+		fi
+		i=$(($i + 1))
+	done
+	
+	require_tmp zpool_cache
+	zpool create -o altroot=$POOL_MNT -o cachefile=$zpool_cache -O mountpoint=none -O canmount=off -O devices=off $POOL_OPTS $POOL_NAME $POOL_TYPE $pool_devs
+	zpool_id=`zpool get -H -p -o value guid $POOL_NAME`
+	for md in ${mock_nodes-}; do
+		zpool offline $POOL_NAME /dev/$md
+		mdconfig -d -u $md
+	done
+	zpool export $POOL_NAME
+	gnop destroy $nop_devs
+	zpool import -o altroot=$POOL_MNT -o cachefile=$zpool_cache -d /dev/gpt $zpool_id
+fi

@@ -23,28 +23,10 @@ nuos_lib_ver=0.0.11.2a1
 [ -z "${nuos_lib_install_loaded-}" ]
 nuos_lib_install_loaded=y
 
-install_vars_init () {
-	if [ -z "${POOL_DEVS-}" ]; then # u shud spec a blank target media
-		if [ -n "${OPT_SWAP-}" ]; then # or ask to use these in (-S)wap
-			# have 2 - 8 GB of xtra ram depending on install options
-			POOL_DEVS="`mdconfig -s 1g` `mdconfig -s 1g` `mdconfig -s 1g` `mdconfig -s 1g` `mdconfig -s 1g` `mdconfig -s 1g` `mdconfig -s 1g` `mdconfig -s 1g`"
-			# and hopefully your build is successful OR you CLEAN UP after yerself!
-		else
-			echo "`basename $0`: -d or -S must be specified" >&2
-			exit 1
-		fi
-	fi
+build_vars_init () {
 	: ${HOST:=`hostname`}
-	echo 'pool devs       -d POOL_DEVS      ' $POOL_DEVS
 	echo 'pool name       -p POOL_NAME      ' ${POOL_NAME:=thumb}
-	echo 'pool mnt pt     -m POOL_MNT       ' ${POOL_MNT:=/$POOL_NAME}
-	echo 'pool type       -t POOL_TYPE      ' ${POOL_TYPE=raidz}
-	echo 'partition align    PART_ALIGN     ' ${PART_ALIGN:=128} # stripesize/sectorsize of eventual target media's presented device. power of two, err higher
-	echo 'pool options    -o POOL_OPTS      ' ${POOL_OPTS="-O atime=off -O compression=lz4"}
-	echo 'pkg collection  -c PKG_COLLECTION ' $PKG_COLLECTION
 	echo 'port db dir        PORT_DBDIR     ' $PORT_DBDIR
-	echo 'swap size       -s SWAP_SIZE      ' ${SWAP_SIZE:=1G}
-	echo 'new host name   -h NEW_HOST       ' ${NEW_HOST:=$POOL_NAME.${HOST#*.}}
 	echo 'make jobs          MAKE_JOBS      ' ${MAKE_JOBS:=$((2+`sysctl -n kern.smp.cpus`))}
 	echo 'target arch        TRGT_ARCH      ' $TRGT_ARCH
 	echo 'target proc        TRGT_PROC      ' $TRGT_PROC
@@ -52,6 +34,16 @@ install_vars_init () {
 	echo 'target optimize    TRGT_OPTZ      ' $TRGT_OPTZ
 	echo 'subversion server  SVN_SERVER     ' ${SVN_SERVER=svn.FreeBSD.org}
 	echo 'subversion path    SVN_PATH       ' ${SVN_PATH:=base/releng/11.2}
+}
+
+install_vars_init () {
+	: ${HOST:=`hostname`}
+	echo 'pool name       -p POOL_NAME      ' ${POOL_NAME:=thumb}
+	echo 'swap size       -s SWAP_SIZE      ' ${SWAP_SIZE:=1G}
+	echo 'new host name   -h NEW_HOST       ' ${NEW_HOST:=$POOL_NAME.${HOST#*.}}
+	echo 'target arch        TRGT_ARCH      ' $TRGT_ARCH
+	echo 'target proc        TRGT_PROC      ' $TRGT_PROC
+	echo 'target kern        TRGT_KERN      ' ${TRGT_KERN:=NUOS}
 	echo -n 'copy ports         COPY_PORTS      ' && [ -n "${COPY_PORTS-}" ] && echo set || echo null
 	echo -n 'copy all pkgs      COPY_DEV_PKGS   ' && [ -n "${COPY_DEV_PKGS-}" ] && echo set || echo null
 	echo -n 'copy src           COPY_SRC        ' && [ -n "${COPY_SRC-}" ] && echo set || echo null
@@ -82,10 +74,12 @@ require_base_src () {
 		[ $svn_errors -lt $max_svn_errors ]
 
 		baseos_init
+		reset_pkg_collection
 	fi
 	local make_conf retire_make_conf_cmd
 	if [ ! -d /usr/obj/usr/src/bin ]; then
 		prepare_make_conf make_conf retire_make_conf_cmd
+		[ $TRGT_OPTZ = `cd /var/empty && make -V CPUTYPE` ]
 		(cd /usr/src && make -j $MAKE_JOBS "__MAKE_CONF=$make_conf" buildworld)
 		$retire_make_conf_cmd make_conf
 	fi

@@ -18,7 +18,7 @@ NUOS_VER=0.0.11.2a1
 
 . "$(dirname "$(realpath "$0")")/../lib/nu_system.sh"
 
-while getopts a:b:c:Bd:DeFh:i:kK:l:m:o:p:PqQs:St:u:vzZ OPT; do case $OPT in
+while getopts a:b:c:Bd:DeFh:i:kK:l:m:o:p:Pqs:t:u:vzZ OPT; do case $OPT in
 	a) ADMIN_ACCT=$OPTARG;;
 	b) BD_ACCT=$OPTARG;;
 	B) OPT_NOBRAND=y;;
@@ -44,7 +44,6 @@ while getopts a:b:c:Bd:DeFh:i:kK:l:m:o:p:PqQs:St:u:vzZ OPT; do case $OPT in
 	P) OPT_DONT_PRESERVE_DIST_SNAP=y;;
 	q) OPT_QUICK=y;;
 	s) SWAP_SIZE=$OPTARG;;
-	S) OPT_SWAP=y;;
 	t) POOL_TYPE=$OPTARG;;
 	u) USER_ACCT=$OPTARG;;
 	v) OPT_VERBOSE=y;;

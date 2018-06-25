@@ -1,0 +1,434 @@
+#!/bin/sh
+set -e; set -u; set -C
+
+# nuOS 0.0.11.2a1 - bin/nu_build
+#
+# Copyright (c) 2008-2018 Chad Jacob Milios and Crop Circle Systems.
+# All rights reserved.
+#
+# This Source Code Form is subject to the terms of the Simplified BSD License.
+# If a copy of the Simplified BSD License was not distributed alongside this file, you can
+# obtain one at https://www.freebsd.org/copyright/freebsd-license.html . This software
+# project is not affiliated with the FreeBSD Project.
+#
+# Official updates and community support available at https://nuos.org .
+# Professional services available at https://ccsys.com .
+
+NUOS_VER=0.0.11.2a1
+
+. "$(dirname "$(realpath "$0")")/../lib/nu_system.sh"
+
+while getopts Bc:FNp:qv OPT; do case $OPT in
+	B) OPT_NOBRAND=y;;
+	c) PKG_COLLECTION=$OPTARG;;
+	F) OPT_SKIP_FBSD=y;;
+	N) OPT_SKIP_NUOS=y;;
+	p) POOL_NAME=$OPTARG;;
+	q) OPT_QUICK=y;;
+	v) OPT_VERBOSE=y;;
+esac; done; shift $(($OPTIND-1))
+[ $# = 0 ]
+
+. "$(dirname "$(realpath "$0")")/../lib/nu_common.sh"
+. "$(dirname "$(realpath "$0")")/../lib/nu_admin.sh"
+. "$(dirname "$(realpath "$0")")/../lib/nu_make.sh"
+. "$(dirname "$(realpath "$0")")/../lib/nu_ports.sh"
+. "$(dirname "$(realpath "$0")")/../lib/nu_collection.sh"
+. "$(dirname "$(realpath "$0")")/../lib/nu_install.sh"
+
+baseos_init
+nuos_init
+make_vars_init
+collection_vars_init
+build_vars_init
+
+maybe_pause
+maybe_yell
+
+require_base_src
+
+pool_mnt=`zpool get -H -o value altroot $POOL_NAME`
+[ -n "$pool_mnt" -a x- != "x$pool_mnt" ]
+
+os_software_ds=$POOL_NAME/os
+fbsd_proj_ds=$os_software_ds/$BASEOS_TYPE
+fbsd_os_ds=$fbsd_proj_ds/$BASEOS_VER
+fbsd_bin_ds=$fbsd_os_ds/$TRGT_MACH
+
+if [ -n "${OPT_SKIP_FBSD-}" -o -n "${OPT_SKIP_NUOS-}" ]; then
+	fbsd_sysroot_ds=$fbsd_bin_ds/`zfs get -H -p -o value org.nuos:active_revision $fbsd_bin_ds`
+else
+	
+	zfs create -p -o mountpoint=none -o canmount=off $os_software_ds
+	zfs create -p -o mountpoint=none -o canmount=off $fbsd_proj_ds
+	zfs create -p -o mountpoint=none -o canmount=off $fbsd_os_ds
+	zfs create -p -o mountpoint=none -o canmount=off $fbsd_bin_ds
+	
+	fbsd_bld_rev=0
+	while
+		fbsd_sysroot_ds=$fbsd_bin_ds/v$fbsd_bld_rev
+		zfs list $fbsd_sysroot_ds
+	do
+		fbsd_bld_rev=$(($fbsd_bld_rev + 1))
+	done
+	
+	zfs create -o mountpoint=/ -o canmount=noauto $fbsd_sysroot_ds
+	zfs mount $fbsd_sysroot_ds
+	zfs create $fbsd_sysroot_ds/etc
+	zfs create -o mountpoint=/usr/local/etc $fbsd_sysroot_ds/etc/local
+	zfs create $fbsd_sysroot_ds/var
+	zfs create $fbsd_sysroot_ds/var/db
+	
+	(cd /usr/src && make -D WITHOUT_KERNEL_SYMBOLS DESTDIR=$pool_mnt KERNCONF=$TRGT_KERN installkernel installworld distribution)
+	:> $pool_mnt/etc/fstab
+	
+	zfs snapshot -r $fbsd_sysroot_ds@freebsd_dist
+	
+	zfs create -o mountpoint=/usr/src $fbsd_proj_ds/src && zfs unmount $fbsd_proj_ds/src || true
+	zfs create -p -o mountpoint=none -o canmount=off $fbsd_proj_ds/src/obj
+	zfs create -o mountpoint=/usr/obj $fbsd_proj_ds/src/obj/$TRGT_MACH && zfs unmount $fbsd_proj_ds/src/obj/$TRGT_MACH || true
+	zfs create -p -o mountpoint=none -o canmount=off $fbsd_proj_ds/ports
+	zfs create -o mountpoint=/var/db/portsnap $fbsd_proj_ds/ports/snap-db && zfs unmount $fbsd_proj_ds/ports/snap-db || true
+	zfs create -o mountpoint=/usr/ports $fbsd_proj_ds/ports/src && zfs unmount $fbsd_proj_ds/ports/src || true
+	zfs create -o mountpoint=/usr/ports/distfiles $fbsd_proj_ds/ports/distfiles && zfs unmount $fbsd_proj_ds/ports/distfiles || true
+
+	cat > $pool_mnt/boot/loader.conf <<'EOF'
+zfs_load="YES"
+EOF
+	
+	cat > $pool_mnt/etc/rc.conf <<'EOF'
+zfs_enable="YES"
+zfsd_enable="YES"
+EOF
+	
+	zfs snapshot -r $fbsd_sysroot_ds@zfs_enabled
+	
+	cat >> $pool_mnt/etc/fstab <<'EOF'
+tmp /tmp tmpfs rw,nosuid 0 0
+EOF
+	
+	zfs snapshot -r $fbsd_sysroot_ds@tmpfs_enabled
+	
+	(cd $pool_mnt && mkdir -p compat/linux/proc compat/linux/sys usr/ports/packages)
+	
+	zfs snapshot -r $fbsd_sysroot_ds@pkg_ready
+	
+	zfs set mountpoint=none canmount=off $fbsd_sysroot_ds/etc/local
+	zfs set mountpoint=none canmount=off $fbsd_sysroot_ds
+	
+	zfs set org.nuos:active_revision=v$fbsd_bld_rev $fbsd_bin_ds
+	
+fi
+
+nuos_proj_ds=$os_software_ds/nuOS
+nuos_os_ds=$nuos_proj_ds/$NUOS_VER
+nuos_bin_ds=$nuos_os_ds/$TRGT_MACH
+
+if [ -n "${OPT_SKIP_NUOS-}" ]; then
+	nuos_sysroot_ds=$nuos_bin_ds/`zfs get -H -p -o value org.nuos:active_revision $nuos_bin_ds`
+else
+	
+	zfs create -p -o mountpoint=none -o canmount=off $nuos_proj_ds
+	zfs create -p -o mountpoint=none -o canmount=off $nuos_os_ds
+	zfs create -p -o mountpoint=none -o canmount=off $nuos_bin_ds
+	
+	nuos_bld_rev=0
+	while
+		nuos_sysroot_ds=$nuos_bin_ds/v$nuos_bld_rev
+		zfs list $nuos_sysroot_ds
+	do
+		nuos_bld_rev=$(($nuos_bld_rev + 1))
+	done
+	
+	zfs clone -o mountpoint=/ -o canmount=noauto $fbsd_sysroot_ds@pkg_ready $nuos_sysroot_ds
+	zfs mount $nuos_sysroot_ds
+	zfs clone $fbsd_sysroot_ds/etc@pkg_ready $nuos_sysroot_ds/etc
+	zfs clone -o mountpoint=/usr/local/etc $fbsd_sysroot_ds/etc/local@pkg_ready $nuos_sysroot_ds/etc/local
+	zfs clone $fbsd_sysroot_ds/var@pkg_ready $nuos_sysroot_ds/var
+	zfs clone $fbsd_sysroot_ds/var/db@pkg_ready $nuos_sysroot_ds/var/db
+	
+	cat > $pool_mnt/usr/local/etc/beadm.conf <<'EOF'
+echo beadm is incompatible with nuOS >&2
+exit 79
+EOF
+	
+	cat >> $pool_mnt/etc/fstab <<'EOF'
+fdesc /dev/fd fdescfs rw 0 0
+proc /proc procfs rw 0 0
+#linproc /compat/linux/proc linprocfs rw 0 0
+#linsys /compat/linux/sys linsysfs rw 0 0
+EOF
+	
+	cat >> $pool_mnt/boot/loader.conf <<'EOF'
+autoboot_delay="3"
+kern.ipc.shmmni="1024"
+kern.ipc.shmseg="1024"
+kern.racct.enable="1"
+vfs.zfs.l2arc_write_max="419430400"
+vfs.zfs.l2arc_write_boost="419430400"
+vfs.zfs.l2arc_headroom="8"
+vfs.zfs.l2arc_norw="0"
+EOF
+	
+	cat >> $pool_mnt/etc/rc.conf <<'EOF'
+#linux_enable="YES"
+kld_list="aesni ipfw sem accf_data accf_dns accf_http cc_htcp"
+entropy_file="/var/db/entropy/seed"
+firewall_enable="YES"
+firewall_type="open"
+firewall_nat_flags="same_ports reset"
+firewall_nat_interface="net0"
+devfs_load_rulesets="YES"
+sendmail_submit_enable="NO"
+sendmail_outbound_enable="NO"
+sendmail_msp_queue_enable="NO"
+openssh_dsa_keygen_enable="NO"
+openssh_rsa_keygen_flags="-b 4096"
+openssh_ecdsa_keygen_flags="-b 521"
+EOF
+	
+	mkdir -p $pool_mnt/etc/rc.conf.d.off
+	
+	cat > $pool_mnt/etc/rc.conf.d.off/ntpd <<'EOF'
+ntpd_sync_on_start="YES"
+EOF
+	
+	cat > $pool_mnt/etc/rc.conf.local <<'EOF'
+#gateway_enable="YES"
+#firewall_nat_enable="YES"
+#ifconfig_net0="DHCP"
+ifconfig_vtnet0_name="net0" # replace vtnet0 with the name of your primary upstream network interface
+EOF
+	
+	cat >> $pool_mnt/etc/sysctl.conf <<'EOF'
+net.inet.ip.fw.one_pass=0
+security.bsd.unprivileged_read_msgbuf=0
+vfs.zfs.vol.recursive=1
+vfs.zfs.vdev.aggregation_limit=262144
+EOF
+	
+	cat > $pool_mnt/etc/periodic.conf <<'EOF'
+daily_output="/var/log/daily.log"
+weekly_output="/var/log/weekly.log"
+monthly_output="/var/log/monthly.log"
+daily_status_security_inline="YES"
+daily_show_success="NO"
+weekly_show_success="NO"
+monthly_show_success="NO"
+security_status_chksetuid_enable="NO"
+security_status_neggrpperm_enable="NO"
+daily_clean_hoststat_enable="NO"
+daily_status_mail_rejects_enable="NO"
+daily_status_include_submit_mailq="NO"
+daily_submit_queuerun="NO"
+weekly_locate_enable="NO"
+weekly_whatis_enable="NO"
+EOF
+	
+	cat >> $pool_mnt/etc/ssh/sshd_config <<'EOF'
+UseDNS no
+EOF
+	
+	cat > $pool_mnt/etc/jail.conf <<'EOF'
+$tmpfs_args = "-o size=1073741824";
+path = "/var/jail/$name";
+host.hostname = "$name.jail";
+devfs_ruleset = 4;
+exec.clean;
+exec.prestart = "mount -t devfs dev $path/dev && devfs -m $path/dev ruleset $devfs_ruleset && devfs -m $path/dev rule applyset && ln -sf /var/run/log $path/dev/log";
+exec.prestart += "mount -t fdescfs fdesc $path/dev/fd";
+exec.prestart += "mount -t tmpfs -o nosuid $tmpfs_args tmp $path/tmp";
+exec.prestart += "mount -t procfs proc $path/proc";
+exec.start = "/bin/sh /etc/rc";
+exec.stop = "/bin/sh /etc/rc.shutdown";
+exec.poststop = "umount $path/proc";
+exec.poststop += "umount $path/tmp";
+exec.poststop += "umount $path/dev/fd";
+exec.poststop += "umount $path/dev";
+enforce_statfs = 1;
+interface = "lo0";
+ip_hostname;
+allow.chflags;
+allow.quotas;
+children.max = 256;
+EOF
+	
+	prepare_make_conf -i make_conf retire_make_conf_cmd
+	cat "$make_conf" > $pool_mnt/etc/make.conf
+	$retire_make_conf_cmd make_conf
+	
+	cat >> $pool_mnt/boot/loader.conf <<'EOF'
+init_script="/boot/init.sh"
+EOF
+	
+	cat > $pool_mnt/boot/init.sh <<'EOF'
+#!/bin/sh
+PATH=/sbin:/bin:/usr/sbin:/usr/bin
+mountfrom=`kenv vfs.root.mountfrom`
+root_ds=${mountfrom#zfs:}
+pool=${root_ds%%/*}
+zfs list -H -r -o name,type $pool/swap | while read swap_ds ds_type; do
+	case $ds_type in volume)
+		zfs rollback -r $swap_ds@blank
+	esac
+done
+zfs mount $root_ds/etc
+EOF
+	
+	mkdir $pool_mnt/etc/nuos
+	if [ -z "${OPT_NOBRAND-}" ]; then
+		
+		baseos_type_lc=`echo "$BASEOS_TYPE" | tr '[:upper:]' '[:lower:]'`
+		baseos_info_url="https://$baseos_type_lc.org"
+		
+		mv -n $pool_mnt/etc/motd $pool_mnt/etc/motd.$baseos_type_lc
+		head -n 1 $pool_mnt/etc/motd.$baseos_type_lc > $pool_mnt/etc/motd
+		cat >> $pool_mnt/etc/motd <<EOF
+nuOS $NUOS_VER
+
+Welcome! Thank you for choosing nuOS.
+
+Official updates and community support available at https://nuos.org .
+
+This is the $BASEOS_TYPE edition of nuOS, extending $BASEOS_TYPE $BASEOS_VER. More
+information about $BASEOS_TYPE is available at $baseos_info_url .
+
+Your contributions are greatly appreciated and allow nuOS to thrive.
+
+Edit /etc/motd to change this login announcement.
+
+EOF
+		
+		mkdir $pool_mnt/usr/nuos
+		tar -cf - -C "$(dirname "$(realpath "$0")")/.." --exclude .DS_Store --exclude .directory --exclude ^conf --exclude '^.?*' --exclude ^www/dist --exclude ^www/node_modules --exclude '^www/*.log' . | tar -xvf - -C $pool_mnt/usr/nuos
+		chown -R root:wheel $pool_mnt/usr/nuos
+		conf=usr/nuos/conf
+		
+	else
+		conf=etc/nuos/conf
+		echo HOSTOS_NOBRAND=y > $pool_mnt/$conf
+	fi
+	
+	cat > $pool_mnt/etc/nuos/backup <<'EOF'
+home
+?svc
+EOF
+	
+	cat >> $pool_mnt/$conf <<EOF
+HOSTOS_TYPE=nuOS
+HOSTOS_VER=$NUOS_VER
+PARENT=`whoami`@`hostname`
+PARENT_HOSTOS_TYPE=$HOSTOS_TYPE
+PARENT_HOSTOS_VER=$HOSTOS_VER
+PARENT_BASEOS_TYPE=`uname -s`
+PARENT_BASEOS_VER=`uname -r`
+PARENT_KERN=`uname -v | awk '{print $NF}'`
+POOL_BASEOS_TYPE=$BASEOS_TYPE
+POOL_BASEOS_VER=$BASEOS_VER
+POOL_HOSTOS_TYPE=nuOS
+POOL_HOSTOS_VER=$NUOS_VER
+HOSTOS_ARCH=$TRGT_ARCH
+HOSTOS_PROC=$TRGT_PROC
+HOSTOS_MACH=$TRGT_MACH
+HOSTOS_KERN=$TRGT_KERN
+HOSTOS_OPTZ=$TRGT_OPTZ
+EOF
+	
+	if [ $PKG_COLLECTION = blank ]; then
+		zfs snapshot -r $nuos_sysroot_ds@blank
+	else
+		require_ports_tree
+		ports_tag
+		mount -t tmpfs -o nosuid tmpfs $pool_mnt/tmp
+		require_tmp -c -C $pool_mnt pkg_tree
+		mount -r -t nullfs /usr/ports $pool_mnt/usr/ports
+		mount -r -t nullfs /var/db/portsnap $pool_mnt/var/db/portsnap
+		sister -C $pool_mnt nu_pkg_tree ${OPT_VERBOSE:+-v} -o dir /var/db/nuos/pkg -o txt "${pkg_tree#"$pool_mnt"}" $PKG_COLLECTION
+		umount $pool_mnt/var/db/portsnap
+		umount $pool_mnt/usr/ports
+		for tree_node in `cat "$pkg_tree"`; do
+			case $tree_node in
+				[^/]*/*)
+					sister nu_install_pkg -C $pool_mnt -R $tree_node
+				;;
+				[^/]*)
+					if [ -f $pool_mnt/etc/nuos/conf ]; then
+						sed -i '' -e /^HOSTOS_PKG_COLLECTION=/d $pool_mnt/etc/nuos/conf
+					fi
+					echo HOSTOS_PKG_COLLECTION=$tree_node >> $pool_mnt/etc/nuos/conf
+					zfs snapshot -r $nuos_sysroot_ds@$tree_node
+				;;
+			esac
+		done
+		retire_tmp pkg_tree
+		umount $pool_mnt/tmp
+	fi
+	
+	zfs create -o mountpoint=/usr/ports/packages $nuos_bin_ds/pkg && zfs unmount $nuos_bin_ds/pkg || true
+	
+	eval `stat -f "mode=%OMp%03OLp uid=%Du gid=%Dg flags=%Of" $pool_mnt/var/db/entropy`
+	chflags schg $pool_mnt/var/db/entropy
+	if zfs create -o mountpoint=/var/db/entropy -o logbias=throughput -o sync=disabled $POOL_NAME/entropy; then
+		chown $uid:$gid $pool_mnt/var/db/entropy
+		chmod $mode $pool_mnt/var/db/entropy
+		(umask 77 && dd if=/dev/random of=$pool_mnt/var/db/entropy/seed count=1 bs=4k)
+		chown $uid:$gid $pool_mnt/var/db/entropy/seed
+		chflags $flags $pool_mnt/var/db/entropy
+		zfs unmount $POOL_NAME/entropy
+	fi
+	
+	zfs set mountpoint=none canmount=off $nuos_sysroot_ds/etc/local
+	zfs set mountpoint=none canmount=off $nuos_sysroot_ds
+	
+	zfs set org.nuos:active_revision=v$nuos_bld_rev $nuos_bin_ds
+	
+fi
+
+sys_ds=$POOL_NAME/sys
+factories_ds=$sys_ds/factory
+nuos_factory_ds=$sys_ds/factory/nuOS-$NUOS_VER-$TRGT_MACH
+
+zfs create -p -o mountpoint=none -o canmount=off $sys_ds
+zfs create -p -o mountpoint=none -o canmount=off $factories_ds
+zfs create -p -o mountpoint=none -o canmount=off $nuos_factory_ds
+
+factory_rev=0
+while
+	new_factory_ds=$nuos_factory_ds/v$factory_rev
+	zfs list $new_factory_ds
+do
+	factory_rev=$(($factory_rev + 1))
+done
+
+zfs clone -o mountpoint=/ -o canmount=noauto $nuos_sysroot_ds@$PKG_COLLECTION $new_factory_ds
+zfs mount $new_factory_ds
+zfs clone $nuos_sysroot_ds/etc@$PKG_COLLECTION $new_factory_ds/etc
+zfs clone -o mountpoint=/usr/local/etc $nuos_sysroot_ds/etc/local@$PKG_COLLECTION $new_factory_ds/etc/local
+zfs clone $nuos_sysroot_ds/var@$PKG_COLLECTION $new_factory_ds/var
+zfs clone $nuos_sysroot_ds/var/db@$PKG_COLLECTION $new_factory_ds/var/db
+
+mkdir $pool_mnt/boot/etc
+mv -n $pool_mnt/etc/login.conf.db $pool_mnt/boot/etc/
+ln -s ../boot/etc/login.conf.db $pool_mnt/etc/login.conf.db
+zfs unmount $new_factory_ds/etc
+ln -s ../boot/etc/login.conf.db $pool_mnt/etc/login.conf.db
+zfs mount $new_factory_ds/etc
+
+zfs snapshot -r $new_factory_ds@prototype
+
+cat >> $pool_mnt/etc/nuos/conf <<EOF
+POOL_BOOT_NAME=$POOL_NAME
+EOF
+
+zpool_cache=`zpool get -H -o value cachefile $POOL_NAME`
+[ -n "$zpool_cache" ] && cp $zpool_cache $pool_mnt/boot/zfs/zpool.cache
+
+zfs snapshot -r $new_factory_ds@pool_registered
+
+zfs set mountpoint=none canmount=off $new_factory_ds/etc/local
+zfs set mountpoint=none canmount=off $new_factory_ds
+
+zfs set org.nuos:active_revision=v$factory_rev $nuos_factory_ds
+
+
+echo "Build of nuOS-$NUOS_VER based on $BASEOS_TYPE-$BASEOS_VER is complete, saved to pool $POOL_NAME."

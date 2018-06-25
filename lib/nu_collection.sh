@@ -22,9 +22,23 @@ nuos_lib_collection_loaded=y
 
 : ${HOSTOS_PKG_COLLECTION:=desktop}
 
+reset_pkg_collection () {
+	: ${PKG_COLLECTION:=$HOSTOS_PKG_COLLECTION}
+	
+	local src_ver="${BASEOS_TYPE}-${BASEOS_VER}"
+	local host_base_ver="`uname -s`-`uname -r`"
+	
+	if [ ${src_ver%-p*} != ${host_base_ver%-p*} ]; then
+		PKG_COLLECTION=blank
+	fi
+	if [ -q != "${1-}" ]; then
+		echo 'pkg collection  -c PKG_COLLECTION ' $PKG_COLLECTION
+	fi
+}
+
 collection_vars_init () {
 	
-	: ${PKG_COLLECTION:=$HOSTOS_PKG_COLLECTION}
+	reset_pkg_collection
 	
 	COLL_blank=
 	
