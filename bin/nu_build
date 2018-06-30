@@ -267,11 +267,15 @@ PATH=/sbin:/bin:/usr/sbin:/usr/bin
 mountfrom=`kenv vfs.root.mountfrom`
 root_ds=${mountfrom#zfs:}
 pool=${root_ds%%/*}
-zfs list -H -r -o name,type $pool/swap | while read swap_ds ds_type; do
-	case $ds_type in volume)
-		zfs rollback -r $swap_ds@blank
-	esac
+sw_spc=`zfs get -H -o value org.nuos:swap_space $root_ds`
+for v in `zfs list -H -r -o name -t volume $pool/swap`; do
+	zfs destroy -r $v
 done
+case $sw_spc in
+	-) ;;
+	eli:*) eli= ;&
+	*) zfs create -p ${eli--o org.freebsd:swap=on} -b 4K -V ${sw_spc#eli:} $pool/swap/sw0
+esac
 zfs mount $root_ds/etc
 EOF
 	
@@ -366,16 +370,9 @@ EOF
 	
 	zfs create -o mountpoint=/usr/ports/packages $nuos_bin_ds/pkg && zfs unmount $nuos_bin_ds/pkg || true
 	
-	eval `stat -f "mode=%OMp%03OLp uid=%Du gid=%Dg flags=%Of" $pool_mnt/var/db/entropy`
-	chflags schg $pool_mnt/var/db/entropy
-	if zfs create -o mountpoint=/var/db/entropy -o logbias=throughput -o sync=disabled $POOL_NAME/entropy; then
-		chown $uid:$gid $pool_mnt/var/db/entropy
-		chmod $mode $pool_mnt/var/db/entropy
-		(umask 77 && dd if=/dev/random of=$pool_mnt/var/db/entropy/seed count=1 bs=4k)
-		chown $uid:$gid $pool_mnt/var/db/entropy/seed
-		chflags $flags $pool_mnt/var/db/entropy
-		zfs unmount $POOL_NAME/entropy
-	fi
+	while ! zfs create -o mountpoint=none -o canmount=off -o primarycache=metadata $POOL_NAME/swap 2> /dev/null; do
+		zfs destroy -r $POOL_NAME/swap
+	done
 	
 	zfs set mountpoint=none canmount=off $nuos_sysroot_ds/etc/local
 	zfs set mountpoint=none canmount=off $nuos_sysroot_ds

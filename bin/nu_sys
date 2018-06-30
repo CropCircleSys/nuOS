@@ -18,7 +18,7 @@ NUOS_VER=0.0.11.2a1
 
 . "$(dirname "$(realpath "$0")")/../lib/nu_system.sh"
 
-while getopts a:b:c:Dh:kK:l:p:Pqs:u:v OPT; do case $OPT in
+while getopts a:b:c:Deh:kK:l:p:qs:u:v OPT; do case $OPT in
 	a) ADMIN_ACCT=$OPTARG;;
 	b) BD_ACCT=$OPTARG;;
 	c) PKG_COLLECTION=$OPTARG;;
@@ -29,12 +29,12 @@ while getopts a:b:c:Dh:kK:l:p:Pqs:u:v OPT; do case $OPT in
 			COPY_SVN=y
 		fi
 		OPT_DEBUG=y;;
+	e) OPT_ELI_SWAP=y;;
 	h) NEW_HOST=$OPTARG;;
 	k) OPT_INSTALL_ADMIN_KEYS=y;;
 	K) push ALSO_INSTALL_KEYS $OPTARG;;
 	l) LOCAL_SCRIPT=$OPTARG;;
 	p) POOL_NAME=$OPTARG;;
-	P) OPT_DONT_PRESERVE_DIST_SNAP=y;;
 	q) OPT_QUICK=y;;
 	s) SWAP_SIZE=$OPTARG;;
 	u) USER_ACCT=$OPTARG;;
@@ -107,21 +107,44 @@ zfs clone -o mountpoint=/usr/local/etc $use_factory_ds/etc/local@pool_registered
 zfs clone $use_factory_ds/var@pool_registered $new_host_ds/var
 zfs clone $use_factory_ds/var/db@pool_registered $new_host_ds/var/db
 
+if [ -n "$SWAP_SIZE" -a "$SWAP_SIZE" != 0 ]; then
+	if [ -n "${OPT_ELI_SWAP-}" ]; then
+		cat >> $pool_mnt/etc/fstab <<'EOF'
+/dev/zvol/$POOL_NAME/swap/sw0.eli none swap sw,ealgo=aes-cbc,keylen=256,sectorsize=4096 0 0
+EOF
+	fi
+	zfs set org.nuos:swap_space=${OPT_ELI_SWAP:+eli:}$SWAP_SIZE $new_host_ds
+fi
+
 cat >> $pool_mnt/etc/rc.conf.local <<EOF
 hostname="$NEW_HOST"
 EOF
 
-sed -i '' -e "s/\.my\.domain\$/.`echo $NEW_HOST | sed -e 's/^[^\.]*\.//'` $NEW_HOST `echo $NEW_HOST | sed -e 's/\..*//'`/" $pool_mnt/etc/hosts
+sed -i '' -e "s/\.my\.domain\$/.${NEW_HOST#*.} $NEW_HOST ${NEW_HOST%%.*}/" $pool_mnt/etc/hosts
 
 cat >> $pool_mnt/etc/nuos/backup <<EOF
 sys/$NEW_HOST/(org.nuos:active_revision)/etc
 sys/$NEW_HOST/(org.nuos:active_revision)/var
 EOF
 
+zfs set org.nuos:active_revision=v$new_host_rev $host_ds
+
 export NEW_HOST
 # sister nu_jail ${OPT_VERBOSE:+-v} -C $pool_mnt -p $POOL_NAME -t clone -w -j base-lab -o $BASEOS_TYPE/$BASEOS_VER/$TRGT_MACH -s pkg_ready -i 127.0.0.2 -a '' -u '' -b '' -q
 # sister nu_jail ${OPT_VERBOSE:+-v} -C $pool_mnt -p $POOL_NAME -t clone -w -j nuos-lab -s blank -i 127.0.0.3 -a '' -u '' -b '' -q
 # sister nu_jail ${OPT_VERBOSE:+-v} -C $pool_mnt -p $POOL_NAME -t clone -w -j lab -i 127.0.0.4 -a '' -u '' -b '' -q
+
+eval `stat -f "mode=%OMp%03OLp uid=%Du gid=%Dg flags=%Of" $pool_mnt/var/db/entropy`
+chflags schg $pool_mnt/var/db/entropy
+while ! zfs create -o mountpoint=/var/db/entropy -o logbias=throughput -o sync=disabled $POOL_NAME/entropy 2> /dev/null; do
+	zfs destroy $POOL_NAME/entropy
+done
+chown $uid:$gid $pool_mnt/var/db/entropy
+chmod $mode $pool_mnt/var/db/entropy
+(umask 77 && dd if=/dev/random of=$pool_mnt/var/db/entropy/seed count=1 bs=4k)
+chown $uid:$gid $pool_mnt/var/db/entropy/seed
+chflags $flags $pool_mnt/var/db/entropy
+zfs unmount $POOL_NAME/entropy
 
 zpool set bootfs=$new_host_ds $POOL_NAME
 zfs snapshot -r $new_host_ds@boot_single_user
@@ -147,15 +170,5 @@ fi
 zfs snapshot -r $new_host_ds@sys_birth
 [ -n "${home_existed-}" ] || zfs snapshot -r $POOL_NAME/home@pool_birth
 
-if [ -z "${must_build-}" -a -n "${OPT_DEBUG-}" ]; then
-	require_tmp bpl
-	require_tmp pl
-	require_tmp -l zpool_report report
-	zfs get -H -t all -o name,property,value -r mountpoint,canmount $POOL_BOOT_NAME | sed -e "s|^$POOL_BOOT_NAME|_pool|" >| "$bpl"
-	zfs get -H -t all -o name,property,value -r mountpoint,canmount $POOL_NAME | sed -e "s|^$POOL_NAME|_pool|;s|/$POOL_NAME\$|/|;s|/$POOL_NAME||" >| "$pl"
-	diff "$bpl" "$pl" >| "$report" && rm "$report" || echo 'WARNING DEBUG: installer reported differences in zpool layout' >&2
-	rm "$bpl" "$pl"
-fi
 
-
-echo "Initialization of $NEW_HOST running nuOS/$NUOS_VER over $BASEOS_TYPE-$BASEOS_VER onto pool $POOL_NAME is complete."
+echo "Initialization of $NEW_HOST running nuOS-$NUOS_VER-$TRGT_MACH on pool $POOL_NAME is complete."
