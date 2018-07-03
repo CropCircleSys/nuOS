@@ -35,9 +35,31 @@ div.title {
 .bl {
 	display: block;
 }
+h1.title:before, h1.title:after {
+	display: block;
+	text-transform: uppercase;
+	font-size: 8.75%;
+	font-weight: initial;
+	border-width: thin;
+	border-left: 0;
+	border-right: 0;
+	border-style: solid;
+	width: 33em;
+	padding: 0 0 0 1em;
+}
+h1.title:before {
+	letter-spacing: 1.3em;
+	content: 'next underground';
+	margin: 0 auto -5.25em;
+}
+h1.title:after {
+	letter-spacing: 1.35em;
+	content: 'operating system';
+	margin: -2.75em auto 0;
+}
 h1.title {
-	font-size: 575%;
-	margin: 0.5em 0 0.33em;
+	font-size: 500%;
+	margin: 0.75em 0 0.33em;
 }
 .strong {
 	transform: scaleY(2);
@@ -62,7 +84,7 @@ h1.title {
 	color: White;
 }
 .shy {
-	font-size: 175%;
+	font-size: 167%;
 	letter-spacing: 0.175em;
 }
 .shy em, h1.title em {

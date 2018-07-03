@@ -2,7 +2,7 @@
 	<div id="app">
 		<header>
 			<nav>
-				<div class="title"><strong><em>nu</em>OS</strong><span class="sm-cap">.org</span></div>
+				<div class="home title"><strong><em>nu</em>OS</strong><span class="sm-cap">.org</span></div>
 				<ul class="north west">
 					<li><router-link to="/">home</router-link></li>
 					<li>info</li>
@@ -14,20 +14,22 @@
 					<li><a href="mailto:join@nuos.org">sign up</a></li>
 					<li>sign in</li>
 				</ul>
+				<div class="net title"><strong><em>nu</em>OS</strong><span class="sm-cap">.net</span></div>
 				<ul class="ext west">
 					<li><em>nu</em><span class="cap">.<span class="sqz x-zone">zone</span></span></li>
 					<li><em>nu</em><span class="cap">.<span class="sqz x-place">place</span></span></li>
-					<li><em>nu</em><span class="cap">.<span class="sqz x-software">software</span></span></li>
 					<li><em>nu</em><span class="cap">.<span class="sqz x-email">email</span></span></li>
 					<li><em>nu</em><span class="cap">.<span class="sqz x-chat">chat</span></span></li>
 					<li><em>nu</em><span class="cap">.<span class="sqz x-team">team</span></span></li>
 					<li><em>nu</em><span class="cap">.<span class="sqz x-show">show</span></span></li>
 					<li><em>nu</em><span class="cap">.<span class="sqz x-live">live</span></span></li>
 					<li><em>nu</em><span class="cap">.<span class="sqz x-lol">lol</span></span></li>
+					<li><em>nu</em><span class="cap">.<span class="sqz x-parts">parts</span></span></li>
+					<li><em>nu</em><span class="cap">.<span class="sqz x-software">software</span></span></li>
 					<li><em>nu</em><span class="cap">.<span class="sqz x-click">click</span></span></li>
 					<li><em>nu</em><span class="cap">.<span class="sqz x-money">money</span></span></li>
-					<li><em>nu</em><span class="cap">.<span class="sqz x-gold">gold</span></span></li>
 					<li><em>nu</em><span class="cap">.<span class="sqz x-cash">cash</span></span></li>
+					<li><em>nu</em><span class="cap">.<span class="sqz x-gold">gold</span></span></li>
 				</ul>
 			</nav>
 		</header>
@@ -36,9 +38,10 @@
 			<p class="brought">
 				<strong>&copy;</strong> MMXVIII<br/>
 				<em>brought to you by:</em><br/>
-				<a href="https://ccsys.com/">Crop Circle Systems, Inc.</a> &amp;<br/>
-				the <strong>society</strong> of <strong>independent</strong><br/>
-				or <strong>anonymous ethical hackers</strong>
+				<a href="https://ccsys.com/">Crop Circle Systems</a> &amp;<br/>
+				the <strong>society</strong> of <br/>
+				<strong>private</strong> or <strong>anonymous</strong><br/>
+				<strong>independent <em>ethical</em> hackers</strong>
 			</p>
 		</footer>
 	</div>
@@ -59,6 +62,7 @@ export default {
 .sqz.x-zone { transform: scaleX(0.956); }
 .sqz.x-place { transform: scaleX(0.855); }
 .sqz.x-software { transform: scaleX(0.5); }
+.sqz.x-parts { transform: scaleX(0.882); }
 .sqz.x-email { transform: scaleX(0.840); }
 .sqz.x-chat { transform: scaleX(0.973); }
 .sqz.x-team { transform: scaleX(0.937); }
@@ -114,10 +118,15 @@ header {
 	text-align: left;
 	margin: 1rem;
 }
-header .title {
+header .home {
 	font-size: 2.5vmax;
 	display: block;
 	margin: -0.1875em 0.875em 0 0;
+}
+header .net {
+	font-size: 1.75vmax;
+	display: block;
+	margin: 1em 0.875em 0 0.5em;
 }
 header .title strong {
 	color: LightGray;
@@ -127,6 +136,9 @@ header .title em {
 }
 .title, header {
 	font-family: Baskerville, "Times New Roman", serif;
+}
+.title em {
+	font-size: 137.5%;
 }
 .sm-cap {
 	font-variant: small-caps;
@@ -165,7 +177,7 @@ nav ul li {
 	font-weight: bold;
 }
 nav ul.ext {
-	margin: 0.75em 0 0;
+	margin: 0.125em 0 0;
 }
 nav ul.ext li {
 	margin: 0;
@@ -186,17 +198,31 @@ footer {
 	right: 0;
 	margin: 1rem;
 }
+@media screen and (max-width: 768px) {
+	.net:before {
+		content: '⟵⟶';
+		font-size: 125%;
+		letter-spacing: -0.15em;
+		display: block;
+		margin: 1em -0.25em 0;
+	}
+}
 @media screen and (min-width: 769px) {
 	footer {
 		position: fixed;
 		z-index: -1;
 	}
-	header .title {
+	header .home {
 		font-size: 3.75vw;
+	}
+	header .net {
+		font-size: 2.375vw;
+	}
+	header .home {
 		display: inline-block;
 	}
 	nav ul {
-		font-size: 3vw;
+		font-size: 2.75vw;
 	}
 	nav ul.north {
 		display: inline-block;
