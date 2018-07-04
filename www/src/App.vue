@@ -14,7 +14,7 @@
 					<li><a href="mailto:join@nuos.org">sign up</a></li>
 					<li>sign in</li>
 				</ul>
-				<div class="net title"><strong><em>nu</em>OS</strong><span class="sm-cap">.net</span></div>
+				<div class="ext net title"><strong><em>nu</em>OS</strong><span class="sm-cap">.net</span></div>
 				<ul class="ext west">
 					<li><em>nu</em><span class="cap">.<span class="sqz x-zone">zone</span></span></li>
 					<li><em>nu</em><span class="cap">.<span class="sqz x-place">place</span></span></li>
@@ -152,9 +152,6 @@ header .title em {
 }
 nav {
 	display: inline-block;
-/*
-	display: none;
- */
 }
 nav ul {
 	margin: 0;
@@ -198,31 +195,23 @@ footer {
 	right: 0;
 	margin: 1rem;
 }
-@media screen and (max-width: 768px) {
-	.net:before {
-		content: '⟵⟶';
-		font-size: 125%;
-		letter-spacing: -0.15em;
-		display: block;
-		margin: 1em -0.25em 0;
-	}
-}
 @media screen and (min-width: 769px) {
 	footer {
 		position: fixed;
 		z-index: -1;
 	}
+	header .ext.net {
+		font-size: 3.5vmin;
+	}
 	header .home {
 		font-size: 3.75vw;
-	}
-	header .net {
-		font-size: 2.375vw;
-	}
-	header .home {
 		display: inline-block;
 	}
 	nav ul {
 		font-size: 2.75vw;
+	}
+	nav .ext {
+		font-size: 4vmin;
 	}
 	nav ul.north {
 		display: inline-block;
@@ -235,11 +224,18 @@ footer {
 	}
 }
 @media screen and (max-width: 768px) {
+	.net:before {
+		content: '⟵⟶';
+		font-size: 125%;
+		letter-spacing: -0.15em;
+		display: block;
+		margin: 1em -0.25em 0;
+	}
 	nav ul.east li {
 		margin: 0;
 	}
 	.router-view {
-		margin: 0 0 0 12vw;
+		margin: 0 0 0 12.5vw;
 	}
 }
 </style>
