@@ -109,7 +109,7 @@ zfs clone $use_factory_ds/var/db@pool_registered $new_host_ds/var/db
 
 if [ -n "$SWAP_SIZE" -a "$SWAP_SIZE" != 0 ]; then
 	if [ -n "${OPT_ELI_SWAP-}" ]; then
-		cat >> $pool_mnt/etc/fstab <<'EOF'
+		cat >> $pool_mnt/etc/fstab <<EOF
 /dev/zvol/$POOL_NAME/swap/sw0.eli none swap sw,ealgo=aes-cbc,keylen=256,sectorsize=4096 0 0
 EOF
 	fi
