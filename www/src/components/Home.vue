@@ -15,7 +15,7 @@
 		</div>
 		<div class="log-xrpt">
 			<h1>Happy Independence Day!</h1>
-			<img src="static/svg/flag.84973f4b0cfc6ce264c0a824bbcd2090.svg"/>
+			<img src="static/svg/flag.eaee3010fcaf745ead274983c6340990.svg"/>
 			<h2>A new version of nuOS is coming.</h2>
 			<p><time datetime="2018-07-04">July 4, 2018</time> &mdash; After you sleep off the night&rsquo;s celebration of a great nation born, a new build of nuOS should be available for download. By the time you&rsquo;re barely ready to return to work in the morning, it&rsquo;ll be time to celebrate your technological independence using the most featurefull nuOS ever. Version 0.11.2a1, available now as source, is building as I write this. Right now it&rsquo;s time to go get deplorably inebriated and hazardously detonate some unregulated ordnance like a true &lsquo;Murican.</p>
 		</div>
