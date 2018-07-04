@@ -68,9 +68,20 @@ to see said applications' documentation, if applicable.
     regarding any event of discovery of any violation of members' or
     peoples' trust(s) [regarding this, or anything, really].
 
-----------------------------------------------------------------------------------
-       We, the society of private or anonymous independent ethical hackers,
-        thank you graciously and dearly for your patronage and membership.
-----------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
+      We, the society of private or anonymous independent ethical hackers,
+       thank you graciously and dearly for your membership and patronage.
+--------------------------------------------------------------------------------
 
-* You should be wary of anyone promoting the Gnu Public License, or 'GPL', and such works. Be on notice: indeed there are some self-contained standalone submodules within nuOS which are individually covered by some of the confusing variations and versions of the GPL. (When the most state of the art implementation of a given highly desirable module is one which is GPL covered, it is given due consideration and many times accepted within the greater OS, albiet with an earmark for possible future suitable replacement.) These files are all clearly marked within. The GPL is still a very open, sharing, and well-intending copyright license granting unlimited free use. It's restrictions come only in how it may modified and/or distributed for financial gain. If you are building and distributing software, services or products for commercial profit you should always have contact with your own attorney.
+* You should be wary of anyone promoting the Gnu Public License, or 'GPL', and
+such works. Be on notice: indeed there are some self-contained standalone
+submodules within nuOS which are individually covered by some of the confusing
+variations and versions of the GPL. (When the most state of the art
+implementation of a given highly desirable module is one which is GPL covered,
+it is given due consideration and many times accepted within the greater OS,
+albiet with an earmark for possible future suitable replacement.) These files
+are all clearly marked within. The GPL is still a very open, sharing, and
+well-intending copyright license granting unlimited free use. It's restrictions
+come only in how it may modified and/or distributed for financial gain. If you
+are building and distributing software, services or products for commercial
+profit you should always have contact with your own attorney.
