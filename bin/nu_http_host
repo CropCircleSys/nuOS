@@ -245,12 +245,13 @@ ${h2:+	Protocols h2${no_ssl:+c} http/1.1
 }${OPT_STATIC_GZIP:+	RewriteEngine On
 	RewriteCond "%{HTTP:Accept-encoding\}" "\bgzip\b"
 	RewriteCond "%{LA-U:REQUEST_FILENAME\}\.gz" -s
-	RewriteRule "^/(.*)\.(html?|js|css|te?xt|x[ms]l)\$" "%{CONTEXT_DOCUMENT_ROOT\}/\$1.\$2.gz" [nocase,env=static-gzip:1]
+	RewriteRule "^/(.*)\.(html?|js|css|te?xt|svg|x[ms]l)\$" "%{CONTEXT_DOCUMENT_ROOT\}/\$1.\$2.gz" [nocase,env=static-gzip:1]
 	<If "%{ENV:static-gzip\} -eq 1">
 		RewriteRule "\.(?i:html?)\.gz\$" "-" [type=text/html,env=no-gzip:1]
 		RewriteRule "\.(?i:js)\.gz\$" "-" [type=application/javascript,env=no-gzip:1]
 		RewriteRule "\.(?i:css)\.gz\$" "-" [type=text/css,env=no-gzip:1]
 		RewriteRule "\.(?i:te?xt)\.gz\$" "-" [type=text/plain,env=no-gzip:1]
+		RewriteRule "\.(?i:svg)\.gz\$" "-" [type=image/svg+xml,env=no-gzip:1]
 		RewriteRule "\.(?i:x[ms]l)\.gz\$" "-" [type=application/xml,env=no-gzip:1]
 		Header append Content-Encoding gzip
 		Header append Vary Accept-Encoding
