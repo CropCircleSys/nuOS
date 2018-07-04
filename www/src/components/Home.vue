@@ -14,7 +14,10 @@
 			</h3>
 		</div>
 		<div class="log-xrpt">
-			<p>foo bar baz foo bar baz foo bar baz foo bar baz foo bar baz foo bar baz foo bar baz foo bar baz foo bar baz foo bar baz foo bar baz foo bar baz foo bar baz foo bar baz foo bar baz foo bar baz foo bar baz foo bar baz foo bar baz foo bar baz foo bar baz foo bar baz foo bar baz foo bar baz foo bar baz foo bar baz foo bar baz foo bar baz foo bar baz foo bar baz foo bar baz foo bar baz foo bar baz foo bar baz foo bar baz foo bar baz foo bar baz foo bar baz foo bar baz foo bar baz foo bar baz foo bar baz foo bar baz foo bar baz foo bar baz foo</p>
+			<h1>Happy Independence Day!</h1>
+			<img src="static/svg/flag.84973f4b0cfc6ce264c0a824bbcd2090.svg"/>
+			<h2>A new version of nuOS is coming.</h2>
+			<p><time datetime="2018-07-04">July 4, 2018</time> &mdash; After you sleep off the night&rsquo;s celebration of a great nation born, a new build of nuOS should be available for download. By the time you&rsquo;re barely ready to return to work in the morning, it&rsquo;ll be time to celebrate your technological independence using the most featurefull nuOS ever. Version 0.11.2a1, available now as source, is building as I write this. Right now it&rsquo;s time to go get deplorably inebriated and hazardously detonate some unregulated ordnance like a true &lsquo;Murican.</p>
 		</div>
 	</div>
 </template>
@@ -31,13 +34,19 @@ export default {
 </script>
 
 <style scoped>
+time {
+	font-style: italic;
+}
+div.log-xrpt p {
+	text-align: left;
+}
 @media screen and (min-width: 769px) {
 	div.log-xrpt {
 		position: fixed;
-		top: calc(4vmin + 8vw);
+		top: calc(2vmin + 6vw);
 		right: 0;
 		width: 20vw;
-		z-index: -1;
+		z-index: 1;
 		margin: 0 1em;
 	}
 }
@@ -46,12 +55,21 @@ export default {
 		margin: 2em 12vw;
 	}
 }
+div.log-xrpt h1 {
+	font-size: 1.33em;
+}
+div.log-xrpt h2 {
+	font-size: 1.2em;
+}
+div.log-xrpt h3 {
+	font-size: 1em;
+}
 div.title {
 	font-size: 3.5vmin;
 	color: LightGray;
 }
 div.log-xrpt {
-	font-size: calc(6pt + 1vmin);
+	font-size: calc(9pt + 0.5vmin);
 	color: LightGray;
 }
 .bl {

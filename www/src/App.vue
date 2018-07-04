@@ -98,6 +98,9 @@ a:hover {
 .brought a {
 	color: Gray;
 }
+.brought {
+	z-index: -1;
+}
 .brought a:hover {
 	color: DarkGray;
 }
