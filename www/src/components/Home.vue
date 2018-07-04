@@ -13,6 +13,9 @@
 				<span class="bl shy">is <em>nu</em> again</span>
 			</h3>
 		</div>
+		<div class="log-xrpt">
+			<p>foo bar baz foo bar baz foo bar baz foo bar baz foo bar baz foo bar baz foo bar baz foo bar baz foo bar baz foo bar baz foo bar baz foo bar baz foo bar baz foo bar baz foo bar baz foo bar baz foo bar baz foo bar baz foo bar baz foo bar baz foo bar baz foo bar baz foo bar baz foo bar baz foo bar baz foo bar baz foo bar baz foo bar baz foo bar baz foo bar baz foo bar baz foo bar baz foo bar baz foo bar baz foo bar baz foo bar baz foo bar baz foo bar baz foo bar baz foo bar baz foo bar baz foo bar baz foo bar baz foo bar baz foo bar baz foo</p>
+		</div>
 	</div>
 </template>
 
@@ -28,8 +31,27 @@ export default {
 </script>
 
 <style scoped>
+@media screen and (min-width: 769px) {
+	div.log-xrpt {
+		position: fixed;
+		top: calc(4vmin + 8vw);
+		right: 0;
+		width: 20vw;
+		z-index: -1;
+		margin: 0 1em;
+	}
+}
+@media screen and (max-width: 768px) {
+	div.log-xrpt {
+		margin: 2em 12vw;
+	}
+}
 div.title {
 	font-size: 3.5vmin;
+	color: LightGray;
+}
+div.log-xrpt {
+	font-size: calc(6pt + 1vmin);
 	color: LightGray;
 }
 .bl {
