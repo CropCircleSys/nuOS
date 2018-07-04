@@ -4,8 +4,73 @@
 | All rights reserved.                                               /),,,,)  |
 +----------------------------------------------------------------------"--"---+
 
-nuOS software is and will always be free. Free to use, free to modify, free to distribute. 
+    This entire written work, its surrounding society, and everything
+    embodied about, within and throughout, are for informational research
+    purposes only and have no expressed nor implied fitness for use nor
+    merchantability of any kind, certainly no expressed nor implied warranty
+    for same. Every effort that impeccable integrity in purpose and function
+    be maintained has been and shall be made in good faith. You are
+    ultimately responsible for your own understanding and use or failure
+    thereby; no other member shall be held or may be found liable.
 
-Goals of this project include the production and dissemination of a free software platform which is easy to use, secure, well integrated, robust, fast, offers advanced functionality and is as backward-compatible as possible.
+Goals of this project include the production and dissemination of a free
+software platform which is easy to use, secure, well integrated, robust, fast,
+offers advanced functionality and is as backward-compatible as possible.
 
-Please read the LICENSE file.
+nuOS operating system software is free and always will be free to use, free
+to modify, free to distribute. Please see the LICENSE file for a copy of the
+Berkley Standard Distribution (or 'BSD') [simplified] license of copyright.*
+
+nuOS online services are not required; all services offered shall be implemented
+within the core system software, to be duplicated and operated freely and
+independently at will. Nevertheless, nuOS online service offerings are free and
+will always be free of cost, free of restriction and free from intrusion upon
+liberty or privacy.
+
+    There can be no violation of these trusts whereby or upon which a nuOS
+    brand shall be lawfully carried on any product, service, affiliation,
+    association or organization.
+
+The nuOS brand and related marks are only to be lawfully used non-commercially
+and in private affairs or trade.
+
+    Civil, corporate, public, personal and individual entities are certainly
+    free to operate using nuOS software and upon nuOS networks for any and
+    all legal commerce. However, as per this binding agreement, entities
+    including those types aforementioned shall be barred and must forgo any
+    and all types of affiliation, agreement, contract, joinder, transaction,
+    encumbrance or incentive such as relates in any way to nuOS products and
+    services or the promotion of nuOS brands.
+
+Both your membership to and participation in this society are free, voluntary
+and private. You will not be compelled by any lawful member. Payment shall not
+be expected nor tendered for any products or services; levies, taxes, bills or
+contraversies shall not be charged. Your participation establishes and exhibits
+an equitable interest in this society while your membership implies an
+established trust, both of which you are hereby explicitly free to dissolve at
+any time. Nothing contained herein constitues an agreement or indication that
+any members or participants are to engage in commerce or to be subject to any
+commercial statues, codes or regulations.
+
+    Additional information is in the LEGAL file. Use of this software or
+    participation in this society or on these networks constitues a binding
+    agreement to the terms and claims in that file as well as this one.
+
+You are free to use or create your own brand to apply to any implementations
+derivative of nuOS system software or online services.
+
+Third-party application softwares upon nuOS may without restriction be covered
+by other licenses or terms, beside rather than beneath, this agreement. Be sure
+to see said applications' documentation, if applicable.
+
+    It is your responsibility to proverbially or literally scream from your
+    own rooftop, or assemble in your own proverbial or literal town square,
+    regarding any event of discovery of any violation of members' or
+    peoples' trust(s) [regarding this, or anything, really].
+
+----------------------------------------------------------------------------------
+       We, the society of private or anonymous independent ethical hackers,
+        thank you graciously and dearly for your patronage and membership.
+----------------------------------------------------------------------------------
+
+* You should be wary of anyone promoting the Gnu Public License, or 'GPL', and such works. Be on notice: indeed there are some self-contained standalone submodules within nuOS which are individually covered by some of the confusing variations and versions of the GPL. (When the most state of the art implementation of a given highly desirable module is one which is GPL covered, it is given due consideration and many times accepted within the greater OS, albiet with an earmark for possible future suitable replacement.) These files are all clearly marked within. The GPL is still a very open, sharing, and well-intending copyright license granting unlimited free use. It's restrictions come only in how it may modified and/or distributed for financial gain. If you are building and distributing software, services or products for commercial profit you should always have contact with your own attorney.

@@ -35,6 +35,15 @@ div.title {
 .bl {
 	display: block;
 }
+.title h3 {
+	border-width: thin;
+	border-left: 0;
+	border-right: 0;
+	border-style: solid;
+	width: 12.75em;
+	margin: 0 auto;
+	padding: 0 0 0 0.1em;
+}
 h1.title:before, h1.title:after {
 	display: block;
 	text-transform: uppercase;
@@ -70,11 +79,13 @@ h1.title {
 	font-variant: small-caps;
 	font-size: 50%;
 	letter-spacing: 0.33em;
-	margin: 0.5em 0 0.33em;
+	margin: 0.5em 0 0.33em 0.33em;
 }
 .wimpy:before, .wimpy:after {
+	display: inline-block;
+	transform: scaleX(2);
 	content: '⟵⟶';
-	margin: 0 2.75em;
+	margin: 0 3em 0 2.5em;
 	letter-spacing: -0.15em;
 }
 .legacy {
@@ -86,6 +97,7 @@ h1.title {
 .shy {
 	font-size: 167%;
 	letter-spacing: 0.175em;
+	margin: -0.25em 0 0;
 }
 .shy em, h1.title em {
 	color: White;

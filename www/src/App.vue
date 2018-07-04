@@ -38,8 +38,8 @@
 			<p class="brought">
 				<strong>&copy;</strong> MMXVIII<br/>
 				<em>brought to you by:</em><br/>
-				<a href="https://ccsys.com/">Crop Circle Systems</a> &amp;<br/>
-				the <strong>society</strong> of <br/>
+				<a href="https://ccsys.com/">Crop Circle Systems</a><br/>
+				&amp; the <strong>society</strong> of <br/>
 				<strong>private</strong> or <strong>anonymous</strong><br/>
 				<strong>independent <em>ethical</em> hackers</strong>
 			</p>
