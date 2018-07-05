@@ -151,7 +151,7 @@ zfs snapshot -r $new_host_ds@boot_single_user
 
 zfs create -o mountpoint=/home $POOL_NAME/home || home_existed=y
 
-# admin_install -z $pool_mnt
+admin_install -z $pool_mnt
 
 if [ -n "${LOCAL_SCRIPT-}" ]; then
 	POOL=$POOL_NAME
@@ -168,7 +168,9 @@ if [ -n "${LOCAL_SCRIPT-}" ]; then
 fi
 
 zfs snapshot -r $new_host_ds@sys_birth
-[ -n "${home_existed-}" ] || zfs snapshot -r $POOL_NAME/home@pool_birth
+if [ -z "${home_existed-}" ]; then
+	zfs snapshot -r -o org.nuos:birth_ver=$NUOS_VER $POOL_NAME/home@pool_birth
+fi
 
 
 echo "Initialization of $NEW_HOST running nuOS-$NUOS_VER-$TRGT_MACH on pool $POOL_NAME is complete."
