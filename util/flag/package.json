@@ -1,0 +1,21 @@
+{
+  "name": "flag",
+  "version": "1.0.0",
+  "description": "barcode for fingerprint of data or signing key, qr code for uri, all in a cool Ol' Glory format",
+  "main": "flag.js",
+  "dependencies": {
+    "jsdom": "^11.11.0",
+    "pure-svg-code": "^1.0.5"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "[ `node flag.js SEhyG https://nuos.org | md5 -q` = 3492b1e945b36a28d013fcc2911b9809 ]"
+  },
+  "keywords": [
+    "flag",
+    "barcode",
+    "qrcode"
+  ],
+  "author": "Chad Jacob Milios",
+  "license": "BSD-2-Clause"
+}
