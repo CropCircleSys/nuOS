@@ -9,7 +9,7 @@
   },
   "devDependencies": {},
   "scripts": {
-    "test": "[ `node flag.js SEhyG https://nuos.org | md5 -q` = 3492b1e945b36a28d013fcc2911b9809 ]"
+    "test": "[ `node flag.js SEhyG https://nuos.org | md5 -q` = 3492b1e945b36a28d013fcc2911b9809 ] && [ `node flag.js -v SEhyG https://nuos.org | md5 -q` = bb14cf0bf85c992c1fa45addc847da58 ]"
   },
   "keywords": [
     "flag",
