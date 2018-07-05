@@ -202,6 +202,8 @@ EOF
 	
 	cat >> $pool_mnt/etc/sysctl.conf <<'EOF'
 net.inet.ip.fw.one_pass=0
+net.local.stream.recvspace=65536
+net.local.stream.sendspace=65536
 security.bsd.unprivileged_read_msgbuf=0
 vfs.zfs.vol.recursive=1
 vfs.zfs.vdev.aggregation_limit=262144
