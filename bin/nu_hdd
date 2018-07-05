@@ -18,10 +18,10 @@ NUOS_VER=0.0.11.2a1
 
 . "$(dirname "$(realpath "$0")")/../lib/nu_system.sh"
 
-while getopts a:bfm:o:p:qt:u:v OPT; do case $OPT in
+while getopts a:bdfm:o:p:qt:u:v OPT; do case $OPT in
 	a) PART_ALIGN=$OPTARG;;
 	b) OPT_BOOTABLE=y;;
-#	d) OPT_DELETE=y;;
+	d) OPT_DELETE=y;;
 	f) OPT_FORCE=y;;
 	m) POOL_MNT=$OPTARG;;
 	o) POOL_OPTS=$OPTARG;;
@@ -73,10 +73,10 @@ baseos_init
 nuos_init
 
 echo 'pool devs          POOL_DEVS      ' $POOL_DEVS
-#echo -n 'delete          -d OPT_DELETE      ' && [ -n "${OPT_DELETE-}" ] && echo set || echo null
+echo 'pool name       -p POOL_NAME      ' ${POOL_NAME:=thumb}
+echo -n 'delete          -d OPT_DELETE      ' && [ -n "${OPT_DELETE-}" ] && echo set || echo null
 if [ -z "${OPT_DELETE-}" ]; then
 	echo -n 'bootable        -b OPT_BOOTABLE    ' && [ -n "${OPT_BOOTABLE-}" ] && echo set || echo null
-	echo 'pool name       -p POOL_NAME      ' ${POOL_NAME:=thumb}
 	echo 'pool mnt pt     -m POOL_MNT       ' ${POOL_MNT:=/$POOL_NAME}
 	echo 'pool type       -t POOL_TYPE      ' $pool_display_type
 	echo 'partition align -a PART_ALIGN     ' ${PART_ALIGN:=8192} " (i.e. `humanize $((512 * $PART_ALIGN))`)"
@@ -93,7 +93,10 @@ undo_exit () {
 	exit 1
 }
 
-if [ -z "${OPT_DELETE-}" ]; then
+if [ -n "${OPT_DELETE-}" ]; then
+	echo "ERROR: We aren't going to delete that for you, yet. You'd best do it manually using some combination of 'zfs/zpool destroy ...', 'zpool labelclear ...' and 'gpart destroy ...'."
+	exit 78
+else
 	if [ -n "${OPT_BOOTABLE-}" ]; then
 		zfsidx=2
 	else
@@ -161,4 +164,7 @@ if [ -z "${OPT_DELETE-}" ]; then
 	zpool export $POOL_NAME
 	gnop destroy $nop_devs
 	zpool import -o altroot=$POOL_MNT -o cachefile=$zpool_cache -d /dev/gpt $zpool_id
+
+
+	echo "Initialization of ${OPT_BOOTABLE+bootable }pool $POOL_NAME is complete on device(s): $phys_devs."
 fi
