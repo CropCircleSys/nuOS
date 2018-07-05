@@ -117,7 +117,7 @@ for port in $*; do
 				pkg_step=post-build
 				. "$script"
 			fi
-			if tag=`pkg_db_tag` && [ $tag = `ports_tag` ] && [ -f $pkg_file ]; then
+			if tag=`pkg_db_tag` && [ $tag = `ports_tag` ] && [ ! -L $pkg_file ]; then
 				mkdir -p "/usr/ports/packages/Index.nuOS/$os_compat-$TRGT_MACH"
 				idx=`nuos_sha_fngr "$make_conf" "$env" "$makeargs" /var/db/nuos/pkg/$port_/settings /var/db/nuos/pkg/$port_/dependencies/all`
 				mv -n -v $pkg_file "/usr/ports/packages/Index.nuOS/$os_compat-$TRGT_MACH/$pkg.$tag.$idx.txz"
