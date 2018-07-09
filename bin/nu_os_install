@@ -55,7 +55,7 @@ nuos_proj_ds_name=$os_software_ds_name/nuOS
 nuos_os_ds_name=$nuos_proj_ds_name/$NUOS_VER
 nuos_bin_ds_name=$nuos_os_ds_name/$TRGT_MACH
 
-nuos_sysroot_source_ds=$nuos_bin_ds/`zfs get -H -p -o value org.nuos:active_revision $SOURCE_POOL/$nuos_bin_ds`
+nuos_sysroot_source_ds=$nuos_bin_ds_name/`zfs get -H -p -o value org.nuos:active_revision $SOURCE_POOL/$nuos_bin_ds_name`
 
 sister nu_backup -p $SOURCE_POOL $nuos_sysroot_source_ds@$PKG_COLLECTION | sister nu_restore -t $POOL_NAME
 

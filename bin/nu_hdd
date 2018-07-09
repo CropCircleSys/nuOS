@@ -144,7 +144,8 @@ else
 		else
 			try 3 gpart commit /dev/$dev
 			if [ -n "${OPT_BOOTABLE-}" ]; then
-				gpart bootcode -b /boot/pmbr -p /boot/gptzfsboot -i 1 /dev/$dev
+				try 3 gpart bootcode -p /boot/gptzfsboot -i 1 /dev/$dev
+				try 3 gpart bootcode -b /boot/pmbr /dev/$dev
 			fi
 			gnop create -S 4096 /dev/gpt/$POOL_NAME$i
 			next_dev=/dev/gpt/$POOL_NAME$i.nop
