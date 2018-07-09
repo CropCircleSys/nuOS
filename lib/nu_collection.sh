@@ -38,7 +38,7 @@ reset_pkg_collection () {
 
 collection_vars_init () {
 	
-	reset_pkg_collection
+	reset_pkg_collection -q
 	
 	COLL_blank=
 	
@@ -88,6 +88,7 @@ collection_vars_init () {
 		net/mpd5
 		ftp/pure-ftpd
 		net/isc-dhcp43-server
+		net/istgt
 		net/netatalk3
 		net/samba48
 		security/tor

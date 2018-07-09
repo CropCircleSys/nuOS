@@ -1,0 +1,1 @@
+[ ! -f files/patch-Modules__uuidmodule.c ] && grep -q '\$FreeBSD: head/lang/python37/Makefile 473992 2018-07-06 04:16:55Z wen \$' Makefile

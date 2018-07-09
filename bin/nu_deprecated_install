@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e; set -u; set -C
 
-# nuOS 0.0.11.2a1 - bin/nu_install
+# nuOS 0.0.11.2a1 - bin/nu_deprecated_install
 #
 # Copyright (c) 2008-2018 Chad Jacob Milios and Crop Circle Systems.
 # All rights reserved.

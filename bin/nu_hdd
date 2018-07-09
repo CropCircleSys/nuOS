@@ -131,7 +131,7 @@ else
 	for dev in $phys_devs; do
 		try 3 gpart resize -a $PART_ALIGN -s $safesz -i $zfsidx -f x /dev/$dev || undo_exit
 		if [ -n "${OPT_BOOTABLE-}" ]; then
-			try 3 gpart set -a bootme -i 2 -f x /dev/$dev || undo_exit
+			try 3 gpart set -a bootme -i $zfsidx -f x /dev/$dev || undo_exit
 		fi
 	done
 	

@@ -1,1 +1,0 @@
-grep -q '\$FreeBSD: head/java/icedtea-web/Makefile 473125 2018-06-23 11:15:50Z rene \$' Makefile && grep -q ^BROKEN Makefile
