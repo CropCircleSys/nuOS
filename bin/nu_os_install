@@ -71,11 +71,13 @@ zfs set mountpoint=none canmount=off \
 zfs set canmount=noauto mountpoint=/ $POOL_NAME/$nuos_bin_ds_name
 zfs set canmount=noauto mountpoint=/usr/local/etc $POOL_NAME/$nuos_bin_ds_name/etc/local
 
-zfs create -o mountpoint=/usr/src $POOL_NAME/$fbsd_proj_ds_name/src && \
-	zfs unmount $POOL_NAME/$fbsd_proj_ds_name/src || true
+zfs create -p -o mountpoint=none -o canmount=off $POOL_NAME/$fbsd_proj_ds_name/src
+zfs create -o mountpoint=/usr/src $POOL_NAME/$fbsd_proj_ds_name/src/$BASEOS_VER && \
+	zfs unmount $POOL_NAME/$fbsd_proj_ds_name/src/$BASEOS_VER || true
 zfs create -p -o mountpoint=none -o canmount=off $POOL_NAME/$fbsd_proj_ds_name/src/obj
-zfs create -o mountpoint=/usr/obj $POOL_NAME/$fbsd_proj_ds_name/src/obj/$TRGT_MACH && \
-	zfs unmount $POOL_NAME/$fbsd_proj_ds_name/src/obj/$TRGT_MACH || true
+zfs create -p -o mountpoint=none -o canmount=off $POOL_NAME/$fbsd_proj_ds_name/src/obj/$TRGT_MACH
+zfs create -o mountpoint=/usr/obj $POOL_NAME/$fbsd_proj_ds_name/src/obj/$TRGT_MACH/$BASEOS_VER && \
+	zfs unmount $POOL_NAME/$fbsd_proj_ds_name/src/obj/$TRGT_MACH/$BASEOS_VER || true
 zfs create -p -o mountpoint=none -o canmount=off $POOL_NAME/$fbsd_proj_ds_name/ports
 zfs create -o mountpoint=/var/db/portsnap $POOL_NAME/$fbsd_proj_ds_name/ports/snap-db && \
 	zfs unmount $POOL_NAME/$fbsd_proj_ds_name/ports/snap-db || true

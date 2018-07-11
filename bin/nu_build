@@ -84,9 +84,11 @@ else
 	
 	zfs snapshot -r $fbsd_sysroot_ds@freebsd_dist
 	
-	zfs create -o mountpoint=/usr/src $fbsd_proj_ds/src && zfs unmount $fbsd_proj_ds/src || true
+	zfs create -p -o mountpoint=none -o canmount=off $fbsd_proj_ds/src
+	zfs create -o mountpoint=/usr/src $fbsd_proj_ds/src/$BASEOS_VER && zfs unmount $fbsd_proj_ds/src/$BASEOS_VER || true
 	zfs create -p -o mountpoint=none -o canmount=off $fbsd_proj_ds/src/obj
-	zfs create -o mountpoint=/usr/obj $fbsd_proj_ds/src/obj/$TRGT_MACH && zfs unmount $fbsd_proj_ds/src/obj/$TRGT_MACH || true
+	zfs create -p -o mountpoint=none -o canmount=off $fbsd_proj_ds/src/obj/$TRGT_MACH
+	zfs create -o mountpoint=/usr/obj $fbsd_proj_ds/src/obj/$TRGT_MACH/$BASEOS_VER && zfs unmount $fbsd_proj_ds/src/obj/$TRGT_MACH/$BASEOS_VER || true
 	zfs create -p -o mountpoint=none -o canmount=off $fbsd_proj_ds/ports
 	zfs create -o mountpoint=/var/db/portsnap $fbsd_proj_ds/ports/snap-db && zfs unmount $fbsd_proj_ds/ports/snap-db || true
 	zfs create -o mountpoint=/usr/ports $fbsd_proj_ds/ports/src && zfs unmount $fbsd_proj_ds/ports/src || true
