@@ -38,7 +38,7 @@ reset_pkg_collection () {
 
 collection_vars_init () {
 	
-	reset_pkg_collection -q
+	reset_pkg_collection ${1-}
 	
 	COLL_blank=
 	
@@ -48,15 +48,19 @@ collection_vars_init () {
 		net/isboot-kmod
 		sysutils/pefs-kmod
 		security/openssh-portable
-		security/gnupg
 		security/wpa_supplicant
 		net/hostapd
 		net/dhcpcd
 		dns/unbound
 	'
-	
-	COLL_lite='
+
+	COLL_base='
 		bare
+		security/gnupg
+	'
+
+	COLL_lite='
+		base
 		sysutils/screen
 		misc/buffer
 		sysutils/pipemeter
@@ -133,15 +137,11 @@ collection_vars_init () {
 		net/kamailio
 		sysutils/ipfs-go
 		lang/go
-	'
-	
-	COLL_office='
-		server
 		print/gutenprint
 	'
 	
 	COLL_desktop='
-		office
+		server
 		editors/libreoffice
 		graphics/gimp
 		graphics/inkscape

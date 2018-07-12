@@ -55,9 +55,29 @@ nuos_proj_ds_name=$os_software_ds_name/nuOS
 nuos_os_ds_name=$nuos_proj_ds_name/$NUOS_VER
 nuos_bin_ds_name=$nuos_os_ds_name/$TRGT_MACH
 
-nuos_sysroot_source_ds=$nuos_bin_ds_name/`zfs get -H -p -o value org.nuos:active_revision $SOURCE_POOL/$nuos_bin_ds_name`
+src_ver=`zfs get -H -p -o value org.nuos:active_revision $SOURCE_POOL/$nuos_bin_ds_name`
 
+nuos_sysroot_source_ds=$nuos_bin_ds_name/$src_ver
+
+# as of FBSD 11.2 this borks any custom properties: GARBANZO!
 sister nu_backup -p $SOURCE_POOL $nuos_sysroot_source_ds@$PKG_COLLECTION | sister nu_restore -t $POOL_NAME
+
+
+
+# XXX: GARBANZO
+
+# HOPING https://github.com/zfsonlinux/zfs/issues/5563 was all it is, but it wasnt
+#sister nu_backup -p $SOURCE_POOL $nuos_sysroot_source_ds@blank | sister nu_restore -t $POOL_NAME
+#sister nu_backup -p $SOURCE_POOL -f blank $nuos_sysroot_source_ds@$PKG_COLLECTION | sister nu_restore -t $POOL_NAME
+
+# BECAUSE https://github.com/zfsonlinux/zfs/pull/5189 SEEMS to be not included in FBSD 11.2
+zfs set org.nuos:active_revision=$src_ver $POOL_NAME/$nuos_bin_ds_name
+fbsd_src_ver=`zfs get -H -p -o value org.nuos:active_revision $SOURCE_POOL/$fbsd_bin_ds_name`
+zfs set org.nuos:active_revision=$fbsd_src_ver $POOL_NAME/$fbsd_bin_ds_name
+
+# /XXX: GARBANZO
+
+
 
 zfs set mountpoint=none canmount=off \
 	$POOL_NAME/$os_software_ds_name \
@@ -68,8 +88,8 @@ zfs set mountpoint=none canmount=off \
 	$POOL_NAME/$nuos_os_ds_name \
 	$POOL_NAME/$nuos_bin_ds_name
 
-zfs set canmount=noauto mountpoint=/ $POOL_NAME/$nuos_bin_ds_name
-zfs set canmount=noauto mountpoint=/usr/local/etc $POOL_NAME/$nuos_bin_ds_name/etc/local
+zfs set canmount=noauto mountpoint=/ $POOL_NAME/$nuos_bin_ds_name/$src_ver
+zfs set canmount=noauto mountpoint=/usr/local/etc $POOL_NAME/$nuos_bin_ds_name/$src_ver/etc/local
 
 zfs create -p -o mountpoint=none -o canmount=off $POOL_NAME/$fbsd_proj_ds_name/src
 zfs create -o mountpoint=/usr/src $POOL_NAME/$fbsd_proj_ds_name/src/$BASEOS_VER && \
@@ -85,3 +105,5 @@ zfs create -o mountpoint=/usr/ports $POOL_NAME/$fbsd_proj_ds_name/ports/src && \
 	zfs unmount $POOL_NAME/$fbsd_proj_ds_name/ports/src || true
 zfs create -o mountpoint=/usr/ports/distfiles $POOL_NAME/$fbsd_proj_ds_name/ports/distfiles && \
 	zfs unmount $POOL_NAME/$fbsd_proj_ds_name/ports/distfiles || true
+
+sister nu_build -FN -p $POOL_NAME -c $PKG_COLLECTION -q

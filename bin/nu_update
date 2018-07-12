@@ -41,7 +41,7 @@ esac; done; shift $(($OPTIND-1))
 
 baseos_init
 nuos_init
-collection_vars_init
+collection_vars_init -q
 
 if [ -n "${OPT_AUTO-}" ]; then
 	: ${JAIL_NAME:=lab}

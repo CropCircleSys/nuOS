@@ -82,6 +82,7 @@ else
 	(cd /usr/src && make -D WITHOUT_KERNEL_SYMBOLS DESTDIR=$pool_mnt KERNCONF=$TRGT_KERN installkernel installworld distribution)
 	:> $pool_mnt/etc/fstab
 	
+	zfs set org.nuos:active_revision=v$fbsd_bld_rev $fbsd_bin_ds
 	zfs snapshot -r $fbsd_sysroot_ds@freebsd_dist
 	
 	zfs create -p -o mountpoint=none -o canmount=off $fbsd_proj_ds/src
@@ -117,8 +118,6 @@ EOF
 	
 	zfs set mountpoint=none canmount=off $fbsd_sysroot_ds/etc/local
 	zfs set mountpoint=none canmount=off $fbsd_sysroot_ds
-	
-	zfs set org.nuos:active_revision=v$fbsd_bld_rev $fbsd_bin_ds
 	
 fi
 
@@ -341,6 +340,8 @@ HOSTOS_KERN=$TRGT_KERN
 HOSTOS_OPTZ=$TRGT_OPTZ
 EOF
 	
+	zfs set org.nuos:active_revision=v$nuos_bld_rev $nuos_bin_ds
+	
 	if [ $PKG_COLLECTION = blank ]; then
 		zfs snapshot -r $nuos_sysroot_ds@blank
 	else
@@ -379,8 +380,6 @@ EOF
 	
 	zfs set mountpoint=none canmount=off $nuos_sysroot_ds/etc/local
 	zfs set mountpoint=none canmount=off $nuos_sysroot_ds
-	
-	zfs set org.nuos:active_revision=v$nuos_bld_rev $nuos_bin_ds
 	
 fi
 

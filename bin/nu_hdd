@@ -18,13 +18,14 @@ NUOS_VER=0.0.11.2a1
 
 . "$(dirname "$(realpath "$0")")/../lib/nu_system.sh"
 
-while getopts a:bdfm:o:p:qt:u:v OPT; do case $OPT in
+while getopts a:bdfm:o:O:p:qt:u:v OPT; do case $OPT in
 	a) PART_ALIGN=$OPTARG;;
 	b) OPT_BOOTABLE=y;;
 	d) OPT_DELETE=y;;
 	f) OPT_FORCE=y;;
 	m) POOL_MNT=$OPTARG;;
-	o) POOL_OPTS=$OPTARG;;
+	o) push POOL_OPTS $OPTARG;;
+	O) push ZFS_OPTS $OPTARG;;
 	p) POOL_NAME=$OPTARG;;
 	q) OPT_QUICK=y;;
 	t) POOL_TYPE=$OPTARG;;
@@ -32,8 +33,6 @@ while getopts a:bdfm:o:p:qt:u:v OPT; do case $OPT in
 	v) OPT_VERBOSE=y;;
 esac; done; shift $(($OPTIND-1))
 [ $# -ge 1 ] || { echo 'ERROR: You must specify at least one device.' >&2 && exit 1; }
-
-maybe_yell
 
 case $# in
 	1) : ${POOL_TYPE:=};;
@@ -79,11 +78,21 @@ if [ -z "${OPT_DELETE-}" ]; then
 	echo -n 'bootable        -b OPT_BOOTABLE    ' && [ -n "${OPT_BOOTABLE-}" ] && echo set || echo null
 	echo 'pool mnt pt     -m POOL_MNT       ' ${POOL_MNT:=/$POOL_NAME}
 	echo 'pool type       -t POOL_TYPE      ' $pool_display_type
+	echo 'data copies     -c COPIES         ' ${COPIES:-1}
 	echo 'partition align -a PART_ALIGN     ' ${PART_ALIGN:=8192} " (i.e. `humanize $((512 * $PART_ALIGN))`)"
 	echo 'utilize percent -u UTILIZE_PCT    ' ${UTILIZE_PCT:=99.95}
-	echo 'pool options    -o POOL_OPTS      ' ${POOL_OPTS="-O atime=off -O compression=lz4"}
+	echo 'pool options    -o POOL_OPTS      ' ${POOL_OPTS=}
+	echo 'zfs options     -O ZFS_OPTS       ' ${ZFS_OPTS="atime=off compression=lz4"}
 fi
+for z in $POOL_OPTS; do
+	push zp_opts -o $z
+done
+for z in $ZFS_OPTS; do
+	push zp_opts -O $z
+done
+
 maybe_pause
+maybe_yell
 
 undo_exit () {
 	for dev in $phys_devs; do
@@ -156,7 +165,7 @@ else
 	done
 	
 	require_tmp zpool_cache
-	zpool create -o altroot=$POOL_MNT -o cachefile=$zpool_cache -O mountpoint=none -O canmount=off -O devices=off $POOL_OPTS $POOL_NAME $POOL_TYPE $pool_devs
+	zpool create -o altroot=$POOL_MNT -o cachefile=$zpool_cache -O mountpoint=none -O canmount=off -O devices=off $zp_opts $POOL_NAME $POOL_TYPE $pool_devs
 	zpool_id=`zpool get -H -p -o value guid $POOL_NAME`
 	for md in ${mock_nodes-}; do
 		zpool offline $POOL_NAME /dev/$md

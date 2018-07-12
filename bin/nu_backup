@@ -109,7 +109,7 @@ if [ -z "${OPT_ONLY_SNAP-}" ]; then
 							setvar seen_ds_$ds_guid y
 							ds_mnt_info ${add_snap%@*} >> "$backup_log"
 						fi
-						zfs send -L -e -p $add_snap
+						zfs send -L -e -c -p $add_snap
 						echo "nu_backup.zfs_snap_end	$add_snap" >> "$backup_log"
 					fi
 				done
@@ -117,7 +117,7 @@ if [ -z "${OPT_ONLY_SNAP-}" ]; then
 				echo "nu_backup.zfs_sub_ds_end	$sub_ds" >> "$backup_log"
 			done
 		fi
-		cmd="zfs send -L -e -R ${send_add_args-} $ds@$snap"
+		cmd="zfs send -L -e -c -R ${send_add_args-} $ds@$snap"
 		$cmd
 		echo "nu_backup.zfs_ds_end	$ds" >> "$backup_log"
 	done < "$output_backlist"

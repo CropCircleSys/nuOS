@@ -40,7 +40,7 @@ esac; done; shift $(($OPTIND-1))
 
 baseos_init -q
 nuos_init -q
-collection_vars_init
+collection_vars_init -q
 
 maybe_yell
 

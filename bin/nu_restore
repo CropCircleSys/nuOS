@@ -45,7 +45,7 @@ set -T
 trap 'clean_exit 2> /dev/null' HUP INT QUIT TERM EXIT
 (
 	(
-		while true; do
+		while :; do
 			cat -u "$pipes/recv_out" &
 			cat_pid=$!
 			touch "$child_pids/$cat_pid"
