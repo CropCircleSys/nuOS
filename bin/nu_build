@@ -197,7 +197,6 @@ EOF
 	cat > $pool_mnt/etc/rc.conf.local <<'EOF'
 #gateway_enable="YES"
 #firewall_nat_enable="YES"
-#ifconfig_net0="DHCP"
 ifconfig_vtnet0_name="net0" # replace vtnet0 with the name of your primary upstream network interface
 EOF
 	
