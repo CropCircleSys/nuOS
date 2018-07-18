@@ -72,24 +72,17 @@ baseos_init
 nuos_init
 
 echo 'pool devs          POOL_DEVS      ' $POOL_DEVS
-echo 'pool name       -p POOL_NAME      ' ${POOL_NAME:=thumb}
+echo 'pool name       -p POOL_NAME      ' $POOL_NAME
 echo -n 'delete          -d OPT_DELETE      ' && [ -n "${OPT_DELETE-}" ] && echo set || echo null
 if [ -z "${OPT_DELETE-}" ]; then
 	echo -n 'bootable        -b OPT_BOOTABLE    ' && [ -n "${OPT_BOOTABLE-}" ] && echo set || echo null
 	echo 'pool mnt pt     -m POOL_MNT       ' ${POOL_MNT:=/$POOL_NAME}
 	echo 'pool type       -t POOL_TYPE      ' $pool_display_type
-	echo 'data copies     -c COPIES         ' ${COPIES:-1}
 	echo 'partition align -a PART_ALIGN     ' ${PART_ALIGN:=8192} " (i.e. `humanize $((512 * $PART_ALIGN))`)"
 	echo 'utilize percent -u UTILIZE_PCT    ' ${UTILIZE_PCT:=99.95}
 	echo 'pool options    -o POOL_OPTS      ' ${POOL_OPTS=}
 	echo 'zfs options     -O ZFS_OPTS       ' ${ZFS_OPTS="atime=off compression=lz4"}
 fi
-for z in $POOL_OPTS; do
-	push zp_opts -o $z
-done
-for z in $ZFS_OPTS; do
-	push zp_opts -O $z
-done
 
 maybe_pause
 maybe_yell
@@ -162,6 +155,13 @@ else
 			push nop_devs $next_dev
 		fi
 		i=$(($i + 1))
+	done
+	
+	for z in $POOL_OPTS; do
+		push zp_opts -o $z
+	done
+	for z in $ZFS_OPTS; do
+		push zp_opts -O $z
 	done
 	
 	require_tmp zpool_cache

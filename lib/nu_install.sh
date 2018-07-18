@@ -25,7 +25,7 @@ nuos_lib_install_loaded=y
 
 build_vars_init () {
 	: ${HOST:=`hostname`}
-	echo 'pool name       -p POOL_NAME      ' ${POOL_NAME:=thumb}
+	echo 'pool name       -p POOL_NAME      ' ${POOL_NAME:=$POOL_BOOT_NAME}
 	echo 'port db dir        PORT_DBDIR     ' $PORT_DBDIR
 	echo 'make jobs          MAKE_JOBS      ' ${MAKE_JOBS:=$((2+`sysctl -n kern.smp.cpus`))}
 	echo 'target arch        TRGT_ARCH      ' $TRGT_ARCH
@@ -38,7 +38,7 @@ build_vars_init () {
 
 install_vars_init () {
 	: ${HOST:=`hostname`}
-	echo 'pool name       -p POOL_NAME      ' ${POOL_NAME:=thumb}
+	echo 'pool name       -p POOL_NAME      ' ${POOL_NAME:=$POOL_BOOT_NAME}
 	echo 'swap size       -s SWAP_SIZE      ' ${SWAP_SIZE:=1G}
 	echo 'new host name   -h NEW_HOST       ' ${NEW_HOST:=$POOL_NAME.${HOST#*.}}
 	echo 'target arch        TRGT_ARCH      ' $TRGT_ARCH

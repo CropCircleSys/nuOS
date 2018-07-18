@@ -45,7 +45,7 @@ build_vars_init
 maybe_pause
 maybe_yell
 
-require_base_src
+[ -n "${OPT_SKIP_FBSD-}" -a -n "${OPT_SKIP_NUOS-}" ] || require_base_src
 
 pool_mnt=`zpool get -H -o value altroot $POOL_NAME`
 [ -n "$pool_mnt" -a x- != "x$pool_mnt" ]
