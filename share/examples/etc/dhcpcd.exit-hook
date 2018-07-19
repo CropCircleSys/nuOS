@@ -1,0 +1,5 @@
+case "$reason" in
+	NOCARRIER|TIMEOUT|EXPIRE*|NAK|IPV4LL|RE*|BOUND*|STATIC)
+		service avahi-daemon restart && logger -p daemon.notice -t "dhcpcd[$pid]" "restarted avahi-daemon for $reason on $interface"
+	;;
+esac
