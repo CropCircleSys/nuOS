@@ -162,14 +162,17 @@ EOF
 	
 	cat >> $pool_mnt/boot/loader.conf <<'EOF'
 autoboot_delay="3"
-kern.ipc.shmmni="1024"
 kern.ipc.shmseg="1024"
+kern.ipc.shmmni="1536"
+kern.ipc.semmnu="3000"
+kern.ipc.semmns="7500"
+kern.ipc.semmni="1000"
 kern.racct.enable="1"
 EOF
 	
 	cat >> $pool_mnt/etc/rc.conf <<'EOF'
 #linux_enable="YES"
-kld_list="aesni ipfw sem accf_data accf_dns accf_http cc_htcp"
+kld_list="aesni ipfw sem accf_data accf_dns accf_http cc_cdg"
 entropy_file="/var/db/entropy/seed"
 keyrate="fast"
 firewall_enable="YES"
@@ -237,15 +240,11 @@ net.inet.tcp.sendspace=131072
 
 # Default congestion control algorithm
 # FreeBSD 11.2 default: newreno
-net.inet.tcp.cc.algorithm=htcp
+net.inet.tcp.cc.algorithm=cdg
 
-# Enable H-TCP adaptive backoff
+# Increment the window increase factor alpha by 1 MSS segment every alpha_inc RTTs during congestion avoidance mode
 # FreeBSD 11.2 default: 0
-net.inet.tcp.cc.htcp.adaptive_backoff=1
-
-# Enable H-TCP RTT scaling
-# FreeBSD 11.2 default: 0
-net.inet.tcp.cc.htcp.rtt_scaling=1
+net.inet.tcp.cc.cdg.alpha_inc=1
 
 # Default TCP Maximum Segment Size
 # FreeBSD 11.2 default: 536
@@ -265,19 +264,19 @@ net.inet.tcp.syncache.rexmtlimit=0
 
 # Cap the max cwnd increment during slow-start to this number of segments
 # FreeBSD 11.2 default: 2
-net.inet.tcp.abc_l_var=44
+net.inet.tcp.abc_l_var=50
 
 # Slow-start flight size (initial congestion window) in number of segments
 # FreeBSD 11.2 default: 10
-net.inet.tcp.initcwnd_segments=44
+net.inet.tcp.initcwnd_segments=50
 
 # Default stream receive space
 # FreeBSD 11.2 default: 65536
-net.local.stream.recvspace=65536
+net.local.stream.recvspace=131072
 
 # Default stream send space
 # FreeBSD 11.2 default: 65536
-net.local.stream.sendspace=65536
+net.local.stream.sendspace=131072
 
 # Max ZFS L2ARC write size
 # FreeBSD 11.2 default: 8388608
