@@ -60,27 +60,6 @@ maybe_pause
 maybe_yell
 
 
-# 	sister nu_backup os/nuOS/$NUOS_VER/$TRGT_MACH@$PKG_COLLECTION | sister nu_restore -t $POOL_NAME
-# 	zfs set mountpoint=none $POOL_NAME/os
-# 	zfs set canmount=off $POOL_NAME/os
-# 	zfs set mountpoint=none $POOL_NAME/os/$BASEOS_TYPE
-# 	zfs set canmount=off $POOL_NAME/os/$BASEOS_TYPE
-# 	zfs set mountpoint=none $POOL_NAME/os/$BASEOS_TYPE/$BASEOS_VER
-# 	zfs set canmount=off $POOL_NAME/os/$BASEOS_TYPE/$BASEOS_VER
-# 	zfs set mountpoint=none $POOL_NAME/os/nuOS
-# 	zfs set canmount=off $POOL_NAME/os/nuOS
-# 	zfs set mountpoint=none $POOL_NAME/os/nuOS/$NUOS_VER
-# 	zfs set canmount=off $POOL_NAME/os/nuOS/$NUOS_VER
-# 	zfs set canmount=noauto $POOL_NAME/os/nuOS/$NUOS_VER/$TRGT_MACH
-# 	zfs set mountpoint=/ $POOL_NAME/os/nuOS/$NUOS_VER/$TRGT_MACH
-# 	zfs mount $POOL_NAME/os/nuOS/$NUOS_VER/$TRGT_MACH
-# 	zfs mount $POOL_NAME/os/nuOS/$NUOS_VER/$TRGT_MACH/var
-# 	zfs mount $POOL_NAME/os/nuOS/$NUOS_VER/$TRGT_MACH/var/db
-# 	zfs mount $POOL_NAME/os/nuOS/$NUOS_VER/$TRGT_MACH/etc
-# 	zfs set canmount=noauto $POOL_NAME/os/nuOS/$NUOS_VER/$TRGT_MACH/etc/local
-# 	zfs set mountpoint=/usr/local/etc $POOL_NAME/os/nuOS/$NUOS_VER/$TRGT_MACH/etc/local
-# 	zfs mount $POOL_NAME/os/nuOS/$NUOS_VER/$TRGT_MACH/etc/local
-
 pool_mnt=`zpool get -H -o value altroot $POOL_NAME`
 [ -n "$pool_mnt" -a x- != "x$pool_mnt" ]
 

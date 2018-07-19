@@ -165,16 +165,13 @@ autoboot_delay="3"
 kern.ipc.shmmni="1024"
 kern.ipc.shmseg="1024"
 kern.racct.enable="1"
-vfs.zfs.l2arc_write_max="419430400"
-vfs.zfs.l2arc_write_boost="419430400"
-vfs.zfs.l2arc_headroom="8"
-vfs.zfs.l2arc_norw="0"
 EOF
 	
 	cat >> $pool_mnt/etc/rc.conf <<'EOF'
 #linux_enable="YES"
 kld_list="aesni ipfw sem accf_data accf_dns accf_http cc_htcp"
 entropy_file="/var/db/entropy/seed"
+keyrate="fast"
 firewall_enable="YES"
 firewall_type="open"
 firewall_nat_flags="same_ports reset"
@@ -201,11 +198,103 @@ ifconfig_vtnet0_name="net0" # replace vtnet0 with the name of your primary upstr
 EOF
 	
 	cat >> $pool_mnt/etc/sysctl.conf <<'EOF'
+
+# Only do a single pass through ipfw when using dummynet(4)
+# FreeBSD 11.2 default: 1
 net.inet.ip.fw.one_pass=0
+
+# Maximum number of IPv4 fragment reassembly queue entries
+# FreeBSD 11.2 default: 31311
+net.inet.ip.maxfragpackets=0
+
+# Maximum number of IPv4 fragments allowed per packet
+# FreeBSD 11.2 default: 16
+net.inet.ip.maxfragsperpacket=0
+
+# Incrementor step size of automatic receive buffer
+# FreeBSD 11.2 default: 16384
+net.inet.tcp.recvbuf_inc=65536
+
+# Max size of automatic receive buffer
+# FreeBSD 11.2 default: 2097152
+net.inet.tcp.recvbuf_max=16777216
+
+# Initial receive socket buffer size
+# FreeBSD 11.2 default: 65536
+net.inet.tcp.recvspace=131072
+
+# Incrementor step size of automatic send buffer
+# FreeBSD 11.2 default: 8192
+net.inet.tcp.sendbuf_inc=65536
+
+# Max size of automatic send buffer
+# FreeBSD 11.2 default: 2097152
+net.inet.tcp.sendbuf_max=16777216
+
+# Initial send socket buffer size
+# FreeBSD 11.2 default: 32768
+net.inet.tcp.sendspace=131072
+
+# Default congestion control algorithm
+# FreeBSD 11.2 default: newreno
+net.inet.tcp.cc.algorithm=htcp
+
+# Enable H-TCP adaptive backoff
+# FreeBSD 11.2 default: 0
+net.inet.tcp.cc.htcp.adaptive_backoff=1
+
+# Enable H-TCP RTT scaling
+# FreeBSD 11.2 default: 0
+net.inet.tcp.cc.htcp.rtt_scaling=1
+
+# Default TCP Maximum Segment Size
+# FreeBSD 11.2 default: 536
+net.inet.tcp.mssdflt=1240
+
+# Minimum TCP Maximum Segment Size
+# FreeBSD 11.2 default: 216
+net.inet.tcp.minmss=536
+
+# Use calculated pipe/in-flight bytes per RFC 6675
+# FreeBSD 11.2 default: 0
+net.inet.tcp.rfc6675_pipe=1
+
+# Limit on SYN/ACK retransmissions
+# FreeBSD 11.2 default: 3
+net.inet.tcp.syncache.rexmtlimit=0
+
+# Cap the max cwnd increment during slow-start to this number of segments
+# FreeBSD 11.2 default: 2
+net.inet.tcp.abc_l_var=44
+
+# Slow-start flight size (initial congestion window) in number of segments
+# FreeBSD 11.2 default: 10
+net.inet.tcp.initcwnd_segments=44
+
+# Default stream receive space
+# FreeBSD 11.2 default: 65536
 net.local.stream.recvspace=65536
+
+# Default stream send space
+# FreeBSD 11.2 default: 65536
 net.local.stream.sendspace=65536
-security.bsd.unprivileged_read_msgbuf=0
-vfs.zfs.vdev.aggregation_limit=262144
+
+# Max ZFS L2ARC write size
+# FreeBSD 11.2 default: 8388608
+vfs.zfs.l2arc_write_max=419430400
+
+# Extra write during ZFS L2ARC warmup
+# FreeBSD 11.2 default: 8388608
+vfs.zfs.l2arc_write_boost=419430400
+
+# Number of ZFS L2ARC dev writes
+# FreeBSD 11.2 default: 2
+vfs.zfs.l2arc_headroom=8
+
+# No ZFS L2ARC reads during writes
+# FreeBSD 11.2 default: 1
+vfs.zfs.l2arc_norw=0
+
 EOF
 	
 	cat > $pool_mnt/etc/periodic.conf <<'EOF'
