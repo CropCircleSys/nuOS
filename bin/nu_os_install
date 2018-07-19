@@ -86,9 +86,9 @@ zfs set mountpoint=none canmount=off \
 	$POOL_NAME/$fbsd_bin_ds_name \
 	$POOL_NAME/$nuos_proj_ds_name \
 	$POOL_NAME/$nuos_os_ds_name \
-	$POOL_NAME/$nuos_bin_ds_name
+	$POOL_NAME/$nuos_bin_ds_name \
+	$POOL_NAME/$nuos_bin_ds_name/$src_rev
 
-zfs set canmount=noauto mountpoint=/ $POOL_NAME/$nuos_bin_ds_name/$src_rev
 zfs set canmount=noauto mountpoint=/usr/local/etc $POOL_NAME/$nuos_bin_ds_name/$src_rev/etc/local
 
 zfs create -p -o mountpoint=none -o canmount=off $POOL_NAME/$fbsd_proj_ds_name/src
