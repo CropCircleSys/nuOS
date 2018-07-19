@@ -472,23 +472,6 @@ EOF
 	
 fi
 
-zfs get mountpoint,canmount \
-	$os_software_ds \
-	$fbsd_proj_ds \
-	$fbsd_os_ds \
-	$fbsd_bin_ds \
-	$fbsd_sysroot_ds \
-	$fbsd_sysroot_ds/etc \
-	$fbsd_sysroot_ds/etc/local \
-	$nuos_proj_ds \
-	$nuos_os_ds \
-	$nuos_bin_ds \
-	$nuos_sysroot_ds \
-	$nuos_sysroot_ds/etc \
-	$nuos_sysroot_ds/etc/local
-
-mount | awk "{if (\$3 ~ \"^$pool_mnt(/|\$)\") print \$1, \$3}"
-
 sys_ds=$POOL_NAME/sys
 factories_ds=$sys_ds/factory
 nuos_factory_ds=$sys_ds/factory/nuOS-$NUOS_VER-$TRGT_MACH
