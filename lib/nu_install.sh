@@ -84,13 +84,8 @@ require_base_src () {
 		$retire_make_conf_cmd make_conf
 	fi
 	if [ ! -d /usr/obj/usr/src/sys/$TRGT_KERN ]; then
-		if [ $TRGT_KERN = NUOS ] && [ ! -e /usr/src/sys/$TRGT_ARCH/conf/NUOS -o /usr/src/sys/$TRGT_ARCH/conf/NUOS -ot "$(realpath "$(dirname "$(realpath "$0")")/../share/kern/NUOS.tmpl")" ]; then
-			if [ -e /usr/src/sys/$TRGT_ARCH/conf/VT ]; then
-				kernel_prototype=VT
-			else
-				kernel_prototype=GENERIC
-			fi
-			sed -e s/%%nuos_kernel_prototype%%/$kernel_prototype/g "$(realpath "$(dirname "$(realpath "$0")")/../share/kern/NUOS.tmpl")" >| /usr/src/sys/$TRGT_ARCH/conf/NUOS
+		if [ $TRGT_KERN = NUOS ] && [ ! -e /usr/src/sys/$TRGT_ARCH/conf/NUOS -o /usr/src/sys/$TRGT_ARCH/conf/NUOS -ot "$(realpath "$(dirname "$(realpath "$0")")/../share/kern/NUOS")" ]; then
+			cp -p "$(realpath "$(dirname "$(realpath "$0")")/../share/kern/NUOS")" /usr/src/sys/$TRGT_ARCH/conf/NUOS
 		fi
 		prepare_make_conf make_conf retire_make_conf_cmd
 		(cd /usr/src && make -j $MAKE_JOBS "__MAKE_CONF=$make_conf" KERNCONF=$TRGT_KERN buildkernel)
@@ -98,3 +93,20 @@ require_base_src () {
 	fi
 }
 
+dismounter () {
+	zfs list -H -r -o name $1 | tail -r | xargs -n 1 zfs set canmount=off
+}
+
+cloner () {
+	local from=$1 to=$2
+	local from_ds=${from%@*} from_snap=${from#*@}
+	zfs list -H -r -o name $from_ds | xargs -n 1 zfs get -H -o name,value,source mountpoint | while read -r ds mtp src; do
+		if [ local = "$src" -o received = "$src" ]; then
+			mtp="${mtp#$pool_mnt}"
+			: ${mtp:=/}
+		else
+			mtp=
+		fi
+		zfs clone ${mtp:+-o mountpoint=$mtp} $ds@$from_snap $to${ds#$from_ds}
+	done
+}

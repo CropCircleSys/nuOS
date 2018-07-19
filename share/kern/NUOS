@@ -1,0 +1,3 @@
+include GENERIC
+ident NUOS
+options VIMAGE

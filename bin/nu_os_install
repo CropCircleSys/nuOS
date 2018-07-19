@@ -55,6 +55,9 @@ nuos_proj_ds_name=$os_software_ds_name/nuOS
 nuos_os_ds_name=$nuos_proj_ds_name/$NUOS_VER
 nuos_bin_ds_name=$nuos_os_ds_name/$TRGT_MACH
 
+pool_mnt=`zpool get -H -o value altroot $POOL_NAME`
+[ -n "$pool_mnt" -a x- != "x$pool_mnt" ]
+
 src_rev=`zfs get -H -p -o value org.nuos:active_revision $SOURCE_POOL/$nuos_bin_ds_name`
 
 nuos_sysroot_source_ds=$nuos_bin_ds_name/$src_rev
@@ -77,19 +80,48 @@ zfs set org.nuos:active_revision=$fbsd_src_rev $POOL_NAME/$fbsd_bin_ds_name
 
 # /XXX: GARBANZO
 
-
-
-zfs set mountpoint=none canmount=off \
+zfs get mountpoint,canmount \
 	$POOL_NAME/$os_software_ds_name \
 	$POOL_NAME/$fbsd_proj_ds_name \
 	$POOL_NAME/$fbsd_os_ds_name \
 	$POOL_NAME/$fbsd_bin_ds_name \
+	$POOL_NAME/$fbsd_bin_ds_name/$fbsd_src_rev \
+	$POOL_NAME/$fbsd_bin_ds_name/$fbsd_src_rev/etc \
+	$POOL_NAME/$fbsd_bin_ds_name/$fbsd_src_rev/etc/local \
+	$POOL_NAME/$nuos_proj_ds_name \
+	$POOL_NAME/$nuos_os_ds_name \
+	$POOL_NAME/$nuos_bin_ds_name \
+	$POOL_NAME/$nuos_bin_ds_name/$src_rev \
+	$POOL_NAME/$nuos_bin_ds_name/$src_rev/etc \
+	$POOL_NAME/$nuos_bin_ds_name/$src_rev/etc/local
+
+mount | awk "{if (\$3 ~ \"^$pool_mnt(/|\$)\") print \$1, \$3}"
+
+zfs set canmount=off \
+	$POOL_NAME/$os_software_ds_name \
+	$POOL_NAME/$fbsd_proj_ds_name \
+	$POOL_NAME/$fbsd_os_ds_name \
+	$POOL_NAME/$fbsd_bin_ds_name \
+	$POOL_NAME/$fbsd_bin_ds_name/$fbsd_src_rev \
 	$POOL_NAME/$nuos_proj_ds_name \
 	$POOL_NAME/$nuos_os_ds_name \
 	$POOL_NAME/$nuos_bin_ds_name \
 	$POOL_NAME/$nuos_bin_ds_name/$src_rev
 
-zfs set canmount=noauto mountpoint=/usr/local/etc $POOL_NAME/$nuos_bin_ds_name/$src_rev/etc/local
+zfs get mountpoint,canmount \
+	$POOL_NAME/$os_software_ds_name \
+	$POOL_NAME/$fbsd_proj_ds_name \
+	$POOL_NAME/$fbsd_os_ds_name \
+	$POOL_NAME/$fbsd_bin_ds_name \
+	$POOL_NAME/$fbsd_bin_ds_name/$fbsd_src_rev \
+	$POOL_NAME/$fbsd_bin_ds_name/$fbsd_src_rev/etc \
+	$POOL_NAME/$fbsd_bin_ds_name/$fbsd_src_rev/etc/local \
+	$POOL_NAME/$nuos_proj_ds_name \
+	$POOL_NAME/$nuos_os_ds_name \
+	$POOL_NAME/$nuos_bin_ds_name \
+	$POOL_NAME/$nuos_bin_ds_name/$src_rev \
+	$POOL_NAME/$nuos_bin_ds_name/$src_rev/etc \
+	$POOL_NAME/$nuos_bin_ds_name/$src_rev/etc/local
 
 zfs create -p -o mountpoint=none -o canmount=off $POOL_NAME/$fbsd_proj_ds_name/src
 zfs create -o mountpoint=/usr/src $POOL_NAME/$fbsd_proj_ds_name/src/$BASEOS_VER && \

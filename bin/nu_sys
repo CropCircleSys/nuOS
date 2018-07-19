@@ -80,11 +80,7 @@ do
 	new_host_rev=$(($new_host_rev + 1))
 done
 
-zfs clone -o mountpoint=/ $use_factory_ds@pool_registered $new_host_ds
-zfs clone $use_factory_ds/etc@pool_registered $new_host_ds/etc
-zfs clone -o mountpoint=/usr/local/etc $use_factory_ds/etc/local@pool_registered $new_host_ds/etc/local
-zfs clone $use_factory_ds/var@pool_registered $new_host_ds/var
-zfs clone $use_factory_ds/var/db@pool_registered $new_host_ds/var/db
+cloner $use_factory_ds@pool_registered $new_host_ds
 
 if [ -n "$SWAP_SIZE" -a "$SWAP_SIZE" != 0 ]; then
 	if [ -n "${OPT_ELI_SWAP-}" ]; then

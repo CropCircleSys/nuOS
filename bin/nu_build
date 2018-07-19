@@ -18,10 +18,11 @@ NUOS_VER=0.0.11.2a1
 
 . "$(dirname "$(realpath "$0")")/../lib/nu_system.sh"
 
-while getopts Bc:FNp:qv OPT; do case $OPT in
+while getopts Bc:FMNp:qv OPT; do case $OPT in
 	B) OPT_NOBRAND=y;;
 	c) PKG_COLLECTION=$OPTARG;;
 	F) OPT_SKIP_FBSD=y;;
+	M) OPT_NOMAKE=y;;
 	N) OPT_SKIP_NUOS=y;;
 	p) POOL_NAME=$OPTARG;;
 	q) OPT_QUICK=y;;
@@ -72,14 +73,18 @@ else
 		fbsd_bld_rev=$(($fbsd_bld_rev + 1))
 	done
 	
-	zfs create -o mountpoint=/ -o canmount=noauto $fbsd_sysroot_ds
-	zfs mount $fbsd_sysroot_ds
+	zfs create -o mountpoint=/ $fbsd_sysroot_ds
 	zfs create $fbsd_sysroot_ds/etc
 	zfs create -o mountpoint=/usr/local/etc $fbsd_sysroot_ds/etc/local
 	zfs create $fbsd_sysroot_ds/var
 	zfs create $fbsd_sysroot_ds/var/db
 	
-	(cd /usr/src && make -D WITHOUT_KERNEL_SYMBOLS DESTDIR=$pool_mnt KERNCONF=$TRGT_KERN installkernel installworld distribution)
+	if [ -n "${OPT_NOMAKE-}" ]; then
+		mkdir $pool_mnt/boot $pool_mnt/boot/zfs $pool_mnt/etc/ssh
+		touch $pool_mnt/etc/motd $pool_mnt/etc/login.conf.db
+	else
+		(cd /usr/src && make -D WITHOUT_KERNEL_SYMBOLS DESTDIR=$pool_mnt KERNCONF=$TRGT_KERN installkernel installworld distribution)
+	fi
 	:> $pool_mnt/etc/fstab
 	
 	zfs set org.nuos:active_revision=v$fbsd_bld_rev $fbsd_bin_ds
@@ -116,8 +121,7 @@ EOF
 	
 	zfs snapshot -r $fbsd_sysroot_ds@pkg_ready
 	
-	zfs set mountpoint=none canmount=off $fbsd_sysroot_ds/etc/local
-	zfs set mountpoint=none canmount=off $fbsd_sysroot_ds
+	dismounter $fbsd_sysroot_ds
 	
 fi
 
@@ -141,12 +145,7 @@ else
 		nuos_bld_rev=$(($nuos_bld_rev + 1))
 	done
 	
-	zfs clone -o mountpoint=/ -o canmount=noauto $fbsd_sysroot_ds@pkg_ready $nuos_sysroot_ds
-	zfs mount $nuos_sysroot_ds
-	zfs clone $fbsd_sysroot_ds/etc@pkg_ready $nuos_sysroot_ds/etc
-	zfs clone -o mountpoint=/usr/local/etc $fbsd_sysroot_ds/etc/local@pkg_ready $nuos_sysroot_ds/etc/local
-	zfs clone $fbsd_sysroot_ds/var@pkg_ready $nuos_sysroot_ds/var
-	zfs clone $fbsd_sysroot_ds/var/db@pkg_ready $nuos_sysroot_ds/var/db
+	cloner $fbsd_sysroot_ds@pkg_ready $nuos_sysroot_ds
 	
 	cat > $pool_mnt/usr/local/etc/beadm.conf <<'EOF'
 echo beadm is incompatible with nuOS >&2
@@ -429,6 +428,10 @@ EOF
 	
 	zfs set org.nuos:active_revision=v$nuos_bld_rev $nuos_bin_ds
 	
+	if [ -n "${OPT_NOMAKE-}" ]; then
+		PKG_COLLECTION=blank
+	fi
+	
 	if [ $PKG_COLLECTION = blank ]; then
 		zfs snapshot -r $nuos_sysroot_ds@blank
 	else
@@ -465,10 +468,26 @@ EOF
 		zfs destroy -r $POOL_NAME/swap
 	done
 	
-	zfs set mountpoint=none canmount=off $nuos_sysroot_ds/etc/local
-	zfs set mountpoint=none canmount=off $nuos_sysroot_ds
+	dismounter $nuos_sysroot_ds
 	
 fi
+
+zfs get mountpoint,canmount \
+	$os_software_ds \
+	$fbsd_proj_ds \
+	$fbsd_os_ds \
+	$fbsd_bin_ds \
+	$fbsd_sysroot_ds \
+	$fbsd_sysroot_ds/etc \
+	$fbsd_sysroot_ds/etc/local \
+	$nuos_proj_ds \
+	$nuos_os_ds \
+	$nuos_bin_ds \
+	$nuos_sysroot_ds \
+	$nuos_sysroot_ds/etc \
+	$nuos_sysroot_ds/etc/local
+
+mount | awk "{if (\$3 ~ \"^$pool_mnt(/|\$)\") print \$1, \$3}"
 
 sys_ds=$POOL_NAME/sys
 factories_ds=$sys_ds/factory
@@ -486,12 +505,7 @@ do
 	factory_rev=$(($factory_rev + 1))
 done
 
-zfs clone -o mountpoint=/ -o canmount=noauto $nuos_sysroot_ds@$PKG_COLLECTION $new_factory_ds
-zfs mount $new_factory_ds
-zfs clone $nuos_sysroot_ds/etc@$PKG_COLLECTION $new_factory_ds/etc
-zfs clone -o mountpoint=/usr/local/etc $nuos_sysroot_ds/etc/local@$PKG_COLLECTION $new_factory_ds/etc/local
-zfs clone $nuos_sysroot_ds/var@$PKG_COLLECTION $new_factory_ds/var
-zfs clone $nuos_sysroot_ds/var/db@$PKG_COLLECTION $new_factory_ds/var/db
+cloner $nuos_sysroot_ds@$PKG_COLLECTION $new_factory_ds
 
 mkdir $pool_mnt/boot/etc
 mv -n $pool_mnt/etc/login.conf.db $pool_mnt/boot/etc/
@@ -511,10 +525,9 @@ zpool_cache=`zpool get -H -o value cachefile $POOL_NAME`
 
 zfs snapshot -r $new_factory_ds@pool_registered
 
-zfs set mountpoint=none canmount=off $new_factory_ds/etc/local
-zfs set mountpoint=none canmount=off $new_factory_ds
+dismounter $new_factory_ds
 
 zfs set org.nuos:active_revision=v$factory_rev $nuos_factory_ds
 
 
-echo "Build of nuOS-$NUOS_VER based on $BASEOS_TYPE-$BASEOS_VER is complete, saved to pool $POOL_NAME."
+echo "Build of nuOS-$NUOS_VER based on $BASEOS_TYPE-$BASEOS_VER is complete${OPT_NOMAKE:+ (simulated)}, saved to pool $POOL_NAME."
