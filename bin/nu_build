@@ -269,14 +269,6 @@ net.inet.tcp.abc_l_var=50
 # FreeBSD 11.2 default: 10
 net.inet.tcp.initcwnd_segments=50
 
-# Default stream receive space
-# FreeBSD 11.2 default: 65536
-net.local.stream.recvspace=131072
-
-# Default stream send space
-# FreeBSD 11.2 default: 65536
-net.local.stream.sendspace=131072
-
 # Max ZFS L2ARC write size
 # FreeBSD 11.2 default: 8388608
 vfs.zfs.l2arc_write_max=419430400
