@@ -456,13 +456,11 @@ EOF
 	
 	zfs create -o mountpoint=/usr/ports/packages $nuos_bin_ds/pkg && zfs unmount $nuos_bin_ds/pkg || true
 	
-	while ! zfs create -o mountpoint=none -o canmount=off -o primarycache=metadata $POOL_NAME/swap 2> /dev/null; do
-		zfs destroy -r $POOL_NAME/swap
-	done
-	
 	dismounter $nuos_sysroot_ds
 	
 fi
+
+zfs create -o mountpoint=none -o canmount=off -o primarycache=metadata $POOL_NAME/swap || zfs set mountpoint=none canmount=off primarycache=metadata $POOL_NAME/swap
 
 sys_ds=$POOL_NAME/sys
 factories_ds=$sys_ds/factory
