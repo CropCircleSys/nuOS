@@ -1,0 +1,10 @@
+--- /usr/ports/graphics/py-cairo/Makefile	(revision 475015)
++++ /usr/ports/graphics/py-cairo/Makefile	(working copy)
+@@ -24,6 +24,7 @@
+ py34_PLIST=	${.CURDIR}/pkg-plist-py3
+ py35_PLIST=	${.CURDIR}/pkg-plist-py3
+ py36_PLIST=	${.CURDIR}/pkg-plist-py3
++py37_PLIST=	${.CURDIR}/pkg-plist-py3
+ 
+ PLIST_SUB=	PORTVER=${PORTVERSION}
+ 

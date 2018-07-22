@@ -42,8 +42,10 @@ collection_vars_init () {
 	
 	COLL_blank=
 	
+	COLL_pkg=ports-mgmt/pkg
+	
 	COLL_bare='
-		blank
+		pkg
 		net/ipxe
 		net/isboot-kmod
 		sysutils/pefs-kmod
@@ -91,7 +93,7 @@ collection_vars_init () {
 		security/openvpn
 		net/mpd5
 		ftp/pure-ftpd
-		net/isc-dhcp43-server
+		net/isc-dhcp44-server
 		net/istgt
 		net/netatalk3
 		net/samba48
