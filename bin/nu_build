@@ -48,8 +48,7 @@ maybe_yell
 
 [ -n "${OPT_SKIP_FBSD-}" -a -n "${OPT_SKIP_NUOS-}" ] || require_base_src
 
-pool_mnt=`zpool get -H -o value altroot $POOL_NAME`
-[ -n "$pool_mnt" -a x- != "x$pool_mnt" ]
+discover_install_mnt $POOL_NAME
 
 os_software_ds=$POOL_NAME/os
 fbsd_proj_ds=$os_software_ds/$BASEOS_TYPE
@@ -57,7 +56,7 @@ fbsd_os_ds=$fbsd_proj_ds/$BASEOS_VER
 fbsd_bin_ds=$fbsd_os_ds/$TRGT_MACH
 
 if [ -n "${OPT_SKIP_FBSD-}" -o -n "${OPT_SKIP_NUOS-}" ]; then
-	fbsd_sysroot_ds=$fbsd_bin_ds/`zfs get -H -p -o value org.nuos:active_revision $fbsd_bin_ds`
+	fbsd_sysroot_ds=$fbsd_bin_ds/`zfs get -H -o value org.nuos:active_revision $fbsd_bin_ds`
 else
 	
 	zfs create -p -o mountpoint=none -o canmount=off $os_software_ds
@@ -73,9 +72,10 @@ else
 		fbsd_bld_rev=$(($fbsd_bld_rev + 1))
 	done
 	
-	zfs create -o mountpoint=/ $fbsd_sysroot_ds
+	zfs create -o canmount=noauto -o "mountpoint=${alt_mnt:-/}" $fbsd_sysroot_ds
+	zfs mount $fbsd_sysroot_ds
 	zfs create $fbsd_sysroot_ds/etc
-	zfs create -o mountpoint=/usr/local/etc $fbsd_sysroot_ds/etc/local
+	zfs create -o "mountpoint=$alt_mnt/usr/local/etc" $fbsd_sysroot_ds/etc/local
 	zfs create $fbsd_sysroot_ds/var
 	zfs create $fbsd_sysroot_ds/var/db
 	
@@ -87,7 +87,6 @@ else
 	fi
 	:> $pool_mnt/etc/fstab
 	
-	zfs set org.nuos:active_revision=v$fbsd_bld_rev $fbsd_bin_ds
 	zfs snapshot -r $fbsd_sysroot_ds@freebsd_dist
 	
 	zfs create -p -o mountpoint=none -o canmount=off $fbsd_proj_ds/src
@@ -120,7 +119,8 @@ EOF
 	(cd $pool_mnt && mkdir -p compat/linux/proc compat/linux/sys usr/ports/packages)
 	
 	zfs snapshot -r $fbsd_sysroot_ds@pkg_ready
-	
+	zfs set org.nuos:active_revision=v$fbsd_bld_rev $fbsd_bin_ds
+
 	dismounter $fbsd_sysroot_ds
 	
 fi
@@ -130,7 +130,7 @@ nuos_os_ds=$nuos_proj_ds/$NUOS_VER
 nuos_bin_ds=$nuos_os_ds/$TRGT_MACH
 
 if [ -n "${OPT_SKIP_NUOS-}" ]; then
-	nuos_sysroot_ds=$nuos_bin_ds/`zfs get -H -p -o value org.nuos:active_revision $nuos_bin_ds`
+	nuos_sysroot_ds=$nuos_bin_ds/`zfs get -H -o value org.nuos:active_revision $nuos_bin_ds`
 else
 	
 	zfs create -p -o mountpoint=none -o canmount=off $nuos_proj_ds
@@ -284,6 +284,10 @@ vfs.zfs.l2arc_headroom=8
 # No ZFS L2ARC reads during writes
 # FreeBSD 11.2 default: 1
 vfs.zfs.l2arc_norw=0
+
+# I/O requests are aggregated up to this size
+# FreeBSD 11.2 default: 131072
+vfs.zfs.vdev.aggregation_limit=1048576
 
 EOF
 	
@@ -485,7 +489,11 @@ mv -n $pool_mnt/etc/login.conf.db $pool_mnt/boot/etc/
 ln -s ../boot/etc/login.conf.db $pool_mnt/etc/login.conf.db
 zfs unmount $new_factory_ds/etc
 ln -s ../boot/etc/login.conf.db $pool_mnt/etc/login.conf.db
-zfs mount $new_factory_ds/etc
+if [ -n "$alt_mnt" ]; then
+	mount -t zfs $new_factory_ds/etc "$alt_mnt/etc"
+else
+	zfs mount $new_factory_ds/etc
+fi
 
 zfs snapshot -r $new_factory_ds@prototype
 
@@ -493,14 +501,23 @@ cat >> $pool_mnt/etc/nuos/conf <<EOF
 POOL_BOOT_NAME=$POOL_NAME
 EOF
 
-zpool_cache=`zpool get -H -o value cachefile $POOL_NAME`
-[ -n "$zpool_cache" ] && cp $zpool_cache $pool_mnt/boot/zfs/zpool.cache
+if [ -n "$alt_mnt" ]; then
+	zpool_cache=/boot/zfs/zpool.cache
+else
+	zpool_cache="`zpool get -H -o value cachefile $POOL_NAME`"
+	if [ "$zpool_cache" = none ]; then
+		zpool_cache=
+		require_tmp zpool_cache
+		zpool set "cachefile=$zpool_cache" $POOL_NAME
+	fi
+fi
+
+[ -n "$zpool_cache" -a x- != "x$zpool_cache" ] && cp $zpool_cache $pool_mnt/boot/zfs/zpool.cache
 
 zfs snapshot -r $new_factory_ds@pool_registered
+zfs set org.nuos:active_revision=v$factory_rev $nuos_factory_ds
 
 dismounter $new_factory_ds
-
-zfs set org.nuos:active_revision=v$factory_rev $nuos_factory_ds
 
 
 echo "Build of nuOS-$NUOS_VER based on $BASEOS_TYPE-$BASEOS_VER is complete${OPT_NOMAKE:+ (simulated)}, saved to pool $POOL_NAME."

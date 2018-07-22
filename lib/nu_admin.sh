@@ -97,23 +97,39 @@ admin_install () {
 
 	acct_install () {
 		local opt_zfs_create=
-		if [ -z = $1 ]; then
+		if [ x-z = x$1 ]; then
 			opt_zfs_create=y
 			shift
-		fi		
+		fi
 		local acct=$1 pass="$2" name="${3-}" cpny="${4-}" keys="${5-}" keys_from_acct="${6-}" useradd_flags="${7-}" groupadd_flags="${8-}"
 		if [ -n "$acct" ]; then
 			echo "WARNING: creating account '$acct' inside new system" >&2
 			if [ -n "$opt_zfs_create" ]; then
-				zfs create $POOL_NAME/home/$acct
+				if zfs create $POOL_NAME/home/$acct; then
+					user_home_fresh=y
+					if [ -n "${home_existed-}" -a -n "$alt_mnt" ]; then
+						mount -t nullfs /home/$acct "$alt_mnt/home/$acct" 
+					fi
+				else
+					[ -n "${home_existed-}" ]
+					user_home_existed=y
+					if [ no = `zfs get -H -o value mounted $POOL_NAME/home/$acct` ]; then
+						if [ -n "$alt_mnt" ]; then
+							mount -t zfs $POOL_NAME/home/$acct "$alt_mnt/home/$acct"
+						else
+							zfs mount $POOL_NAME/home/$acct
+						fi
+					fi
+				fi
 			fi
 			chroot "$trgt_path" pw groupadd -n $acct $groupadd_flags
+			
 			if [ -n "$pass" ]; then
-				chroot "$trgt_path" pw useradd -m -n $acct -g $acct -c "$name" $useradd_flags -h 0 <<EOF
+				chroot "$trgt_path" pw useradd ${user_home_fresh:+-m} -n $acct -g $acct -c "$name" $useradd_flags -h 0 <<EOF
 $pass
 EOF
 			else
-				chroot "$trgt_path" pw useradd -m -n $acct -g $acct -c "$name" $useradd_flags
+				chroot "$trgt_path" pw useradd ${user_home_fresh:+-m} -n $acct -g $acct -c "$name" $useradd_flags
 			fi
 			if [ -n "${OPT_INSTALL_ADMIN_KEYS-}" ]; then
 				key_install $acct "$keys"

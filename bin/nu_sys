@@ -60,17 +60,28 @@ maybe_pause
 maybe_yell
 
 
-pool_mnt=`zpool get -H -o value altroot $POOL_NAME`
-[ -n "$pool_mnt" -a x- != "x$pool_mnt" ]
+discover_install_mnt $POOL_NAME
 
 sys_ds=$POOL_NAME/sys
 factories_ds=$sys_ds/factory
 nuos_factory_ds=$sys_ds/factory/nuOS-$NUOS_VER-$TRGT_MACH
-use_factory_ds=$nuos_factory_ds/`zfs get -H -p -o value org.nuos:active_revision $nuos_factory_ds`
+use_factory_ds=$nuos_factory_ds/`zfs get -H -o value org.nuos:active_revision $nuos_factory_ds`
 
 host_ds=$sys_ds/$NEW_HOST
 
-zfs create -p -o mountpoint=none -o canmount=off $host_ds
+if ! zfs create -o mountpoint=none -o canmount=off $host_ds; then
+	host_existed=y
+	existing_host_ds=$host_ds/`zfs get -H -o value org.nuos:active_revision $host_ds`
+	if [ -z "$alt_mnt" ] && [ yes = `zfs get -H -o value mounted $existing_host_ds` ]; then
+		existing_host_mp="`zfs get -H -o value mountpoint $existing_host_ds`"
+		if [ "$existing_host_mp" = "$pool_mnt" ]; then
+			zfs set canmount=noauto $existing_host_ds
+			awk_pattern="$(echo "$pool_mnt/" | sed -e 's,/,\\/,g;s/\./\\\./g')"
+			mount | awk "\$3 ~ /^$awk_pattern/ {print \$3}" | tail -r | xargs -n1 umount
+			zfs unmount $existing_host_ds
+		fi
+	fi
+fi
 
 new_host_rev=0
 while
@@ -102,36 +113,44 @@ sys/$NEW_HOST/(org.nuos:active_revision)/etc
 sys/$NEW_HOST/(org.nuos:active_revision)/var
 EOF
 
-zfs set org.nuos:active_revision=v$new_host_rev $host_ds
-
 export NEW_HOST
 # sister nu_jail ${OPT_VERBOSE:+-v} -C $pool_mnt -p $POOL_NAME -t clone -w -j base-lab -o $BASEOS_TYPE/$BASEOS_VER/$TRGT_MACH -s pkg_ready -i 127.0.0.2 -a '' -u '' -b '' -q
 # sister nu_jail ${OPT_VERBOSE:+-v} -C $pool_mnt -p $POOL_NAME -t clone -w -j nuos-lab -s blank -i 127.0.0.3 -a '' -u '' -b '' -q
 # sister nu_jail ${OPT_VERBOSE:+-v} -C $pool_mnt -p $POOL_NAME -t clone -w -j lab -i 127.0.0.4 -a '' -u '' -b '' -q
 
-eval `stat -f "mode=%OMp%03OLp uid=%Du gid=%Dg flags=%Of" $pool_mnt/var/db/entropy`
+[ -n "$alt_mnt" ] || eval `stat -f "mode=%OMp%03OLp uid=%Du gid=%Dg flags=%Of" $pool_mnt/var/db/entropy`
 chflags schg $pool_mnt/var/db/entropy
-while ! zfs create -o mountpoint=/var/db/entropy -o logbias=throughput -o sync=disabled $POOL_NAME/entropy 2> /dev/null; do
-	zfs destroy $POOL_NAME/entropy
-done
-chown $uid:$gid $pool_mnt/var/db/entropy
-chmod $mode $pool_mnt/var/db/entropy
-(umask 77 && dd if=/dev/random of=$pool_mnt/var/db/entropy/seed count=1 bs=4k)
-chown $uid:$gid $pool_mnt/var/db/entropy/seed
-chflags $flags $pool_mnt/var/db/entropy
-zfs unmount $POOL_NAME/entropy
+if [ -z "$alt_mnt" ]; then
+	while ! zfs create -o mountpoint=/var/db/entropy -o logbias=throughput -o sync=disabled $POOL_NAME/entropy 2> /dev/null; do
+		zfs destroy $POOL_NAME/entropy
+	done
+	chown $uid:$gid $pool_mnt/var/db/entropy
+	chmod $mode $pool_mnt/var/db/entropy
+	(umask 77 && dd if=/dev/random of=$pool_mnt/var/db/entropy/seed count=1 bs=4k)
+	chown $uid:$gid $pool_mnt/var/db/entropy/seed
+	chflags $flags $pool_mnt/var/db/entropy
+fi
 
+zfs set org.nuos:active_revision=v$new_host_rev $host_ds
 zpool set bootfs=$new_host_ds $POOL_NAME
 zfs snapshot -r $new_host_ds@boot_single_user
 
-zfs create -o mountpoint=/home $POOL_NAME/home || home_existed=y
+if ! zfs create -o mountpoint=/home $POOL_NAME/home; then
+	home_existed=y
+	if ! zfs mount $POOL_NAME/home; then
+		if [ -n "$alt_mnt" ]; then
+			mkdir -p "$alt_mnt/home"
+			mount -t nullfs /home "$alt_mnt/home"
+		fi
+	fi
+fi
 
 admin_install -z $pool_mnt
 
 if [ -n "${LOCAL_SCRIPT-}" ]; then
-	POOL=$POOL_NAME
-	TRGT=$pool_mnt
-	NAME=${NEW_HOST%%.*}
+	export POOL=$POOL_NAME
+	export TRGT=$pool_mnt
+	export NAME=${NEW_HOST%%.*}
 	if [ -d "${LOCAL_SCRIPT-}" ]; then
 		script_files=`rcorder "$LOCAL_SCRIPT"/*.sh`
 		for script_file in "$script_files"; do
