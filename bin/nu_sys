@@ -68,6 +68,8 @@ nuos_factory_ds=$sys_ds/factory/nuOS-$NUOS_VER-$TRGT_MACH
 use_factory_ds=$nuos_factory_ds/`zfs get -H -o value org.nuos:active_revision $nuos_factory_ds`
 
 host_ds=$sys_ds/$NEW_HOST
+curr_host_ver=`zfs get -H -o value org.nuos:active_revision $host_ds`
+[ "x$curr_host_ver" != x- ] || curr_host_ver=
 
 if ! zfs create -o mountpoint=none -o canmount=off $host_ds; then
 	host_existed=y
@@ -131,6 +133,10 @@ if [ -z "$alt_mnt" ]; then
 	chflags $flags $pool_mnt/var/db/entropy
 fi
 
+if [ -n "$curr_host_ver" ]; then
+	dismounter -sr $host_ds/$curr_host_ver
+fi
+
 zfs set org.nuos:active_revision=v$new_host_rev $host_ds
 zpool set bootfs=$new_host_ds $POOL_NAME
 zfs snapshot -r $new_host_ds@boot_single_user
@@ -151,6 +157,7 @@ if [ -n "${LOCAL_SCRIPT-}" ]; then
 	export POOL=$POOL_NAME
 	export TRGT=$pool_mnt
 	export NAME=${NEW_HOST%%.*}
+	export NUOS="$(realpath "$(dirname "$(realpath "$0")")/..")"
 	if [ -d "${LOCAL_SCRIPT-}" ]; then
 		script_files=`rcorder "$LOCAL_SCRIPT"/*.sh`
 		for script_file in "$script_files"; do

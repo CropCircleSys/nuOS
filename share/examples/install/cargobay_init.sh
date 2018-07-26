@@ -31,7 +31,7 @@ case $NAME in
 	*) die
 esac
 
-if [ -n "${primary_if-}" ]; then
+if canhas ${primary_if-}; then
 	clear_primary_if_from_conf $TRGT/etc/rc.conf.local
 fi
 
@@ -47,17 +47,16 @@ PasswordAuthentication no\
 AuthenticationMethods publickey,publickey,publickey
 ' $TRGT/usr/local/etc/ssh/sshd_config
 
-sister enable_svc -C $TRGT ntpd
-sister enable_svc -C $TRGT openssh
+sister enable_svc -C $TRGT ntpd openssh
 sister nu_ns_cache -C $TRGT -s
 
 case $NAME in
 	jack)
-		#sister nu_ns_server ${POOL_MNT:+-C $POOL_MNT} -d -k 4096 -z 2048 -i $ip_1 -i $ip_2 -i $ip_3 -i $ip_4 -s $ip_2 -s $ip_3 -s $ip_4
-		sister nu_ns_server ${POOL_MNT:+-C $POOL_MNT} -d -k 4096 -z 2048 -i $ip_1 -i $ip_2 -s $ip_2
+		#sister nu_ns_server -C $TRGT -d -k 4096 -z 2048 -i $ip_1 -i $ip_2 -i $ip_3 -i $ip_4 -s $ip_2 -s $ip_3 -s $ip_4
+		sister nu_ns_server -C $TRGT -d -k 4096 -z 2048 -i $ip_1 -i $ip_2 -s $ip_2
 	;;
 	*)
-		#sister nu_ns_server ${POOL_MNT:+-C $POOL_MNT} -i $ip_1 -i $ip_2 -i $ip_3 -i $ip_4 -m $ip_1
-		sister nu_ns_server ${POOL_MNT:+-C $POOL_MNT} -i $ip_1 -i $ip_2 -m $ip_1
+		#sister nu_ns_server -C $TRGT -i $ip_1 -i $ip_2 -i $ip_3 -i $ip_4 -m $ip_1
+		sister nu_ns_server -C $TRGT -i $ip_1 -i $ip_2 -m $ip_1
 	;;
 esac

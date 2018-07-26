@@ -105,21 +105,30 @@ discover_install_mnt () {
 }
 
 dismounter () {
-	local ds= mp= src= cm= opt_remount= tmp_mp= remount_script=
-	if [ x-r = x$1 ]; then
-		opt_remount=y
-		shift
-		[ -z "$alt_mnt" ] || require_tmp remount_script
+	local ds= mp= src= cm= ro= root= opt_remount= opt_sys= tmp_mp= remount_script=
+	while getopts rs OPT; do case $OPT in
+		r) opt_remount=y;;
+		s) opt_sys=y;;
+	esac; done; shift $(($OPTIND-1))
+	if [ -n "$opt_remount" ]; then
+		[ -z "$alt_mnt" -a -z "$opt_sys" ] || require_tmp remount_script
 	fi
 	zfs list -H -r -o name $1 | tail -r | xargs -n 1 zfs get -H -o name,value,source mountpoint | while read -r ds mp src; do
-		[ -z "$alt_mnt" ] || tmp_mp="$mp"
+		tmp_mp="$mp"
 		mp="${mp%/}"
 		mp="${mp#$pool_mnt}"
-		if [ -z "$mp" ]; then cm=y; else cm=; fi
-		if [ \( local = "$src" -o received = "$src" \) -a -n "$alt_mnt" ]; then : ${mp:=/}; fi
-		[ -n "$opt_remount" -a -z "$alt_mnt" ] || zfs unmount $ds
-		[ -z "$cm" -a -z "$mp" ] || zfs set ${cm:+canmount=noauto} ${mp:+"mountpoint=$mp"} $ds
-		if [ -n "$opt_remount" -a -n "$alt_mnt" ]; then
+		if [ -z "$mp" ]; then root=y; else root=; fi
+		if [ -z "$opt_remount" -a -n "$root" -a -z "$opt_sys" ]; then ro=on; else ro=; fi
+		cm=noauto
+		if [ \( local = "$src" -o received = "$src" \) -a -n "$alt_mnt" ]; then
+			: ${mp:=/}
+			if [ "$mp" = "$tmp_mp" ]; then
+				mp=
+			fi
+		fi
+		[ \( -n "$opt_remount" -a -z "$alt_mnt" \) -o \( -n "$opt_sys" -a -n "$alt_mnt" \) ] || zfs unmount -f $ds || true
+		[ -z "$cm" -a -z "$mp" -a -z "ro" ] || zfs set ${cm:+canmount=$cm} ${ro:+readonly=$ro} ${mp:+"mountpoint=$mp"} $ds
+		if [ -n "$opt_remount" -a -n "$alt_mnt" -a -z "$opt_sys" ]; then
 			echo mount -t zfs $ds "$tmp_mp" >> "$remount_script"
 		fi
 	done
