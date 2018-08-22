@@ -8,7 +8,7 @@ for z in $zones; do
   # These must be defined, but they can be the empty string.
   province='Florida'
   locality='Kissimmee'
-  organization='Crop Circle Systems, Inc.'
+  organization='Crop Circle Systems'
   
   nu_ns_host -h $z
   
