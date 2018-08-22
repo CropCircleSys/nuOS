@@ -68,7 +68,7 @@ nuos_factory_ds=$sys_ds/factory/nuOS-$NUOS_VER-$TRGT_MACH
 use_factory_ds=$nuos_factory_ds/`zfs get -H -o value org.nuos:active_revision $nuos_factory_ds`
 
 host_ds=$sys_ds/$NEW_HOST
-curr_host_ver=`zfs get -H -o value org.nuos:active_revision $host_ds`
+curr_host_ver=`zfs get -H -o value org.nuos:active_revision $host_ds || true`
 [ "x$curr_host_ver" != x- ] || curr_host_ver=
 
 if ! zfs create -o mountpoint=none -o canmount=off $host_ds; then
