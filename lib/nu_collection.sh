@@ -140,6 +140,7 @@ collection_vars_init () {
 		sysutils/ipfs-go
 		lang/go
 		print/gutenprint
+		print/fontforge
 	'
 	
 	COLL_desktop='
