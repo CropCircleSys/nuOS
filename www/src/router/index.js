@@ -1,7 +1,9 @@
 import Vue from 'vue'
 import Router from 'vue-router'
 import Home from '@/components/Home'
-import HelloWorld from '@/components/HelloWorld'
+import Get from '@/components/Get'
+import Conduct from '@/components/Conduct'
+// import HelloWorld from '@/components/HelloWorld'
 import NotFound from '@/components/NotFound'
 
 Vue.use(Router)
@@ -18,10 +20,20 @@ export default new Router({
 			name: 'Home',
 			component: Home
 		},
+		// {
+		// 	path: '/hello',
+		// 	name: 'HelloWorld',
+		// 	component: HelloWorld
+		// },
 		{
-			path: '/hello',
-			name: 'HelloWorld',
-			component: HelloWorld
+			path: '/get',
+			name: 'Get',
+			component: Get
+		},
+		{
+			path: '/coc',
+			name: 'CoC',
+			component: Conduct
 		},
 		{
 			path: '*',

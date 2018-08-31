@@ -16,8 +16,11 @@
 		<div class="log-xrpt">
 			<h1>Happy Independence Day!</h1>
 			<img src="static/svg/flag.3492b1e945b36a28d013fcc2911b9809.svg"/>
-			<h2>A new version of nuOS is coming.</h2>
-			<p><time datetime="2018-07-04">July 4, 2018</time> &mdash; After you sleep off the night&rsquo;s celebration of a great nation born, a new build of nuOS should be available for download. By the time you&rsquo;re barely ready to return to work in the morning, it&rsquo;ll be time to celebrate your technological independence using the most featurefull nuOS ever. Version 0.11.2a1, available now as source, is building as I write this. Right now it&rsquo;s time to go get deplorably inebriated and hazardously detonate some unregulated ordnance like a true &lsquo;Murican.</p>
+			<h2>A new version of nuOS is <del>coming</del> <ins datetime="2018-07-05">here</ins>.</h2>
+			<h4><time datetime="2018-07-04">July 4, 2018</time></h4>
+			<p>After you sleep off the night&rsquo;s celebration of a great nation born, a new build of nuOS <del>should be</del> <ins datetime="2018-07-05">is now</ins> available for download. By the time you&rsquo;re barely ready to return to work in the morning, <del>it&rsquo;ll be</del> <ins datetime="2018-07-05">it <strong>is</strong></ins> time to celebrate your technological independence using the most featurefull nuOS ever. Version 0.11.2a1, available now as source, is building as I write this.</p>
+			<p>For now it&rsquo;s time to go get deplorably inebriated and hazardously detonate some unregulated ordnance like a true &lsquo;Murican.</p>
+			<h5>(updated: <time datetime="2018-07-04">July 5, 2018</time>)</h5>
 		</div>
 	</div>
 </template>
@@ -26,16 +29,20 @@
 export default {
 	name: 'Home',
 	data () {
-		return {
-			msg: 'foo bar baz buz'
-		}
+		return {}
 	}
 }
 </script>
 
 <style scoped>
-time {
+div.log-xrpt time, div.log-xrpt ins {
 	font-style: italic;
+}
+div.log-xrpt del {
+	text-decoration: line-through red double;
+}
+div.log-xrpt ins {
+	text-decoration: underline red solid;
 }
 div.log-xrpt p {
 	text-align: left;
@@ -139,7 +146,7 @@ h1.title {
 	letter-spacing: 0.175em;
 	margin: -0.25em 0 0;
 }
-.shy em, h1.title em {
+.shy em {
 	color: White;
 }
 .shyer {

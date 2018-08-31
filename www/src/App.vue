@@ -7,7 +7,7 @@
 					<li><router-link to="/">home</router-link></li>
 					<li>info</li>
 					<li>log</li>
-					<li>get</li>
+					<li><router-link to="/get">get</router-link></li>
 					<li><a href="https://github.com/CropCircleSys/nuOS/">src</a></li>
 				</ul>
 				<ul class="sm-cap north east">
@@ -134,10 +134,10 @@ header .net {
 header .title strong {
 	color: LightGray;
 }
-header .title em {
+.title em {
 	color: White;
 }
-.title, header {
+.title, header, h1, h2, h3, h4, h5, h6 {
 	font-family: Baskerville, "Times New Roman", serif;
 }
 .title em {
@@ -218,12 +218,13 @@ footer {
 	}
 	nav ul.north {
 		display: inline-block;
+		text-shadow: 0 0 0.25em black, 0 0 0.25em black, 0 0 0.25em black, 0 0 0.25em black, 0 0 0.25em black, 0 0 0.25em black, 0 0 0.25em black, 0 0 0.25em black;
 	}
 	nav ul li {
 		display: inline-block;
 	}
 	.router-view {
-		margin: 8vw 0 0 0;
+		margin: 8vw 0 10vh 0;
 	}
 }
 @media screen and (max-width: 768px) {
@@ -238,7 +239,7 @@ footer {
 		margin: 0;
 	}
 	.router-view {
-		margin: 0 0 0 12.5vw;
+		margin: 0 0 10vh 12.5vw;
 	}
 }
 </style>
