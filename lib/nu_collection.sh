@@ -103,8 +103,8 @@ collection_vars_init () {
 		net-p2p/bitcoin-daemon
 		net-p2p/bitcoin-utils
 		finance/vanitygen
-		net-p2p/namecoin-beta-daemon
-		net-p2p/namecoin-beta-utils
+		net-p2p/namecoin-daemon
+		net-p2p/namecoin-utils
 		net-p2p/litecoin-daemon
 		net-p2p/litecoin-utils
 		net-p2p/monero-cli
@@ -152,7 +152,7 @@ collection_vars_init () {
 		x11/kde5
 		x11/sddm
 		net-p2p/bitcoin
-		net-p2p/namecoin-beta
+		net-p2p/namecoin
 		net-p2p/litecoin
 		net-p2p/bitmessage
 		net/x11vnc
