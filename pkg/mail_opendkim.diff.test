@@ -1,1 +1,1 @@
-[ ! -f files/patch-miltertest_miltertest.c ] && grep -q '\$FreeBSD: head/mail/opendkim/Makefile 473954 2018-07-05 08:37:37Z amdmi3 \$' Makefile
+[ ! -f files/patch-miltertest_miltertest.c ] && grep -q '\$FreeBSD: head/mail/opendkim/Makefile 479406 2018-09-10 13:14:50Z mat \$' Makefile
