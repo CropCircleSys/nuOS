@@ -1,4 +1,4 @@
-zones='cargobay.net nuos.org nuos.net nu.zone nu.software nu.email nu.place nu.chat nu.team nu.show nu.live nu.lol nu.click nu.parts nu.money nu.gold nu.cash cropcircle.systems ccsys.com uhax.tv pawnbase.com unblind.date blindish.date dominatrixbunny.com dominatrixbunnies.com dominatrixbunnys.com daddyoh.life daddyoh.org'
+zones='cargobay.net nuos.org nuos.net nu.zone nu.software nu.email nu.place nu.chat nu.team nu.show nu.live nu.lol nu.click nu.parts nu.money nu.gold nu.cash cropcircle.systems ccsys.com uhax.tv pawnbase.com freer.trade xng.trade xchng.trade unblind.date blindish.date rose.baby dollhouse.cam dominatrixbunny.com dominatrixbunnies.com dominatrixbunnys.com daddyoh.life daddyoh.org'
 
 for z in $zones; do
   
@@ -62,10 +62,18 @@ for z in $zones; do
       department='Hacker News and Entertainment';;
     pawnbase.com)
       department='Lending';;
+    freer.trade)
+      department='Community Goods and Services Marketplace';;
+    xng.trade|xchng.trade)
+      department='Cryptographic Instrument Exchange';;
     blindish.date)
       department='Casual Dating Information Service';;
     unblind.date)
       department='Premier Dating Information Service';;
+    rose.baby)
+      department='Sugar Baby Dating Communication Service';;
+    dollhouse.cam)
+      department='Live Adult Entertainment';;
     dominatrixbunny.com|dominatrixbunnies.com|dominatrixbunnys.com)
       province='Florida'
       locality='Tampa'

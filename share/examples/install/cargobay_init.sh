@@ -35,7 +35,7 @@ if canhas ${primary_if-}; then
 	clear_primary_if_from_conf $TRGT/etc/rc.conf.local
 fi
 
-cat >> $TRGT/etc/rc.conf.local <<EOF
+cat >> "$TRGT"/etc/rc.conf.local <<EOF
 ${primary_if:+ifconfig_${primary_if}_name="net0"
 }ifconfig_net0="inet $my_ip netmask $netmask"
 defaultrouter="$defaultrouter"
@@ -45,10 +45,10 @@ sed -i '' -E -e '/^#VersionAddendum\>/a\
 ChallengeResponseAuthentication no\
 PasswordAuthentication no\
 AuthenticationMethods publickey,publickey,publickey
-' $TRGT/usr/local/etc/ssh/sshd_config
+' "$TRGT"/usr/local/etc/ssh/sshd_config
 
-sister enable_svc -C $TRGT ntpd openssh
-sister nu_ns_cache -C $TRGT -s
+sister enable_svc -C "$TRGT" ntpd openssh
+sister nu_ns_cache -C "$TRGT" -s
 
 case $NAME in
 	jack)
