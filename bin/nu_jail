@@ -16,7 +16,9 @@ set -e; set -u; set -C
 
 NUOS_VER=0.0.11.2a1
 
-while getopts a:b:C:dfh:i:j:o:p:qs:t:u:vw OPT; do case $OPT in
+. "$(dirname "$(realpath "$0")")/../lib/nu_system.sh"
+
+while getopts a:b:C:dfh:i:I:j:o:O:p:qs:S:t:u:vwx OPT; do case $OPT in
 	a) ADMIN_ACCT=$OPTARG;;
 	b) BD_ACCT=$OPTARG;;
 	C) CHROOTDIR=$OPTARG;;
@@ -24,25 +26,31 @@ while getopts a:b:C:dfh:i:j:o:p:qs:t:u:vw OPT; do case $OPT in
 	f) OPT_FORCE_DELETE=y;;
 	h) JAIL_HOST=$OPTARG;;
 	i) JAIL_IP=$OPTARG;;
+	I) push LISTEN_SERVICE $OPTARG;;
 	j) JAIL_NAME=$OPTARG;;
 	o) JAIL_OS=$OPTARG;;
+	O) push CONNECT_SERVICE $OPTARG;;
 	p) POOL_NAME=$OPTARG;;
 	q) OPT_QUICK=y;;
 	s) JAIL_SNAP=$OPTARG;;
+	S) push SERVICE $OPTARG;;
 	t) JAIL_TYPE=$OPTARG;; # jail (default), clone or vnet
 	u) USER_ACCT=$OPTARG;;
 	v) OPT_VERBOSE=y;;
 	w) OPT_RW_SRC=y;;
+	x) ADMIN_ACCT=; BD_ACCT=; USER_ACCT=;;
 esac; done; shift $(($OPTIND-1))
 [ $# = 0 ]
 
-. "$(dirname "$(realpath "$0")")/../lib/nu_system.sh"
 . "$(dirname "$(realpath "$0")")/../lib/nu_common.sh"
 . "$(dirname "$(realpath "$0")")/../lib/nu_admin.sh"
 . "$(dirname "$(realpath "$0")")/../lib/nu_jail.sh"
 . "$(dirname "$(realpath "$0")")/../lib/nu_collection.sh"
 
+baseos_init
 nuos_init
+: ${POOL_NAME:=$POOL_BOOT_NAME}
+
 collection_vars_init
 jail_vars_init
 admin_init
@@ -60,18 +68,48 @@ if [ -n "${OPT_DELETE-}" ]; then
 	fi
 	jail -r $JAIL_NAME || true
 	sed -i '' -e "/^$JAIL_NAME {\$/,/^}\$/d" "${CHROOTDIR-}/etc/jail.conf"
+	sed -i '' -E -e "/^[^#]*[[:<:]]$JAIL_NAME\\.jail[[:>:]]/d" "${CHROOTDIR-}/etc/hosts"
 	zfs list -H -r $JAIL_DATA | cut -w -f 1 | tail -r | xargs -n1 zfs destroy
 	rmdir "${CHROOTDIR-}$JAIL_PATH"
 	exit
 fi
 
+if canhas "${SERVICE-}"; then
+	push LISTEN_SERVICE $SERVICE
+	push CONNECT_SERVICE $SERVICE
+fi
+if canhas "${LISTEN_SERVICE-}" || canhas "${CONNECT_SERVICE-}"; then
+	[ $JAIL_TYPE = jail ]
+	inbound_fw_rule_n=$((`{ echo 200; sed -nEe '/^[[:blank:]]*exec.prestart[[:>:]]/{/"ipfw add 1[[:digit:]][[:digit:]] /{s/^.*(ipfw add 1[[:digit:]][[:digit:]])/\1/;s/ipfw add (1[[:digit:]][[:digit:]]).*$/\1/;p;};}' "${CHROOTDIR-}/etc/jail.conf"; } | sort -n | head -n 1` - 1))
+	[ $inbound_fw_rule_n -le 199 -a $inbound_fw_rule_n -ge 102 ]
+	outbound_fw_rule_n=$((`{ echo 300; sed -nEe '/^[[:blank:]]*exec.prestart[[:>:]]/{/"ipfw add 2[[:digit:]][[:digit:]] /{s/^.*(ipfw add 2[[:digit:]][[:digit:]])/\1/;s/ipfw add (2[[:digit:]][[:digit:]]).*$/\1/;p;};}' "${CHROOTDIR-}/etc/jail.conf"; } | sort -n | head -n 1` - 1))
+	[ $outbound_fw_rule_n -le 299 -a $outbound_fw_rule_n -ge 202 ]
+fi
+
 zfs create -p -o mountpoint=none -o canmount=off $POOL_NAME/jail
 mkdir -p `dirname "${CHROOTDIR-}$JAIL_PATH"`
-zfs clone -o mountpoint=$JAIL_PATH $POOL_NAME/os/$JAIL_OS@$JAIL_SNAP $JAIL_DATA
-zfs clone $POOL_NAME/os/$JAIL_OS/etc@$JAIL_SNAP $JAIL_DATA/etc
-zfs clone -o mountpoint=$JAIL_PATH/usr/local/etc $POOL_NAME/os/$JAIL_OS/etc/local@$JAIL_SNAP $JAIL_DATA/etc/local
-zfs clone $POOL_NAME/os/$JAIL_OS/var@$JAIL_SNAP $JAIL_DATA/var
-zfs clone $POOL_NAME/os/$JAIL_OS/var/db@$JAIL_SNAP $JAIL_DATA/var/db
+
+
+curr_host_ver=`zfs get -H -o value org.nuos:active_revision $POOL_NAME/os/$JAIL_OS || true`
+[ "x$curr_host_ver" != x- ]
+
+zfs list -H -r -t filesystem -o name,mountpoint $POOL_NAME/os/$JAIL_OS/$curr_host_ver | while read -r ds mp; do
+	if [ $POOL_NAME/os/$JAIL_OS/$curr_host_ver$mp = $ds ]; then
+		jmp=
+	else
+		if [ / = "$mp" ]; then
+			jmp=$JAIL_PATH
+		else
+			jmp=$JAIL_PATH$mp
+		fi
+	fi
+	pat=$POOL_NAME/os/$JAIL_OS/$curr_host_ver/
+	if [ "$POOL_NAME/os/$JAIL_OS/$curr_host_ver" = "$ds" ]; then
+		ds=
+	fi
+	zfs clone ${jmp:+-o mountpoint=$jmp} $POOL_NAME/os/$JAIL_OS/$curr_host_ver${ds:+/${ds#$pat}}@$JAIL_SNAP $JAIL_DATA${ds:+/${ds#$pat}}
+done
+
 
 cat >> "${CHROOTDIR-}/$JAIL_PATH/etc/rc.conf.local" <<EOF
 hostname="$JAIL_HOST"
@@ -101,17 +139,19 @@ EOF
 		rm "$tempfile"
 		;;
 	vnet)
+		rip=${JAIL_IP%.*}.$((${JAIL_IP##*.} - 1))
+		next_epair=$((`{ echo -1; sed -nEe '/^[[:blank:]]*exec.prestart[[:>:]]/{/"ifconfig epair[[:digit:]]+ create"/{s/^.*(epair[[:digit:]]+)/\1/;s/epair([[:digit:]]+).*$/\1/;p;};}' "${CHROOTDIR-}/etc/jail.conf"; } | sort -n | tail -n 1` + 1))
 		cat >> "${CHROOTDIR-}/etc/jail.conf" <<EOF
 	noip_hostname;
 	vnet = "new";
-	vnet.interface = "epair0b";
-	exec.prestart += "ifconfig epair0 create";
-	exec.prestart += "ifconfig epair0a 172.16.0.0 netmask 0xfffffffe";
+	vnet.interface = "epair${next_epair}b";
+	exec.prestart += "ifconfig epair${next_epair} create";
+	exec.prestart += "ifconfig epair${next_epair}a $rip netmask 0xfffffffe";
 	exec.start = "ifconfig lo0 127.0.0.1 netmask 0xff000000";
-	exec.start += "ifconfig epair0b 172.16.0.1 netmask 0xfffffffe";
-	exec.start += "route add default 172.16.0.0";
+	exec.start += "ifconfig epair${next_epair}b $JAIL_IP netmask 0xfffffffe";
+	exec.start += "route add default $rip";
 	exec.start += "/bin/sh /etc/rc";
-	exec.poststop += "ifconfig epair0a destroy";
+	exec.poststop += "ifconfig epair${next_epair}a destroy";
 EOF
 		;;
 esac
@@ -130,6 +170,35 @@ if [ -n "${OPT_RW_SRC-}" ]; then
 	exec.poststop += "umount \$path/var/db/portsnap";
 	exec.poststop += "umount \$path/usr/src";
 	exec.poststop += "umount \$path/usr/obj";
+EOF
+fi
+
+if canhas "${LISTEN_SERVICE-}"; then
+	if [ "${LISTEN_SERVICE-}" = '*' ]; then
+		tgt=$JAIL_NAME.jail
+	else
+		tgt="$JAIL_NAME.jail `echo $LISTEN_SERVICE | tr '[:blank:]' ,`"
+	fi
+	cat >> "${CHROOTDIR-}/etc/jail.conf" <<EOF
+	exec.prestart += "ipfw add $inbound_fw_rule_n allow ip from any to $tgt via \$interface";
+	exec.poststop += "ipfw delete $inbound_fw_rule_n";
+	exec.prestart += "ipfw add $outbound_fw_rule_n allow ip from $tgt to any via \$interface";
+	exec.poststop += "ipfw delete $outbound_fw_rule_n";
+EOF
+	inbound_fw_rule_n=$(($inbound_fw_rule_n - 1))
+	outbound_fw_rule_n=$(($outbound_fw_rule_n - 1))
+fi
+if canhas "${CONNECT_SERVICE-}"; then
+	if [ "${CONNECT_SERVICE-}" = '*' ]; then
+		tgt=any
+	else
+		tgt="any `echo $CONNECT_SERVICE | tr '[:blank:]' ,`"
+	fi
+	cat >> "${CHROOTDIR-}/etc/jail.conf" <<EOF
+	exec.prestart += "ipfw add $inbound_fw_rule_n allow ip from $tgt to $JAIL_NAME.jail";
+	exec.poststop += "ipfw delete $inbound_fw_rule_n";
+	exec.prestart += "ipfw add $outbound_fw_rule_n allow ip from $JAIL_NAME.jail to $tgt";
+	exec.poststop += "ipfw delete $outbound_fw_rule_n";
 EOF
 fi
 

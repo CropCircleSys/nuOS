@@ -1,0 +1,17 @@
+--- /dev/null	2018-11-04 10:55:00.000000000 +0000
++++ files/namecoin-qt.desktop	2018-11-03 22:40:31.052066000 +0000
+@@ -0,0 +1,14 @@
++[Desktop Entry]
++Version=1.0
++Name=Namecoin Core
++Comment=Connect to the Namecoin P2P Network
++Comment[de]=Verbinde mit dem Namecoin peer-to-peer Netzwerk
++Comment[fr]=Namecoin, monnaie virtuelle cryptographique pair à pair
++Comment[tr]=Namecoin, eşten eşe kriptografik sanal para birimi
++Exec=namecoin-qt %u
++Terminal=false
++Type=Application
++Icon=namecoin128
++MimeType=x-scheme-handler/namecoin;
++Categories=Office;Finance;
++StartupWMClass=Namecoin-qt

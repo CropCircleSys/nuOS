@@ -1,9 +1,0 @@
---- /usr/ports/devel/py-gobject3/Makefile	(revision 475015)
-+++ /usr/ports/devel/py-gobject3/Makefile	(working copy)
-@@ -13,5 +13,6 @@
- py34_PLIST=	${.CURDIR}/pkg-plist-py3
- py35_PLIST=	${.CURDIR}/pkg-plist-py3
- py36_PLIST=	${.CURDIR}/pkg-plist-py3
-+py37_PLIST=	${.CURDIR}/pkg-plist-py3
- 
- .include "${MASTERDIR}/Makefile"

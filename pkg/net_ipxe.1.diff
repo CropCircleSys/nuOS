@@ -1,6 +1,6 @@
 --- ../ipxe.orig/Makefile	2018-06-09 21:29:27.297241000 +0000
 +++ Makefile	2018-06-10 10:48:40.421276000 +0000
-@@ -55,12 +55,15 @@
+@@ -56,12 +56,15 @@
  _IPXE_BUILDCFG=	branding:PRODUCT_NAME="${PKGNAME} (${OPSYS} ${OSREL}/${ARCH})" \
  		console:CONSOLE_SERIAL \
  		console:KEYBOARD_MAP=us \

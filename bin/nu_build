@@ -178,6 +178,8 @@ firewall_enable="YES"
 firewall_type="open"
 firewall_nat_flags="same_ports reset"
 firewall_nat_interface="net0"
+cloned_interfaces="lo1"
+ifconfig_lo1="inet 127.1.0.0 netmask 0xffff0000"
 devfs_load_rulesets="YES"
 sendmail_submit_enable="NO"
 sendmail_outbound_enable="NO"
@@ -314,7 +316,7 @@ UseDNS no
 EOF
 	
 	cat > $pool_mnt/etc/jail.conf <<'EOF'
-$tmpfs_args = "-o size=1073741824";
+$tmpfs_args = "-o size=3221225472";
 path = "/var/jail/$name";
 host.hostname = "$name.jail";
 devfs_ruleset = 4;
@@ -330,7 +332,7 @@ exec.poststop += "umount $path/tmp";
 exec.poststop += "umount $path/dev/fd";
 exec.poststop += "umount $path/dev";
 enforce_statfs = 1;
-interface = "lo0";
+interface = "lo1";
 ip_hostname;
 allow.chflags;
 allow.quotas;

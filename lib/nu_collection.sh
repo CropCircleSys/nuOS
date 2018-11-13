@@ -42,7 +42,10 @@ collection_vars_init () {
 	
 	COLL_blank=
 	
-	COLL_pkg=ports-mgmt/pkg
+	COLL_pkg='
+		blank
+		ports-mgmt/pkg
+	'
 	
 	COLL_bare='
 		pkg

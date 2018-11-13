@@ -1,1 +1,1 @@
-[ ! -f files/patch-Modules__uuidmodule.c ] && grep -q '\$FreeBSD: head/lang/python37/Makefile 478157 2018-08-26 18:42:37Z sunpoet \$' Makefile
+[ ! -f files/patch-Modules__uuidmodule.c ] && grep -q '\$FreeBSD: head/lang/python37/Makefile 483807 2018-11-02 13:32:34Z rene \$' Makefile
