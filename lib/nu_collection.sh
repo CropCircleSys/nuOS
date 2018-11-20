@@ -52,7 +52,7 @@ collection_vars_init () {
 		net/ipxe
 		net/isboot-kmod
 		sysutils/pefs-kmod
-		security/openssh-portable
+		security/openssh-portable@hpn
 		security/wpa_supplicant
 		net/hostapd
 		net/dhcpcd
