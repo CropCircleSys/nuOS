@@ -1,1 +1,0 @@
-grep -q PORTVERSION=.0\\.16\\.2 Makefile
