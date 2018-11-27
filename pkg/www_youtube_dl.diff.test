@@ -1,1 +1,0 @@
-grep -q '(youtube-dl-2018\.09\.10\.tar\.gz)' distinfo && grep -q '\$FreeBSD: head/www/youtube_dl/Makefile 484273 2018-11-06 01:50:26Z jbeich \$' Makefile
