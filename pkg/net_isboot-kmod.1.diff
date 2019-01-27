@@ -9,7 +9,7 @@
  CATEGORIES=	net
  MASTER_SITES=	http://www.peach.ne.jp/archives/isboot/
  DISTNAME=	isboot-${PORTVERSION}
-@@ -23,9 +23,10 @@
+@@ -22,9 +22,10 @@
  PLIST_FILES=	${KMODDIR}/isboot.ko
  PORTDOCS=	README
  

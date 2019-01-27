@@ -58,8 +58,8 @@ admin_init
 maybe_pause
 maybe_yell
 
-if [ -n "${OPT_DELETE-}" ]; then
-	if [ -z "${OPT_FORCE_DELETE-}" ]; then
+if srsly "${OPT_DELETE-}"; then
+	if ! srsly "${OPT_FORCE_DELETE-}"; then
 		read -p "Are you sure you want to delete the jail '$JAIL_NAME' from configuration and all associated data from '$JAIL_DATA'? Type 'absolutely' to confirm: " confirm
 		if [ "$confirm" != absolutely ]; then
 			echo Action canceled.
@@ -94,6 +94,9 @@ curr_host_ver=`zfs get -H -o value org.nuos:active_revision $POOL_NAME/os/$JAIL_
 [ "x$curr_host_ver" != x- ]
 
 zfs list -H -r -t filesystem -o name,mountpoint $POOL_NAME/os/$JAIL_OS/$curr_host_ver | while read -r ds mp; do
+	if canhas "${CHROOTDIR-}"; then
+		mp=${mp#${CHROOTDIR-}}
+	fi
 	if [ $POOL_NAME/os/$JAIL_OS/$curr_host_ver$mp = $ds ]; then
 		jmp=
 	else
@@ -106,6 +109,7 @@ zfs list -H -r -t filesystem -o name,mountpoint $POOL_NAME/os/$JAIL_OS/$curr_hos
 	pat=$POOL_NAME/os/$JAIL_OS/$curr_host_ver/
 	if [ "$POOL_NAME/os/$JAIL_OS/$curr_host_ver" = "$ds" ]; then
 		ds=
+		jmp=$JAIL_PATH
 	fi
 	zfs clone ${jmp:+-o mountpoint=$jmp} $POOL_NAME/os/$JAIL_OS/$curr_host_ver${ds:+/${ds#$pat}}@$JAIL_SNAP $JAIL_DATA${ds:+/${ds#$pat}}
 done
@@ -156,7 +160,7 @@ EOF
 		;;
 esac
 
-if [ -n "${OPT_RW_SRC-}" ]; then
+if srsly "${OPT_RW_SRC-}"; then
 		cat >> "${CHROOTDIR-}/etc/jail.conf" <<EOF
 	exec.prestart += "mkdir -p \$path/usr/ports && mount -t nullfs /usr/ports \$path/usr/ports";
 	exec.prestart += "mount -t nullfs /usr/ports/distfiles \$path/usr/ports/distfiles";

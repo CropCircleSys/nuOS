@@ -150,7 +150,9 @@ collection_vars_init () {
 		server
 		editors/libreoffice
 		graphics/gimp
+		graphics/krita
 		graphics/inkscape
+		print/scribus-devel
 		x11/xorg
 		x11/kde5
 		x11/sddm
@@ -165,9 +167,9 @@ collection_vars_init () {
 		mail/thunderbird
 		multimedia/vlc
 		net-im/jitsi
-		graphics/appleseed
-		graphics/luxrender
+		cad/freecad
 		graphics/blender
+		graphics/luxrender
 		games/sdlpop
 	'
 }

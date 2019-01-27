@@ -1,1 +1,1 @@
-[ ! -f files/patch-iscsi.c ] && grep -q '\$FreeBSD: head/net/isboot-kmod/Makefile 458739 2018-01-11 14:18:01Z danfe \$' Makefile
+[ ! -f files/patch-iscsi.c ] && grep -q '\$FreeBSD: head/net/isboot-kmod/Makefile 487243 2018-12-11 17:03:52Z linimon \$' Makefile
