@@ -18,7 +18,7 @@ NUOS_VER=0.0.11.2a1
 
 . "$(dirname "$(realpath "$0")")/../lib/nu_system.sh"
 
-while getopts a:b:C:dfh:i:I:j:o:O:p:qs:S:t:u:vwx OPT; do case $OPT in
+while getopts a:b:C:dfh:i:I:j:o:O:p:Pqs:S:t:u:vwx OPT; do case $OPT in
 	a) ADMIN_ACCT=$OPTARG;;
 	b) BD_ACCT=$OPTARG;;
 	C) CHROOTDIR=$OPTARG;;
@@ -31,6 +31,7 @@ while getopts a:b:C:dfh:i:I:j:o:O:p:qs:S:t:u:vwx OPT; do case $OPT in
 	o) JAIL_OS=$OPTARG;;
 	O) push CONNECT_SERVICE $OPTARG;;
 	p) POOL_NAME=$OPTARG;;
+	P) OPT_PUBLIC_LISTEN_SERVICE=y;;
 	q) OPT_QUICK=y;;
 	s) JAIL_SNAP=$OPTARG;;
 	S) push SERVICE $OPTARG;;
@@ -80,10 +81,8 @@ if canhas "${SERVICE-}"; then
 fi
 if canhas "${LISTEN_SERVICE-}" || canhas "${CONNECT_SERVICE-}"; then
 	[ $JAIL_TYPE = jail ]
-	inbound_fw_rule_n=$((`{ echo 200; sed -nEe '/^[[:blank:]]*exec.prestart[[:>:]]/{/"ipfw add 1[[:digit:]][[:digit:]] /{s/^.*(ipfw add 1[[:digit:]][[:digit:]])/\1/;s/ipfw add (1[[:digit:]][[:digit:]]).*$/\1/;p;};}' "${CHROOTDIR-}/etc/jail.conf"; } | sort -n | head -n 1` - 1))
-	[ $inbound_fw_rule_n -le 199 -a $inbound_fw_rule_n -ge 102 ]
-	outbound_fw_rule_n=$((`{ echo 300; sed -nEe '/^[[:blank:]]*exec.prestart[[:>:]]/{/"ipfw add 2[[:digit:]][[:digit:]] /{s/^.*(ipfw add 2[[:digit:]][[:digit:]])/\1/;s/ipfw add (2[[:digit:]][[:digit:]]).*$/\1/;p;};}' "${CHROOTDIR-}/etc/jail.conf"; } | sort -n | head -n 1` - 1))
-	[ $outbound_fw_rule_n -le 299 -a $outbound_fw_rule_n -ge 202 ]
+	fw_rule_n=$((`{ echo 200; sed -nEe '/^[[:blank:]]*exec.prestart[[:>:]]/{/"ipfw add 1[[:digit:]][[:digit:]] /{s/^.*(ipfw add 1[[:digit:]][[:digit:]])/\1/;s/ipfw add (1[[:digit:]][[:digit:]]).*$/\1/;p;};}' "${CHROOTDIR-}/etc/jail.conf"; } | sort -n | head -n 1` - 1))
+	[ $fw_rule_n -le 199 -a $fw_rule_n -ge 101 ]
 fi
 
 zfs create -p -o mountpoint=none -o canmount=off $POOL_NAME/jail
@@ -178,31 +177,27 @@ EOF
 fi
 
 if canhas "${LISTEN_SERVICE-}"; then
-	if [ "${LISTEN_SERVICE-}" = '*' ]; then
-		tgt=$JAIL_NAME.jail
-	else
-		tgt="$JAIL_NAME.jail `echo $LISTEN_SERVICE | tr '[:blank:]' ,`"
+	if [ "${LISTEN_SERVICE-}" != '*' ]; then
+		listen_list=`echo $LISTEN_SERVICE | tr '[:blank:]' ,`
 	fi
 	cat >> "${CHROOTDIR-}/etc/jail.conf" <<EOF
-	exec.prestart += "ipfw add $inbound_fw_rule_n allow ip from any to $tgt via \$interface";
-	exec.poststop += "ipfw delete $inbound_fw_rule_n";
-	exec.prestart += "ipfw add $outbound_fw_rule_n allow ip from $tgt to any via \$interface";
-	exec.poststop += "ipfw delete $outbound_fw_rule_n";
+${OPT_PUBLIC_LISTEN_SERVICE:+	exec.prestart += "ipfw add $fw_rule_n fwd $JAIL_NAME.jail ip from any to me${listen_list:+ $listen_list}";
+}	exec.prestart += "ipfw add $fw_rule_n allow ip from any to $JAIL_NAME.jail${listen_list:+ $listen_list} via \$interface";
+	exec.prestart += "ipfw add $fw_rule_n allow ip from $JAIL_NAME.jail${listen_list:+ $listen_list} to any via \$interface";
 EOF
-	inbound_fw_rule_n=$(($inbound_fw_rule_n - 1))
-	outbound_fw_rule_n=$(($outbound_fw_rule_n - 1))
 fi
 if canhas "${CONNECT_SERVICE-}"; then
-	if [ "${CONNECT_SERVICE-}" = '*' ]; then
-		tgt=any
-	else
-		tgt="any `echo $CONNECT_SERVICE | tr '[:blank:]' ,`"
+	if [ "${CONNECT_SERVICE-}" != '*' ]; then
+		connect_list=`echo $CONNECT_SERVICE | tr '[:blank:]' ,`
 	fi
 	cat >> "${CHROOTDIR-}/etc/jail.conf" <<EOF
-	exec.prestart += "ipfw add $inbound_fw_rule_n allow ip from $tgt to $JAIL_NAME.jail";
-	exec.poststop += "ipfw delete $inbound_fw_rule_n";
-	exec.prestart += "ipfw add $outbound_fw_rule_n allow ip from $JAIL_NAME.jail to $tgt";
-	exec.poststop += "ipfw delete $outbound_fw_rule_n";
+	exec.prestart += "ipfw add $fw_rule_n allow ip from any${connect_list:+ $connect_list} to $JAIL_NAME.jail";
+	exec.prestart += "ipfw add $fw_rule_n allow ip from $JAIL_NAME.jail to any${connect_list:+ $connect_list}";
+EOF
+fi
+if canhas "${LISTEN_SERVICE-}${CONNECT_SERVICE-}"; then
+	cat >> "${CHROOTDIR-}/etc/jail.conf" <<EOF
+	exec.poststop += "ipfw delete $fw_rule_n";
 EOF
 fi
 
