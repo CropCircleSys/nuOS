@@ -81,7 +81,7 @@ if canhas "${SERVICE-}"; then
 fi
 if canhas "${LISTEN_SERVICE-}" || canhas "${CONNECT_SERVICE-}"; then
 	[ $JAIL_TYPE = jail ]
-	fw_rule_n=$((`{ echo 200; sed -nEe '/^[[:blank:]]*exec.prestart[[:>:]]/{/"ipfw add 1[[:digit:]][[:digit:]] /{s/^.*(ipfw add 1[[:digit:]][[:digit:]])/\1/;s/ipfw add (1[[:digit:]][[:digit:]]).*$/\1/;p;};}' "${CHROOTDIR-}/etc/jail.conf"; } | sort -n | head -n 1` - 1))
+	fw_rule_n=$((`{ echo 200; sed -nEe '/^[[:blank:]]*exec.poststart[[:>:]]/{/"ipfw add 1[[:digit:]][[:digit:]] /{s/^.*(ipfw add 1[[:digit:]][[:digit:]])/\1/;s/ipfw add (1[[:digit:]][[:digit:]]).*$/\1/;p;};}' "${CHROOTDIR-}/etc/jail.conf"; } | sort -n | head -n 1` - 1))
 	[ $fw_rule_n -le 199 -a $fw_rule_n -ge 101 ]
 fi
 
@@ -178,26 +178,32 @@ fi
 
 if canhas "${LISTEN_SERVICE-}"; then
 	if [ "${LISTEN_SERVICE-}" != '*' ]; then
-		listen_list=`echo $LISTEN_SERVICE | tr '[:blank:]' ,`
+		listen_list=`echo $LISTEN_SERVICE | sed -e 's/ /, /g'`
+	fi
+	if srsly "${OPT_PUBLIC_LISTEN_SERVICE-}"; then
+		: ${PUBLIC_INTERFACE:=net0}
+		nat_conf=`for port in $LISTEN_SERVICE; do for proto in tcp udp; do echo redirect_port $proto $JAIL_NAME.jail:$port $port; done; done | xargs`
 	fi
 	cat >> "${CHROOTDIR-}/etc/jail.conf" <<EOF
-${OPT_PUBLIC_LISTEN_SERVICE:+	exec.prestart += "ipfw add $fw_rule_n fwd $JAIL_NAME.jail ip from any to me${listen_list:+ $listen_list}";
-}	exec.prestart += "ipfw add $fw_rule_n allow ip from any to $JAIL_NAME.jail${listen_list:+ $listen_list} via \$interface";
-	exec.prestart += "ipfw add $fw_rule_n allow ip from $JAIL_NAME.jail${listen_list:+ $listen_list} to any via \$interface";
+${OPT_PUBLIC_LISTEN_SERVICE:+	exec.poststart += "ipfw add $fw_rule_n fwd $JAIL_NAME.jail ip from any to me${listen_list:+ $listen_list} via $PUBLIC_INTERFACE";
+	exec.poststart += "\`ipfw nat show config\` $nat_conf";
+}	exec.poststart += "ipfw add $fw_rule_n allow ip from any to $JAIL_NAME.jail${listen_list:+ $listen_list} via \$interface";
+	exec.poststart += "ipfw add $fw_rule_n allow ip from $JAIL_NAME.jail${listen_list:+ $listen_list} to any via \$interface";
 EOF
 fi
 if canhas "${CONNECT_SERVICE-}"; then
 	if [ "${CONNECT_SERVICE-}" != '*' ]; then
-		connect_list=`echo $CONNECT_SERVICE | tr '[:blank:]' ,`
+		connect_list=`echo $CONNECT_SERVICE | sed -e 's/ /, /g'`
 	fi
 	cat >> "${CHROOTDIR-}/etc/jail.conf" <<EOF
-	exec.prestart += "ipfw add $fw_rule_n allow ip from any${connect_list:+ $connect_list} to $JAIL_NAME.jail";
-	exec.prestart += "ipfw add $fw_rule_n allow ip from $JAIL_NAME.jail to any${connect_list:+ $connect_list}";
+	exec.poststart += "ipfw add $fw_rule_n allow ip from any${connect_list:+ $connect_list} to $JAIL_NAME.jail";
+	exec.poststart += "ipfw add $fw_rule_n allow ip from $JAIL_NAME.jail to any${connect_list:+ $connect_list}";
 EOF
 fi
 if canhas "${LISTEN_SERVICE-}${CONNECT_SERVICE-}"; then
 	cat >> "${CHROOTDIR-}/etc/jail.conf" <<EOF
-	exec.poststop += "ipfw delete $fw_rule_n";
+${OPT_PUBLIC_LISTEN_SERVICE:+	exec.prestop += "\`ipfw nat show config | sed -E -e \"s/ redirect_port ..p \$(getent hosts $JAIL_NAME.jail | cut -w -f 1):[[:digit:]]+ [[:digit:]]+//g\"\`";
+}	exec.prestop += "ipfw delete $fw_rule_n";
 EOF
 fi
 
