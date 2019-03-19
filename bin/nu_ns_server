@@ -139,14 +139,25 @@ case $SOFTWARE in
 			/^log:/,/^$/p' "$ETC/knot.conf.sample" >| "$ETC/knot$sufx.conf"
 		
 		if [ -n "${MASTERS-}${SLAVES-}" ]; then
+			for h in ${MASTERS-}${SLAVES-}; do
+				if echo $h | grep -q -E '[^[:digit:]\.]'; then
+					h=`${CHROOTDIR:+chroot "$CHROOTDIR"} getent hosts $h | cut -w -f 1`
+					canhas $h
+				fi
+				push partner_ips $h
+				incr num_partners 1
+			done
+			if [ $num_partners -gt 1 ]; then
+				partner_ips=`echo $partner_ips | sed -e 's/ /, /g;s/^/[/;s/$/]/;'`
+			fi
 			cat >> "$ETC/knot$sufx.conf" <<EOF
 remote:
   - id: $other_mode
-    address: ${MASTERS-}${SLAVES-}
+    address: $partner_ips
 
 acl:
   - id: acl_$other_mode
-    address: ${MASTERS-}${SLAVES-}
+    address: $partner_ips
     action: $action
 
 EOF

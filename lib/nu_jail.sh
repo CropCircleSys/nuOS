@@ -22,6 +22,7 @@ nuos_lib_jail_loaded=y
 
 jail_vars_init () {
 	echo 'creating jail   -j JAIL_NAME      ' ${JAIL_NAME:=clink}
+	JAIL_NAME_=`echo $JAIL_NAME | tr . _`
 	echo 'jail type       -t JAIL_TYPE      ' ${JAIL_TYPE:=jail}
 	echo 'jail opsys      -o JAIL_OS        ' ${JAIL_OS:=$HOSTOS_TYPE/$HOSTOS_VER/$HOSTOS_MACH}
 	echo 'pool name       -p POOL_NAME      ' ${POOL_NAME:=$POOL_BOOT_NAME}

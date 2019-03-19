@@ -18,8 +18,9 @@ NUOS_VER=0.0.11.2a1
 
 . "$(dirname "$(realpath "$0")")/../lib/nu_system.sh"
 
-while getopts a:b:C:dfh:i:I:j:o:O:p:Pqs:S:t:u:vwx OPT; do case $OPT in
+while getopts a:Ab:C:dfh:i:I:j:o:O:p:Pqs:S:t:u:vwx OPT; do case $OPT in
 	a) ADMIN_ACCT=$OPTARG;;
+	A) OPT_PUBLIC_ALIAS=y;;
 	b) BD_ACCT=$OPTARG;;
 	C) CHROOTDIR=$OPTARG;;
 	d) OPT_DELETE=y;;
@@ -35,7 +36,7 @@ while getopts a:b:C:dfh:i:I:j:o:O:p:Pqs:S:t:u:vwx OPT; do case $OPT in
 	q) OPT_QUICK=y;;
 	s) JAIL_SNAP=$OPTARG;;
 	S) push SERVICE $OPTARG;;
-	t) JAIL_TYPE=$OPTARG;; # jail (default), clone or vnet
+	t) JAIL_TYPE=$OPTARG;; # jail (default), clone, public or vnet
 	u) USER_ACCT=$OPTARG;;
 	v) OPT_VERBOSE=y;;
 	w) OPT_RW_SRC=y;;
@@ -55,9 +56,22 @@ nuos_init
 collection_vars_init
 jail_vars_init
 admin_init
+: ${PUBLIC_INTERFACE:=net0}
 
 maybe_pause
 maybe_yell
+
+jail_dir=`dirname "${CHROOTDIR-}$JAIL_PATH"`
+
+add_our_jail_to_hostfile () {
+	cat >> "$1" <<EOF
+$JAIL_IP		$JAIL_HOST $JAIL_NAME.jail $JAIL_NAME
+EOF
+}
+
+remove_our_jail_from_hostfile () {
+	sed -i '' -E -e "/^[^#]*[[:<:]]$JAIL_NAME\\.jail[[:>:]]/d" "$1"
+}
 
 if srsly "${OPT_DELETE-}"; then
 	if ! srsly "${OPT_FORCE_DELETE-}"; then
@@ -67,9 +81,13 @@ if srsly "${OPT_DELETE-}"; then
 			exit 1
 		fi 
 	fi
-	jail -r $JAIL_NAME || true
-	sed -i '' -e "/^$JAIL_NAME {\$/,/^}\$/d" "${CHROOTDIR-}/etc/jail.conf"
-	sed -i '' -E -e "/^[^#]*[[:<:]]$JAIL_NAME\\.jail[[:>:]]/d" "${CHROOTDIR-}/etc/hosts"
+	jail -r $JAIL_NAME_ || true
+	sed -i '' -e "/^$JAIL_NAME_ {\$/,/^}\$/d" "${CHROOTDIR-}/etc/jail.conf"
+	remove_our_jail_from_hostfile "${CHROOTDIR-}/etc/hosts"
+	for j in `ls "$jail_dir"`; do
+		remove_our_jail_from_hostfile "$jail_dir/$j/etc/hosts" || true
+	done
+
 	zfs list -H -r $JAIL_DATA | cut -w -f 1 | tail -r | xargs -n1 zfs destroy
 	rmdir "${CHROOTDIR-}$JAIL_PATH"
 	exit
@@ -83,10 +101,14 @@ if canhas "${LISTEN_SERVICE-}" || canhas "${CONNECT_SERVICE-}"; then
 	[ $JAIL_TYPE = jail ]
 	fw_rule_n=$((`{ echo 200; sed -nEe '/^[[:blank:]]*exec.poststart[[:>:]]/{/"ipfw add 1[[:digit:]][[:digit:]] /{s/^.*(ipfw add 1[[:digit:]][[:digit:]])/\1/;s/ipfw add (1[[:digit:]][[:digit:]]).*$/\1/;p;};}' "${CHROOTDIR-}/etc/jail.conf"; } | sort -n | head -n 1` - 1))
 	[ $fw_rule_n -le 199 -a $fw_rule_n -ge 101 ]
+	if canhas "${LISTEN_SERVICE-}" && srsly "${OPT_PUBLIC_LISTEN_SERVICE-}"; then
+		fwd_rule_n=$((`{ echo 50; sed -nEe '/^[[:blank:]]*exec.poststart[[:>:]]/{/"ipfw add [1-4]?[[:digit:]] /{s/^.*(ipfw add [1-4]?[[:digit:]])/\1/;s/ipfw add ([1-4]?[[:digit:]]).*$/\1/;p;};}' "${CHROOTDIR-}/etc/jail.conf"; } | sort -n | head -n 1` - 1))
+		[ $fwd_rule_n -le 49 -a $fwd_rule_n -ge 1 ]
+	fi
 fi
 
 zfs create -p -o mountpoint=none -o canmount=off $POOL_NAME/jail
-mkdir -p `dirname "${CHROOTDIR-}$JAIL_PATH"`
+mkdir -p "$jail_dir"
 
 
 curr_host_ver=`zfs get -H -o value org.nuos:active_revision $POOL_NAME/os/$JAIL_OS || true`
@@ -120,15 +142,31 @@ EOF
 
 sed -i '' -e "s/\.my\.domain\$/.`echo $JAIL_HOST | sed -e 's/^[^\.]*\.//'` $JAIL_HOST `echo $JAIL_HOST | sed -e 's/\..*//'`/" "${CHROOTDIR-}$JAIL_PATH/etc/hosts"
 
-cat >> "${CHROOTDIR-}/etc/hosts" <<EOF
-$JAIL_IP		$JAIL_HOST $JAIL_NAME.jail $JAIL_NAME
-EOF
+add_our_jail_to_hostfile "${CHROOTDIR-}/etc/hosts"
+for j in `ls "$jail_dir"`; do
+	if [ $j != $JAIL_NAME ]; then
+		${CHROOTDIR:+chroot "$CHROOTDIR"} getent hosts $j.jail >> "$jail_dir/$JAIL_NAME/etc/hosts"
+	fi
+	add_our_jail_to_hostfile "$jail_dir/$j/etc/hosts"
+done
 
 cat >> "${CHROOTDIR-}/etc/jail.conf" <<EOF
-$JAIL_NAME {
+$JAIL_NAME_ {
 EOF
 
+if [ "$JAIL_NAME" != "$JAIL_NAME_" ]; then
+	cat >> "${CHROOTDIR-}/etc/jail.conf" <<EOF
+	path = "/var/jail/$JAIL_NAME";
+	host.hostname = "$JAIL_NAME.jail";
+EOF
+fi
+
 case $JAIL_TYPE in
+	public)
+		cat >> "${CHROOTDIR-}/etc/jail.conf" <<EOF
+	interface = "$PUBLIC_INTERFACE";
+EOF
+		;;
 	clone)
 		cat >> "${CHROOTDIR-}/etc/jail.conf" <<'EOF'
 	allow.raw_sockets;
@@ -181,11 +219,16 @@ if canhas "${LISTEN_SERVICE-}"; then
 		listen_list=`echo $LISTEN_SERVICE | sed -e 's/ /, /g'`
 	fi
 	if srsly "${OPT_PUBLIC_LISTEN_SERVICE-}"; then
-		: ${PUBLIC_INTERFACE:=net0}
-		nat_conf=`for port in $LISTEN_SERVICE; do for proto in tcp udp; do echo redirect_port $proto $JAIL_NAME.jail:$port $port; done; done | xargs`
+		if srsly "${OPT_PUBLIC_ALIAS-}"; then
+			: ${ALIAS_IP:=$JAIL_IP}
+			me=$ALIAS_IP
+		else
+			me=me
+		fi
+		nat_conf=`for port in $LISTEN_SERVICE; do for proto in tcp udp; do echo redirect_port $proto $JAIL_NAME.jail:$port ${OPT_PUBLIC_ALIAS:+$ALIAS_IP:}$port; done; done | xargs`
 	fi
 	cat >> "${CHROOTDIR-}/etc/jail.conf" <<EOF
-${OPT_PUBLIC_LISTEN_SERVICE:+	exec.poststart += "ipfw add $fw_rule_n fwd $JAIL_NAME.jail ip from any to me${listen_list:+ $listen_list} via $PUBLIC_INTERFACE";
+${OPT_PUBLIC_LISTEN_SERVICE:+	exec.poststart += "ipfw add $fwd_rule_n fwd $JAIL_NAME.jail ip from any to $me${listen_list:+ $listen_list} via $PUBLIC_INTERFACE";
 	exec.poststart += "\`ipfw nat show config\` $nat_conf";
 }	exec.poststart += "ipfw add $fw_rule_n allow ip from any to $JAIL_NAME.jail${listen_list:+ $listen_list} via \$interface";
 	exec.poststart += "ipfw add $fw_rule_n allow ip from $JAIL_NAME.jail${listen_list:+ $listen_list} to any via \$interface";
@@ -202,7 +245,8 @@ EOF
 fi
 if canhas "${LISTEN_SERVICE-}${CONNECT_SERVICE-}"; then
 	cat >> "${CHROOTDIR-}/etc/jail.conf" <<EOF
-${OPT_PUBLIC_LISTEN_SERVICE:+	exec.prestop += "\`ipfw nat show config | sed -E -e \"s/ redirect_port ..p \$(getent hosts $JAIL_NAME.jail | cut -w -f 1):[[:digit:]]+ [[:digit:]]+//g\"\`";
+${OPT_PUBLIC_LISTEN_SERVICE:+	exec.prestop += "\`ipfw nat show config | sed -E -e \"s/ redirect_port [[:graph:]]+ \$(getent hosts $JAIL_NAME.jail | cut -w -f 1):[[:digit:]]+ ${OPT_PUBLIC_ALIAS:+[[:digit:]]+\\.[[:digit:]]+\\.[[:digit:]]+\\.[[:digit:]]+:}[[:digit:]]+//g\"\`";
+	exec.prestop += "ipfw delete $fwd_rule_n";
 }	exec.prestop += "ipfw delete $fw_rule_n";
 EOF
 fi
@@ -218,5 +262,9 @@ EOF
 fi
 
 admin_install "${CHROOTDIR-}$JAIL_PATH"
+
+if [ -f "${CHROOTDIR-}/etc/resolv.conf" ]; then
+	cp -a -v "${CHROOTDIR-}/etc/resolv.conf" "${CHROOTDIR-}$JAIL_PATH/etc/"
+fi
 
 echo "Initialization of $JAIL_HOST running $JAIL_OS is complete."
