@@ -18,7 +18,7 @@ NUOS_VER=0.0.11.2a1
 
 . "$(dirname "$(realpath "$0")")/../lib/nu_system.sh"
 
-while getopts a:Ab:C:dfh:i:I:j:o:O:p:Pqs:S:t:u:vwx OPT; do case $OPT in
+while getopts a:Ab:C:dfh:i:I:j:n:o:O:p:Pqs:S:t:u:vwx OPT; do case $OPT in
 	a) ADMIN_ACCT=$OPTARG;;
 	A) OPT_PUBLIC_ALIAS=y;;
 	b) BD_ACCT=$OPTARG;;
@@ -29,6 +29,7 @@ while getopts a:Ab:C:dfh:i:I:j:o:O:p:Pqs:S:t:u:vwx OPT; do case $OPT in
 	i) JAIL_IP=$OPTARG;;
 	I) push LISTEN_SERVICE $OPTARG;;
 	j) JAIL_NAME=$OPTARG;;
+	n) ALIAS_IP=$OPTARG;;
 	o) JAIL_OS=$OPTARG;;
 	O) push CONNECT_SERVICE $OPTARG;;
 	p) POOL_NAME=$OPTARG;;
