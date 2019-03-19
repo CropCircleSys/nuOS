@@ -1,4 +1,4 @@
-zones='cargobay.net nuos.org nuos.net nu.zone nu.software nu.email nu.place nu.chat nu.team nu.show nu.live nu.lol nu.click nu.parts nu.money nu.gold nu.cash cropcircle.systems ccsys.com uhax.tv pawnbase.com freer.trade xng.trade xchng.trade unblind.date blindish.date rose.baby dollhouse.cam dominatrixbunny.com dominatrixbunnies.com dominatrixbunnys.com daddyoh.life daddyoh.org'
+zones='cargobay.net nuos.org nuos.net nu.zone nu.software nu.email nu.place nu.chat nu.team nu.show nu.live nu.lol nu.click nu.parts nu.money nu.gold nu.cash cropcircle.systems ccsys.com uhax.tv pawnbase.com freer.trade xng.trade xchng.trade unblind.date blindish.date rose.baby dollhouse.cam daddyoh.life daddyoh.org'
 
 for z in $zones; do
   
@@ -53,7 +53,7 @@ for z in $zones; do
     nu.parts)
       department='Construction and Manufacturing';;
     nu.money)
-      department='Financial News and Services';;
+      department='Cryptographic Instrument Issuance and Offering Service';;
     nu.gold)
       department='Cryptographic Assets and Democratic Service';;
     nu.cash)
@@ -61,11 +61,11 @@ for z in $zones; do
     uhax.tv)
       department='Hacker News and Entertainment';;
     pawnbase.com)
-      department='Lending';;
+      department='Collateralized Lending Market Portal';;
     freer.trade)
-      department='Community Goods and Services Marketplace';;
+      department='Community Goods and Services Market Portal';;
     xng.trade|xchng.trade)
-      department='Cryptographic Instrument Exchange';;
+      department='Cryptographic Instrument Market Portal';;
     blindish.date)
       department='Casual Dating Information Service';;
     unblind.date)
@@ -74,11 +74,6 @@ for z in $zones; do
       department='Sugar Baby Dating Communication Service';;
     dollhouse.cam)
       department='Live Adult Entertainment';;
-    dominatrixbunny.com|dominatrixbunnies.com|dominatrixbunnys.com)
-      province='Florida'
-      locality='Tampa'
-      organization="Jenny's Cam, LLC"
-      department='Goddess Worship Products and Entertainment';;
     daddyoh.life|daddyoh.org)
       province='Ohio'
       locality='Toledo'
