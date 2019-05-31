@@ -131,11 +131,17 @@ mnt_dev () {
 }
 
 sister () {
-	local chrootdir=
-	while getopts C: OPT; do case $OPT in
+	local chrootdir= jailname=; unset chrootdir jailname
+	while getopts C:j: OPT; do case $OPT in
 		C) chrootdir=$OPTARG;;
+		j) jailname=$OPTARG;;
 	esac; done; shift $(($OPTIND-1))
 	local bin=$1; shift
+	
+	if [ -n "${jailname-}" ]; then
+		chrootdir="`jls -j $jailname path`"
+		[ -n "$chrootdir" ] || { echo "could not find running jail thusly named." >&2 && return 85; }
+	fi
 	
 	if [ -n "${chrootdir-}" ]; then
 		local nuos_src
@@ -145,7 +151,11 @@ sister () {
 		if mnt_dev "$chrootdir"; then
 			devfs_mounted=y
 		fi
-		chroot "$chrootdir" sh "${nuos_src#"$chrootdir"}/bin/$bin" "$@"
+		if [ -n "${jailname-}" ]; then
+			jexec -l "$jailname" sh "${nuos_src#"$chrootdir"}/bin/$bin" "$@"
+		else
+			chroot "$chrootdir" sh "${nuos_src#"$chrootdir"}/bin/$bin" "$@"
+		fi
 		if [ -n "$devfs_mounted" ]; then
 			umount "$chrootdir/dev"
 		fi

@@ -88,14 +88,21 @@ nuos_sha_fngr () {
 
 ns_master_zone () {
 	local opt_chroot= alternate= chrootdir= zone= host_name=; unset alternate chrootdir
-	while getopts A:cC: OPT; do case $OPT in
+	while getopts A:cC:j: OPT; do case $OPT in
 		A) alternate=$OPTARG;;
 		c) opt_chroot=y;;
 		C) chrootdir=$OPTARG;;
+		j) jailname=$OPTARG;;
 	esac; done; shift $(($OPTIND-1))
 	[ $# -eq 1 ]
 	host_name=$1; shift
 	zone=$host_name
+	
+	if [ -n "${jailname-}" ]; then
+		chrootdir="`jls -j $jailname path`"
+		opt_chroot=y
+		[ -n "$chrootdir" ] || { echo "could not find running jail thusly named." >&2 && return 85; }
+	fi
 	
 	while [ ! -f "${opt_chroot:+${chrootdir-$CHROOTDIR}}/var/db/knot${alternate:+_${alternate}}/$zone.zone" ]; do
 		echo $zone | grep -q '\.' || { echo "could not find zone file (are we the configured master of a parent zone?)" >&2 && return 85; }
