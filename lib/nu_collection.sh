@@ -115,6 +115,7 @@ collection_vars_init () {
 		www/youtube_dl
 		graphics/optipng
 		graphics/gifsicle
+		lang/gawk
 		lang/expect
 		databases/postgresql10-server
 		databases/mysql57-server
