@@ -16,10 +16,11 @@ set -e; set -u; set -C
 
 NUOS_VER=0.0.11.2a1
 
-while getopts C:eh:p:sv OPT; do case $OPT in
+while getopts C:eh:j:p:sv OPT; do case $OPT in
 	C) CHROOTDIR=$OPTARG;;
 	e) OPT_ELECT=y;;
 	h) HOST_NAME=$OPTARG;;
+	j) JAIL_NAME=$OPTARG;;
 	p) POOL_NAME=$OPTARG;;
 	s) OPT_SSL=y;;
 	v) OPT_VERBOSE=y;;
@@ -32,6 +33,14 @@ esac; done; shift $(($OPTIND-1))
 . "$(dirname "$(realpath "$0")")/../lib/nu_common.sh"
 
 nuos_init
+
+if canhas ${JAIL_NAME-}; then
+	JAIL_NAME_=`echo $JAIL_NAME | tr . _`
+	jail_path="`jls -j $JAIL_NAME_ path`"
+	alt_root=$jail_path
+elif canhas "${CHROOTDIR-}"; then
+	alt_root="${CHROOTDIR-}"
+fi
 
 hostname=${NEW_HOST:-$HOST}
 if [ -n "${OPT_ELECT-}" ]; then
@@ -50,16 +59,16 @@ maybe_yell
 
 [ -n "${OPT_ELECT-}" ] || [ "$HOST_NAME" = "$hostname" ]
 
-[ ! -e "${CHROOTDIR-}/usr/local/etc/postfix/virtual" ]
+[ ! -e "${alt_root-}/usr/local/etc/postfix/virtual" ]
 
-touch "${CHROOTDIR-}/usr/local/etc/postfix/virtual" "${CHROOTDIR-}/usr/local/etc/postfix/aliases" "${CHROOTDIR-}/usr/local/etc/postfix/domains" "${CHROOTDIR-}/usr/local/etc/postfix/senders" "${CHROOTDIR-}/usr/local/etc/postfix/transport"
+touch "${alt_root-}/usr/local/etc/postfix/virtual" "${alt_root-}/usr/local/etc/postfix/aliases" "${alt_root-}/usr/local/etc/postfix/domains" "${alt_root-}/usr/local/etc/postfix/senders" "${alt_root-}/usr/local/etc/postfix/transport"
 
-postmap "${CHROOTDIR-}/usr/local/etc/postfix/virtual" "${CHROOTDIR-}/usr/local/etc/postfix/domains" "${CHROOTDIR-}/usr/local/etc/postfix/senders" "${CHROOTDIR-}/usr/local/etc/postfix/transport"
-postalias "${CHROOTDIR-}/usr/local/etc/postfix/aliases"
+postmap "${alt_root-}/usr/local/etc/postfix/virtual" "${alt_root-}/usr/local/etc/postfix/domains" "${alt_root-}/usr/local/etc/postfix/senders" "${alt_root-}/usr/local/etc/postfix/transport"
+postalias "${alt_root-}/usr/local/etc/postfix/aliases"
 
-sed -ne '/^$/,${/^./,$p;}' "${CHROOTDIR-}/usr/local/etc/postfix/bounce.cf.default" > "${CHROOTDIR-}/usr/local/etc/postfix/bounce.cf"
+sed -ne '/^$/,${/^./,$p;}' "${alt_root-}/usr/local/etc/postfix/bounce.cf.default" > "${alt_root-}/usr/local/etc/postfix/bounce.cf"
 
-cat >> "${CHROOTDIR-}/usr/local/etc/postfix/main.cf" <<'EOF'
+cat >> "${alt_root-}/usr/local/etc/postfix/main.cf" <<'EOF'
 
 bounce_queue_lifetime = 0
 bounce_size_limit = 80
@@ -88,21 +97,21 @@ smtp_dns_support_level = dnssec
 EOF
 
 if [ -n "${OPT_SSL-}" ]; then
-	mkdir "${CHROOTDIR-}/usr/local/etc/postfix/ssl"
-	(umask 77 && mkdir "${CHROOTDIR-}/usr/local/etc/postfix/ssl/private")
+	mkdir "${alt_root-}/usr/local/etc/postfix/ssl"
+	(umask 77 && mkdir "${alt_root-}/usr/local/etc/postfix/ssl/private")
 	if zfs list $POOL_NAME-pvt > /dev/null 2>&1; then # this check will need to be refined if ever we support CHROOTDIR
-		chflags schg "${CHROOTDIR-}/usr/local/etc/postfix/ssl/private"
+		chflags schg "${alt_root-}/usr/local/etc/postfix/ssl/private"
 		zfs create -o mountpoint=/usr/local/etc/postfix/ssl/private $POOL_NAME-pvt/sys/host/smtp-ssl
-		chmod go-rx "${CHROOTDIR-}/usr/local/etc/postfix/ssl/private"
+		chmod go-rx "${alt_root-}/usr/local/etc/postfix/ssl/private"
 	fi
-	if ! cp "${CHROOTDIR-}/etc/ssl/certs/$HOST_NAME.crt" "${CHROOTDIR-}/usr/local/etc/postfix/ssl/"; then
-		cp "${CHROOTDIR-}/etc/ssl/certs/$HOST_NAME.internal.crt" "${CHROOTDIR-}/usr/local/etc/postfix/ssl/$HOST_NAME.crt"
+	if ! cp "${alt_root-}/etc/ssl/certs/$HOST_NAME.crt" "${alt_root-}/usr/local/etc/postfix/ssl/"; then
+		cp "${alt_root-}/etc/ssl/certs/$HOST_NAME.internal.crt" "${alt_root-}/usr/local/etc/postfix/ssl/$HOST_NAME.crt"
 		internal=y
 	fi
-	mkdir -p "${CHROOTDIR-}/etc/ssl/certs.installed/localhost/$HOST_NAME.${internal:+internal.}crt"
-	ln -s "/usr/local/etc/postfix/ssl/$HOST_NAME.crt" "${CHROOTDIR-}/etc/ssl/certs.installed/localhost/$HOST_NAME.${internal:+internal.}crt/postfix"
-	cp "${CHROOTDIR-}/etc/ssl/private/$HOST_NAME.key" "${CHROOTDIR-}/usr/local/etc/postfix/ssl/private/"
-	cat >> "${CHROOTDIR-}/usr/local/etc/postfix/main.cf" <<EOF
+	mkdir -p "${alt_root-}/etc/ssl/certs.installed/localhost/$HOST_NAME.${internal:+internal.}crt"
+	ln -s "/usr/local/etc/postfix/ssl/$HOST_NAME.crt" "${alt_root-}/etc/ssl/certs.installed/localhost/$HOST_NAME.${internal:+internal.}crt/postfix"
+	cp "${alt_root-}/etc/ssl/private/$HOST_NAME.key" "${alt_root-}/usr/local/etc/postfix/ssl/private/"
+	cat >> "${alt_root-}/usr/local/etc/postfix/main.cf" <<EOF
 smtpd_tls_security_level = may
 smtpd_tls_auth_only = yes
 smtp_tls_session_cache_database = btree:\$data_directory/smtp_scache
@@ -111,21 +120,21 @@ smtpd_tls_cert_file = \$config_directory/ssl/$HOST_NAME.crt
 smtpd_tls_key_file = \$config_directory/ssl/private/$HOST_NAME.key
 EOF
 
-	if cp "${CHROOTDIR-}/etc/ssl/certs/$HOST_NAME.ca.crt" "${CHROOTDIR-}/usr/local/etc/postfix/ssl/"; then
-		mkdir -p "${CHROOTDIR-}/etc/ssl/certs.installed/localhost/$HOST_NAME.ca.crt"
-		ln -s "/usr/local/etc/postfix/ssl/$HOST_NAME.ca.crt" "${CHROOTDIR-}/etc/ssl/certs.installed/localhost/$HOST_NAME.ca.crt/postfix"
-		cat >> "${CHROOTDIR-}/usr/local/etc/postfix/main.cf" <<EOF
+	if cp "${alt_root-}/etc/ssl/certs/$HOST_NAME.ca.crt" "${alt_root-}/usr/local/etc/postfix/ssl/"; then
+		mkdir -p "${alt_root-}/etc/ssl/certs.installed/localhost/$HOST_NAME.ca.crt"
+		ln -s "/usr/local/etc/postfix/ssl/$HOST_NAME.ca.crt" "${alt_root-}/etc/ssl/certs.installed/localhost/$HOST_NAME.ca.crt/postfix"
+		cat >> "${alt_root-}/usr/local/etc/postfix/main.cf" <<EOF
 smtpd_tls_CAfile = \$config_directory/ssl/$HOST_NAME.ca.crt
 EOF
 	fi
 fi
 
 if [ "$HOST_NAME" != "$hostname" ]; then
-	echo 'smtp_helo_name = $myorigin' >> "${CHROOTDIR-}/usr/local/etc/postfix/main.cf"
+	echo 'smtp_helo_name = $myorigin' >> "${alt_root-}/usr/local/etc/postfix/main.cf"
 	if [ "$HOST_NAME" = "$default_servername" ]; then
-		echo 'myorigin = $mydomain' >> "${CHROOTDIR-}/usr/local/etc/postfix/main.cf"
+		echo 'myorigin = $mydomain' >> "${alt_root-}/usr/local/etc/postfix/main.cf"
 	else
-		echo "myorigin = $HOST_NAME" >> "${CHROOTDIR-}/usr/local/etc/postfix/main.cf"
+		echo "myorigin = $HOST_NAME" >> "${alt_root-}/usr/local/etc/postfix/main.cf"
 	fi
 fi
 
@@ -134,31 +143,31 @@ sed -i '' -Ee '
 		s/^#(submission[[:>:]].*)$/\1/
 		s/^#([[:blank:]]+-o (syslog_name|smtpd_tls_security_level|smtpd_sasl_auth_enable|milter_macro_daemon_name)=.*)$/\1/
 	}
-' "${CHROOTDIR-}/usr/local/etc/postfix/master.cf"
+' "${alt_root-}/usr/local/etc/postfix/master.cf"
 
 zfs list $POOL_NAME/svc 2> /dev/null || zfs create -o mountpoint=none -o canmount=off $POOL_NAME/svc
 zfs create -o mountpoint=none -o canmount=off $POOL_NAME/svc/smtp
 zfs create -o mountpoint=none -o canmount=off $POOL_NAME/svc/smtp/postfix
 
-eval `stat -f "mode=%OMp%03OLp uid=%Du gid=%Dg flags=%Of" "${CHROOTDIR-}/var/db/postfix"`
-zfs create -o mountpoint=/var/db/postfix $POOL_NAME/svc/smtp/postfix/db
-chown $uid:$gid "${CHROOTDIR-}/var/db/postfix"
-chmod $mode "${CHROOTDIR-}/var/db/postfix"
-chflags $flags "${CHROOTDIR-}/var/db/postfix"
+eval `stat -f "mode=%OMp%03OLp uid=%Du gid=%Dg flags=%Of" "${alt_root-}/var/db/postfix"`
+zfs create -o mountpoint="${jail_path-}/var/db/postfix" $POOL_NAME/svc/smtp/postfix/db
+chown $uid:$gid "${alt_root-}/var/db/postfix"
+chmod $mode "${alt_root-}/var/db/postfix"
+chflags $flags "${alt_root-}/var/db/postfix"
 
-eval `stat -f "mode=%OMp%03OLp uid=%Du gid=%Dg flags=%Of" "${CHROOTDIR-}/var/spool/postfix"`
-mv "${CHROOTDIR-}/var/spool/postfix" "${CHROOTDIR-}/var/spool/postfix.orig"
-zfs create -o mountpoint=/var/spool/postfix $POOL_NAME/svc/smtp/postfix/spool
-chown $uid:$gid "${CHROOTDIR-}/var/spool/postfix"
-chmod $mode "${CHROOTDIR-}/var/spool/postfix"
+eval `stat -f "mode=%OMp%03OLp uid=%Du gid=%Dg flags=%Of" "${alt_root-}/var/spool/postfix"`
+mv "${alt_root-}/var/spool/postfix" "${alt_root-}/var/spool/postfix.orig"
+zfs create -o mountpoint="${jail_path-}/var/spool/postfix" $POOL_NAME/svc/smtp/postfix/spool
+chown $uid:$gid "${alt_root-}/var/spool/postfix"
+chmod $mode "${alt_root-}/var/spool/postfix"
 
-mv "${CHROOTDIR-}/var/spool/postfix.orig/"* "${CHROOTDIR-}/var/spool/postfix/"
-mv "${CHROOTDIR-}/var/spool/postfix.orig/".* "${CHROOTDIR-}/var/spool/postfix/" 2> /dev/null || true
-rmdir "${CHROOTDIR-}/var/spool/postfix.orig"
-chflags $flags "${CHROOTDIR-}/var/spool/postfix"
+mv "${alt_root-}/var/spool/postfix.orig/"* "${alt_root-}/var/spool/postfix/"
+mv "${alt_root-}/var/spool/postfix.orig/".* "${alt_root-}/var/spool/postfix/" 2> /dev/null || true
+rmdir "${alt_root-}/var/spool/postfix.orig"
+chflags $flags "${alt_root-}/var/spool/postfix"
 
 zfs snapshot -r $POOL_NAME/svc/smtp/postfix@genesis
 
-sister enable_svc ${CHROOTDIR:+-C "$CHROOTDIR"} postfix
+sister ${JAIL_NAME:+-j $JAIL_NAME} enable_svc ${CHROOTDIR:+-C "$CHROOTDIR"} postfix
 
 echo "Configured $HOST_NAME for smtp service."

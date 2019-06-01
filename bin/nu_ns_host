@@ -18,13 +18,14 @@ NUOS_VER=0.0.11.2a1
 
 . "$(dirname "$(realpath "$0")")/../lib/nu_system.sh"
 
-while getopts A:c:C:dh:i:klM:nr:st:vw OPT; do case $OPT in
+while getopts A:c:C:dh:i:j:klM:nr:st:vw OPT; do case $OPT in
 	A) ALTERNATE=$OPTARG;;
 	c) CA_ZONE=$OPTARG;;
 	C) CHROOTDIR=$OPTARG;;
 	d) incr OPT_DELETE 1;;
 	h) HOST_NAME=$OPTARG;;
 	i) push PUB_IPS $OPTARG;;
+	j) NAMESERVER_JAILNAME=$OPTARG;;
 	k) OPT_EXPORT_KEY_FINGERPRINTS=y;;
 	l) OPT_LITE=y;;
 	M) MODE=$OPTARG; case $MODE in
@@ -40,8 +41,16 @@ esac; done; shift $(($OPTIND-1))
 
 . "$(dirname "$(realpath "$0")")/../lib/nu_common.sh"
 
+if canhas ${NAMESERVER_JAILNAME-}; then
+	NAMESERVER_JAILNAME_=`echo $NAMESERVER_JAILNAME | tr . _`
+	jail_path="`jls -j $NAMESERVER_JAILNAME_ path`"
+	alt_root=$jail_path
+elif canhas "${CHROOTDIR-}"; then
+	alt_root="${CHROOTDIR-}"
+fi
+
 if [ -n "${OPT_EXPORT_KEY_FINGERPRINTS-}" ]; then
-	out=$(${CHROOTDIR:+chroot "$CHROOTDIR"} keymgr ${ALTERNATE:+-c /usr/local/etc/knot/knot_$ALTERNATE.conf} $HOST_NAME ds)
+	out=$(${NAMESERVER_JAILNAME:+jexec -l $NAMESERVER_JAILNAME_} ${CHROOTDIR:+chroot "$CHROOTDIR"} keymgr ${ALTERNATE:+-c /usr/local/etc/knot/knot_$ALTERNATE.conf} $HOST_NAME ds)
 	if [ -n "$out" ]; then
 		cat <<EOF
 $out
@@ -54,11 +63,11 @@ fi
 
 : ${SOFTWARE:=knot}
 if [ $SOFTWARE = knot ]; then
-	knotc_cmd="$(echo ${CHROOTDIR:+chroot "$CHROOTDIR"} knotc ${ALTERNATE:+-c /usr/local/etc/knot/knot_$ALTERNATE.conf})"
+	knotc_cmd="$(echo ${NAMESERVER_JAILNAME:+jexec -l $NAMESERVER_JAILNAME_} ${CHROOTDIR:+chroot "$CHROOTDIR"} knotc ${ALTERNATE:+-c /usr/local/etc/knot/knot_$ALTERNATE.conf})"
 fi
 
 if [ -n "${OPT_EXPORT_NAMECOIN_JSON_VALUE-}" ]; then
-	ds=$(sister nu_ns_host ${CHROOTDIR:+-C "$CHROOTDIR"} ${ALTERNATE:+-A $ALTERNATE} -k -h $HOST_NAME | awk 'length($6) == 64 {print $3, $4, $5, $6}')
+	ds=$(sister nu_ns_host ${NAMESERVER_JAILNAME:+-j $NAMESERVER_JAILNAME} ${CHROOTDIR:+-C "$CHROOTDIR"} ${ALTERNATE:+-A $ALTERNATE} -k -h $HOST_NAME | awk 'length($6) == 64 {print $3, $4, $5, $6}')
 	if [ -n "$ds" ]; then
 		read tag alg dig hex <<EOF
 $ds
@@ -96,7 +105,7 @@ EOF
 fi
 
 if [ -n "${CA_ZONE-}" ]; then
-	sister nu_ns_host ${CHROOTDIR:+-C "$CHROOTDIR"} ${OPT_VERBOSE:+-v} ${ALTERNATE:+-A $ALTERNATE} -d -r caa -h $HOST_NAME
+	sister nu_ns_host ${NAMESERVER_JAILNAME:+-j $NAMESERVER_JAILNAME} ${CHROOTDIR:+-C "$CHROOTDIR"} ${OPT_VERBOSE:+-v} ${ALTERNATE:+-A $ALTERNATE} -d -r caa -h $HOST_NAME
 	if [ x-d != "x${CA_ZONE-}" -a d != "${CA_ZONE-}" -a -z "${OPT_DELETE-}" ]; then
 		if [ -n "${OPT_CA_WILDCARD-}" ]; then
 			wild_zone=$CA_ZONE
@@ -107,8 +116,8 @@ if [ -n "${CA_ZONE-}" ]; then
 		CA_ZONE=";"
 		wild_zone=";"
 	fi
-	sister nu_ns_host ${CHROOTDIR:+-C "$CHROOTDIR"} ${OPT_VERBOSE:+-v} ${ALTERNATE:+-A $ALTERNATE} -s -r caa -h $HOST_NAME -i "128 issue \"$CA_ZONE\""
-	sister nu_ns_host ${CHROOTDIR:+-C "$CHROOTDIR"} ${OPT_VERBOSE:+-v} ${ALTERNATE:+-A $ALTERNATE} -s -r caa -h $HOST_NAME -i "128 issuewild \"$wild_zone\""
+	sister nu_ns_host ${NAMESERVER_JAILNAME:+-j $NAMESERVER_JAILNAME} ${CHROOTDIR:+-C "$CHROOTDIR"} ${OPT_VERBOSE:+-v} ${ALTERNATE:+-A $ALTERNATE} -s -r caa -h $HOST_NAME -i "128 issue \"$CA_ZONE\""
+	sister nu_ns_host ${NAMESERVER_JAILNAME:+-j $NAMESERVER_JAILNAME} ${CHROOTDIR:+-C "$CHROOTDIR"} ${OPT_VERBOSE:+-v} ${ALTERNATE:+-A $ALTERNATE} -s -r caa -h $HOST_NAME -i "128 issuewild \"$wild_zone\""
 	exit 0
 fi
 
@@ -123,9 +132,9 @@ case $SOFTWARE in
 		fi
 	;;
 	knot)
-		[ -f "${CHROOTDIR-}/usr/local/etc/knot/knot${ALTERNATE:+_${ALTERNATE}}.conf" ]
-		! diff -q "${CHROOTDIR-}/usr/local/etc/knot/knot.conf.sample" "${CHROOTDIR-}/usr/local/etc/knot/knot${ALTERNATE:+_${ALTERNATE}}.conf" > /dev/null 2>&1
-		master_refs=`sed -n -E -e '/^template:/,/^[^[:blank:]]/p' "${CHROOTDIR-}/usr/local/etc/knot/knot${ALTERNATE:+_${ALTERNATE}}.conf" | sed -e '1d;$d' | sed -n -E -e '/^[[:blank:]]*- id: default$/,/^[[:blank:]]*- id: /p' | sed -n -E -e '1d;$d;/^[[:blank:]]*master:[[:blank:]]*.+/=' | wc -l | xargs`
+		[ -f "${alt_root-}/usr/local/etc/knot/knot${ALTERNATE:+_${ALTERNATE}}.conf" ]
+		! diff -q "${alt_root-}/usr/local/etc/knot/knot.conf.sample" "${alt_root-}/usr/local/etc/knot/knot${ALTERNATE:+_${ALTERNATE}}.conf" > /dev/null 2>&1
+		master_refs=`sed -n -E -e '/^template:/,/^[^[:blank:]]/p' "${alt_root-}/usr/local/etc/knot/knot${ALTERNATE:+_${ALTERNATE}}.conf" | sed -e '1d;$d' | sed -n -E -e '/^[[:blank:]]*- id: default$/,/^[[:blank:]]*- id: /p' | sed -n -E -e '1d;$d;/^[[:blank:]]*master:[[:blank:]]*.+/=' | wc -l | xargs`
 		if [ $master_refs -ge 1 ]; then
 			default_mode=slave
 		else
@@ -133,7 +142,7 @@ case $SOFTWARE in
 		fi
 		echo 'mode            -M MODE           ' ${MODE:=$default_mode}
 		if [ -z "${PUB_IPS-}" ]; then
-			PUB_IPS="`sed -n -E -e '/^@	A+\>/,/^[^@[:blank:]]/{/^(@	A+\>|	A+\>)/p;}' "${CHROOTDIR-}/usr/local/etc/knot/example${ALTERNATE:+_${ALTERNATE}}.com.zone" | cut -f 3 | xargs`"
+			PUB_IPS="`sed -n -E -e '/^@	A+\>/,/^[^@[:blank:]]/{/^(@	A+\>|	A+\>)/p;}' "${alt_root-}/usr/local/etc/knot/example${ALTERNATE:+_${ALTERNATE}}.com.zone" | cut -f 3 | xargs`"
 		fi
 	;;
 esac
@@ -172,13 +181,13 @@ case $SOFTWARE in
 		zone=$HOST_NAME
 		case $MODE in
 			master)
-				if [ ! -d "${CHROOTDIR-}/var/db/knot${ALTERNATE:+_${ALTERNATE}}" ]; then
-					mkdir "${CHROOTDIR-}/var/db/knot${ALTERNATE:+_${ALTERNATE}}"
-					chown knot:knot "${CHROOTDIR-}/var/db/knot${ALTERNATE:+_${ALTERNATE}}"
+				if [ ! -d "${alt_root-}/var/db/knot${ALTERNATE:+_${ALTERNATE}}" ]; then
+					mkdir "${alt_root-}/var/db/knot${ALTERNATE:+_${ALTERNATE}}"
+					chown knot:knot "${alt_root-}/var/db/knot${ALTERNATE:+_${ALTERNATE}}"
 				fi
 				new_serial=`date +%Y%m%d`01
 				if [ -n "${OPT_LITE-}" ]; then
-					zone=$(ns_master_zone ${CHROOTDIR:+-c} ${ALTERNATE:+-A $ALTERNATE} $HOST_NAME)
+					zone=$(ns_master_zone ${NAMESERVER_JAILNAME:+-j $NAMESERVER_JAILNAME} ${CHROOTDIR:+-c} ${ALTERNATE:+-A $ALTERNATE} $HOST_NAME)
 					if [ "$HOST_NAME" = "$zone" ]; then
 						host=@
 					else
@@ -221,23 +230,23 @@ case $SOFTWARE in
 						sed -E -e "
 							s/\<example\\.com\>/$HOST_NAME/g
 							/\<serial[[:blank:]]*$/s/[[:digit:]]+/$new_serial/" \
-								"${CHROOTDIR-}/usr/local/etc/knot/example${ALTERNATE:+_${ALTERNATE}}.com.zone" \
-									> "${CHROOTDIR-}/var/db/knot${ALTERNATE:+_${ALTERNATE}}/$HOST_NAME.zone"
+								"${alt_root-}/usr/local/etc/knot/example${ALTERNATE:+_${ALTERNATE}}.com.zone" \
+									> "${alt_root-}/var/db/knot${ALTERNATE:+_${ALTERNATE}}/$HOST_NAME.zone"
 					fi
 				fi
 				if [ -z "${OPT_DELETE-}" -a '(' A = $REC_TYPE -o AAAA = $REC_TYPE ')' ]; then
 					for ip in $PUB_IPS; do
 						rz=`rev_zone $ip`
-						if [ ! -f "${CHROOTDIR-}/var/db/knot${ALTERNATE:+_${ALTERNATE}}/$rz.zone" ]; then
+						if [ ! -f "${alt_root-}/var/db/knot${ALTERNATE:+_${ALTERNATE}}/$rz.zone" ]; then
 							sed -E -e "
 								s/\<example\\.in-addr\\.arpa\>/$rz/
 								s/\<example\\.in-addr\\.arpa\>/$HOST_NAME/
 								/\<serial[[:blank:]]*$/s/[[:digit:]]+/$new_serial/" \
-									"${CHROOTDIR-}/usr/local/etc/knot/example${ALTERNATE:+_${ALTERNATE}}.in-addr.arpa.zone" \
-										> "${CHROOTDIR-}/var/db/knot${ALTERNATE:+_${ALTERNATE}}/$rz.zone"
+									"${alt_root-}/usr/local/etc/knot/example${ALTERNATE:+_${ALTERNATE}}.in-addr.arpa.zone" \
+										> "${alt_root-}/var/db/knot${ALTERNATE:+_${ALTERNATE}}/$rz.zone"
 							[ -n "${conf_began-}" ] || { $knotc_cmd conf-begin && conf_began=y; }
 							$knotc_cmd conf-set "zone[$rz]"
-							cat >> "${CHROOTDIR-}/usr/local/etc/knot/knot${ALTERNATE:+_${ALTERNATE}}.conf" <<EOF
+							cat >> "${alt_root-}/usr/local/etc/knot/knot${ALTERNATE:+_${ALTERNATE}}.conf" <<EOF
   - domain: $rz
 EOF
 						fi
@@ -255,14 +264,14 @@ EOF
 				if $knotc_cmd conf-unset "zone[$zone]"; then
 					zone_escd="$(echo $zone | sed -e 's/\./\\./g')"
 					sed -i '' -e "/^[[:blank:]]*-[[:blank:]]*domain:[[:blank:]]*$zone_escd[[:blank:]]*\$/d" \
-						"${CHROOTDIR-}/usr/local/etc/knot/knot${ALTERNATE:+_${ALTERNATE}}.conf"
-					mv "${CHROOTDIR-}/var/db/knot${ALTERNATE:+_${ALTERNATE}}/$HOST_NAME.zone" "${CHROOTDIR-}/var/db/knot${ALTERNATE:+_${ALTERNATE}}/$HOST_NAME.zone.`env TZ=UTC date +%Y-%m-%d-%H%M%S`.removed_from_service"
+						"${alt_root-}/usr/local/etc/knot/knot${ALTERNATE:+_${ALTERNATE}}.conf"
+					mv "${alt_root-}/var/db/knot${ALTERNATE:+_${ALTERNATE}}/$HOST_NAME.zone" "${alt_root-}/var/db/knot${ALTERNATE:+_${ALTERNATE}}/$HOST_NAME.zone.`env TZ=UTC date +%Y-%m-%d-%H%M%S`.removed_from_service"
 				else
 					conf_failed=y
 				fi
 			else
 				if $knotc_cmd conf-set "zone[$zone]"; then
-					cat >> "${CHROOTDIR-}/usr/local/etc/knot/knot${ALTERNATE:+_${ALTERNATE}}.conf" <<EOF
+					cat >> "${alt_root-}/usr/local/etc/knot/knot${ALTERNATE:+_${ALTERNATE}}.conf" <<EOF
   - domain: $zone
 EOF
 				else
