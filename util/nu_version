@@ -32,7 +32,7 @@ export LC_CTYPE=C
 
 readmes="`find -E . -type f -depth 1 -regex './[[:upper:]]+'`"
 libs="lib/*.sh pkg/*.sh"
-bins="bin/* util/*"
+bins="bin/* `find util -depth 1 -type f`"
 diffs="pkg/*.diff"
 
 nuos_ver_escd="$(echo $NUOS_VER | sed -e 's/\./\\./g')"
