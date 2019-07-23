@@ -137,7 +137,7 @@ sister nu_jail ${OPT_VERBOSE:+-v} -C $pool_mnt -p $POOL_NAME -t clone -w -j $nl_
 
 l_rev=0
 while
-	l_jail_name=nuos-lab$l_rev
+	l_jail_name=lab$l_rev
 	zfs list $POOL_NAME/jail/$l_jail_name.$NEW_HOST
 do
 	l_rev=$(($l_rev + 1))
