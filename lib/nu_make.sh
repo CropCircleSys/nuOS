@@ -54,8 +54,7 @@ prepare_make_conf () {
 		require_tmp tempfile
 		cat >| "$tempfile" <<EOF
 CPUTYPE?=$TRGT_OPTZ
-DEFAULT_VERSIONS= ssl=openssl linux=c7 perl5=5.28 ruby=2.5 php=7.2 python3=3.7 lua=5.3 pgsql=10 mysql=5.7 samba=4.8
-QT4_OPTIONS=CUPS NAS
+DEFAULT_VERSIONS= ssl=openssl111 ruby=2.6 perl5=5.30 php=7.3 python=3.7 python3=3.7 lua=5.3 pgsql=11 samba=4.10
 WANT_OPENLDAP_SASL=YES
 EOF
 		setvar $ret_file_var "$tempfile"
