@@ -1,9 +1,9 @@
 #!/usr/bin/false
 set -e; set -u; set -C
 
-# nuOS 0.0.11.2a1 - lib/nu_install.sh
+# nuOS 0.0.11.3a0 - lib/nu_install.sh
 #
-# Copyright (c) 2008-2018 Chad Jacob Milios and Crop Circle Systems.
+# Copyright (c) 2008-2019 Chad Jacob Milios and Crop Circle Systems.
 # All rights reserved.
 #
 # This Source Code Form is subject to the terms of the Simplified BSD License.
@@ -14,7 +14,7 @@ set -e; set -u; set -C
 # Official updates and community support available at https://nuos.org .
 # Professional services available at https://ccsys.com .
 
-nuos_lib_ver=0.0.11.2a1
+nuos_lib_ver=0.0.11.3a0
 [ $nuos_lib_ver = "$NUOS_VER" ]
 [ -n "${nuos_lib_system_loaded-}" ]
 [ -n "${nuos_lib_make_loaded-}" ]
@@ -33,7 +33,7 @@ build_vars_init () {
 	echo 'target kern        TRGT_KERN      ' ${TRGT_KERN:=NUOS}
 	echo 'target optimize    TRGT_OPTZ      ' $TRGT_OPTZ
 	echo 'subversion server  SVN_SERVER     ' ${SVN_SERVER=svn.FreeBSD.org}
-	echo 'subversion path    SVN_PATH       ' ${SVN_PATH:=base/releng/11.2}
+	echo 'subversion path    SVN_PATH       ' ${SVN_PATH:=base/releng/11.3}
 }
 
 install_vars_init () {

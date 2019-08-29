@@ -1,9 +1,9 @@
 #!/usr/bin/false
 set -e; set -u; set -C
 
-# nuOS 0.0.11.2a1 - lib/nu_collection.sh
+# nuOS 0.0.11.3a0 - lib/nu_collection.sh
 #
-# Copyright (c) 2008-2018 Chad Jacob Milios and Crop Circle Systems.
+# Copyright (c) 2008-2019 Chad Jacob Milios and Crop Circle Systems.
 # All rights reserved.
 #
 # This Source Code Form is subject to the terms of the Simplified BSD License.
@@ -14,7 +14,7 @@ set -e; set -u; set -C
 # Official updates and community support available at https://nuos.org .
 # Professional services available at https://ccsys.com .
 
-nuos_lib_ver=0.0.11.2a1
+nuos_lib_ver=0.0.11.3a0
 [ $nuos_lib_ver = "$NUOS_VER" ]
 [ -n "${nuos_lib_system_loaded-}" ]
 [ -z "${nuos_lib_collection_loaded-}" ]
@@ -75,6 +75,7 @@ collection_vars_init () {
 		sysutils/smartmontools
 		net/rsync
 		security/sudo
+		sysutils/lsof
 		textproc/jq
 	'
 	
@@ -82,9 +83,11 @@ collection_vars_init () {
 		lite
 		devel/subversion
 		devel/git
+		lang/gawk
+		lang/expect
 	'
-	
-	COLL_server='
+
+	COLL_miniserver='
 		developer
 		net-mgmt/lldpd
 		mail/postfix
@@ -95,11 +98,42 @@ collection_vars_init () {
 		net/openldap24-server
 		security/openvpn
 		net/mpd5
+		net/3proxy
 		ftp/pure-ftpd
 		net/isc-dhcp44-server
 		net/istgt
+		mail/cyrus-imapd30
+		security/cyrus-sasl2-saslauthd
+		databases/postgresql11-server
+		databases/mysql57-server
+		databases/mongodb40
+		databases/redis
+		lang/mono-basic
+		lang/go
+		www/npm
+		lang/php73-extensions
+		graphics/pecl-imagick-im7
+		www/mod_php73
+		www/apache24
+		www/nginx
+		net/haproxy
+		net-im/ejabberd
+		net/rabbitmq
+		irc/irssi
+		net/kamailio
+		sysutils/ipfs-go
+	'
+	
+	COLL_mediaserver='
+		miniserver
 		net/netatalk3
-		net/samba48
+		net/samba410
+		multimedia/ffmpeg
+		www/youtube_dl
+	'
+
+	COLL_server='
+		mediaserver
 		security/tor
 		net-p2p/rtorrent
 		net-p2p/createtorrent
@@ -111,38 +145,15 @@ collection_vars_init () {
 		net-p2p/litecoin-daemon
 		net-p2p/litecoin-utils
 		net-p2p/monero-cli
-		multimedia/ffmpeg
-		www/youtube_dl
 		graphics/optipng
 		graphics/gifsicle
-		lang/gawk
-		lang/expect
-		databases/postgresql10-server
-		databases/mysql57-server
-		databases/mongodb36
-		databases/redis
-		lang/mono-basic
-		www/npm
-		www/apache24
-		www/nginx
-		mail/cyrus-imapd25
-		security/cyrus-sasl2-saslauthd
-		net-im/ejabberd
 		lang/phantomjs
-		net/rabbitmq
 		emulators/virtualbox-ose
 		sysutils/vmdktool
 		graphics/povray-meta
 		graphics/graphviz
 		x11-fonts/webfonts
-		lang/php72-extensions
-		www/mod_php72
 		mail/roundcube-sieverules
-		irc/irssi
-		sysutils/lsof
-		net/kamailio
-		sysutils/ipfs-go
-		lang/go
 		print/gutenprint
 		print/fontforge
 	'
@@ -160,7 +171,6 @@ collection_vars_init () {
 		net-p2p/bitcoin
 		net-p2p/namecoin
 		net-p2p/litecoin
-		net-p2p/bitmessage
 		net/x11vnc
 		net/tightvnc
 		www/firefox
@@ -168,9 +178,7 @@ collection_vars_init () {
 		mail/thunderbird
 		multimedia/vlc
 		net-im/jitsi
-		cad/freecad
 		graphics/blender
-		graphics/luxrender
 		games/sdlpop
 	'
 }
