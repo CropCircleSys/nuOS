@@ -1,22 +1,22 @@
 domain=cargobay.net
 
-ip_1=23.111.168.34 # jack
-ip_2=104.219.250.194 # chol
+ip_1=23.111.168.34 # willy
+ip_2=66.206.20.42 # mama
 ip_3=168.235.81.21 # iron
 ip_4=168.235.71.47 # mcfly
 
 case $NAME in
-	jack)
+	willy)
 		my_ip=$ip_1 # 23.111.168.34
 		netmask=0xfffffff8
 		defaultrouter=23.111.168.33
 		primary_if=igb0
 	;;
-	chol)
-		my_ip=$ip_2 # 104.219.250.194
-		netmask=0xffffff80
-		defaultrouter=104.219.250.129
-		primary_if=igb1
+	mama)
+		my_ip=$ip_2 # 66.206.20.42
+		netmask=0xfffffff8
+		defaultrouter=66.206.20.41
+		primary_if=igb0
 	;;
 	iron)
 		my_ip=$ip_3 # 168.235.81.21
@@ -48,15 +48,15 @@ AuthenticationMethods publickey,publickey,publickey
 ' "$TRGT"/usr/local/etc/ssh/sshd_config
 
 sister enable_svc -C "$TRGT" ntpd openssh
-sister nu_ns_cache -C "$TRGT" -s
+#sister nu_ns_cache -C "$TRGT" -s
 
 case $NAME in
-	jack)
+	willy)
 		#sister nu_ns_server -C $TRGT -d -k 4096 -z 2048 -i $ip_1 -i $ip_2 -i $ip_3 -i $ip_4 -s $ip_2 -s $ip_3 -s $ip_4
-		sister nu_ns_server -C $TRGT -d -k 4096 -z 2048 -i $ip_1 -i $ip_2 -s $ip_2
+		#sister nu_ns_server -C $TRGT -d -k 4096 -z 2048 -i $ip_1 -i $ip_2 -s $ip_2
 	;;
 	*)
 		#sister nu_ns_server -C $TRGT -i $ip_1 -i $ip_2 -i $ip_3 -i $ip_4 -m $ip_1
-		sister nu_ns_server -C $TRGT -i $ip_1 -i $ip_2 -m $ip_1
+		#sister nu_ns_server -C $TRGT -i $ip_1 -i $ip_2 -m $ip_1
 	;;
 esac
