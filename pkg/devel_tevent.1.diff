@@ -1,0 +1,11 @@
+--- ../tevent.orig/Makefile	2019-11-19 16:52:58.650768000 +0000
++++ ./Makefile	2019-11-17 06:47:26.717649000 +0000
+@@ -1,7 +1,7 @@
+ # $FreeBSD: head/devel/tevent/Makefile 504597 2019-06-19 22:44:25Z timur $
+ 
+ PORTNAME=		tevent
+-PORTVERSION=		0.10.0
++PORTVERSION=		0.10.1
+ PORTREVISION=		0
+ PORTEPOCH=		0
+ CATEGORIES=		devel

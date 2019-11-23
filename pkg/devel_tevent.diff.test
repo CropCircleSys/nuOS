@@ -1,0 +1,1 @@
+grep -q '(tevent-0\.10\.0\.tar\.gz)' distinfo && grep -q '\$FreeBSD: head/devel/tevent/Makefile 504597 2019-06-19 22:44:25Z timur \$' Makefile

@@ -104,7 +104,7 @@ collection_vars_init () {
 		net/istgt
 		mail/cyrus-imapd30
 		security/cyrus-sasl2-saslauthd
-		databases/postgresql11-server
+		databases/postgresql12-server
 		databases/mysql57-server
 		databases/mongodb40
 		databases/redis
@@ -119,6 +119,8 @@ collection_vars_init () {
 		net/haproxy
 		net-im/ejabberd
 		net/rabbitmq
+		lang/erlang-runtime22
+		lang/elixir
 		irc/irssi
 		net/kamailio
 		sysutils/ipfs-go
