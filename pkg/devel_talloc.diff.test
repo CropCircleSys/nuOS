@@ -1,1 +1,0 @@
-grep -q '(talloc-2\.2\.0\.tar\.gz)' distinfo && grep -q '\$FreeBSD: head/devel/talloc/Makefile 507681 2019-07-30 21:09:07Z bdrewery \$' Makefile
