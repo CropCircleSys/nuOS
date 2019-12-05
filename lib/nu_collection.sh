@@ -111,9 +111,9 @@ collection_vars_init () {
 		lang/mono-basic
 		lang/go
 		www/npm
-		lang/php73-extensions
+		lang/php74-extensions
 		graphics/pecl-imagick-im7
-		www/mod_php73
+		www/mod_php74
 		www/apache24
 		www/nginx
 		net/haproxy
