@@ -132,13 +132,14 @@ collection_vars_init () {
 		net/samba410
 		multimedia/ffmpeg
 		www/youtube_dl
+		net-p2p/rtorrent
+		net-p2p/createtorrent
+		net-p2p/torrentcheck
 	'
 
 	COLL_server='
 		mediaserver
 		security/tor
-		net-p2p/rtorrent
-		net-p2p/createtorrent
 		net-p2p/bitcoin-daemon
 		net-p2p/bitcoin-utils
 		finance/vanitygen
