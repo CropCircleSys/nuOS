@@ -241,7 +241,7 @@ if canhas "${LISTEN_SERVICE-}"; then
 		nat_conf=`for port in $LISTEN_SERVICE; do for proto in tcp udp; do echo redirect_port $proto $JAIL_NAME.jail:$port ${OPT_PUBLIC_ALIAS:+$ALIAS_IP:}$port; done; done | xargs`
 	fi
 	cat >> "${CHROOTDIR-}/etc/jail.conf" <<EOF
-${OPT_PUBLIC_LISTEN_SERVICE:+	exec.poststart += "ipfw add $fwd_rule_n fwd $JAIL_NAME.jail ip from any to $me${listen_list:+ $listen_list} via $PUBLIC_INTERFACE";
+${OPT_PUBLIC_LISTEN_SERVICE:+	exec.poststart += "ipfw add $fwd_rule_n fwd $JAIL_NAME.jail ip from any to $me${listen_list:+ $listen_list} via $PUBLIC_INTERFACE keep-state";
 	exec.poststart += "\`ipfw nat show config\` $nat_conf";
 }	exec.poststart += "ipfw add $fw_rule_n allow ip from any to $JAIL_NAME.jail${listen_list:+ $listen_list} via \$interface";
 	exec.poststart += "ipfw add $fw_rule_n allow ip from $JAIL_NAME.jail${listen_list:+ $listen_list} to any via \$interface";
