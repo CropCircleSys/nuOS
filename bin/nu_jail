@@ -18,7 +18,7 @@ NUOS_VER=0.0.11.3a0
 
 . "$(dirname "$(realpath "$0")")/../lib/nu_system.sh"
 
-while getopts a:Ab:C:dfh:i:I:j:n:o:O:p:Pqs:S:t:u:vwx OPT; do case $OPT in
+while getopts a:Ab:C:dfh:i:I:j:n:o:O:p:Pqs:S:t:T:u:vwx OPT; do case $OPT in
 	a) ADMIN_ACCT=$OPTARG;;
 	A) OPT_PUBLIC_ALIAS=y;;
 	b) BD_ACCT=$OPTARG;;
@@ -38,6 +38,7 @@ while getopts a:Ab:C:dfh:i:I:j:n:o:O:p:Pqs:S:t:u:vwx OPT; do case $OPT in
 	s) JAIL_SNAP=$OPTARG;;
 	S) push SERVICE $OPTARG;;
 	t) JAIL_TYPE=$OPTARG;; # jail (default), clone, public or vnet
+	T) push CONNECT_TARGETS $OPTARG;;
 	u) USER_ACCT=$OPTARG;;
 	v) OPT_VERBOSE=y;;
 	w) OPT_RW_SRC=y;;
@@ -97,6 +98,11 @@ fi
 if canhas "${SERVICE-}"; then
 	push LISTEN_SERVICE $SERVICE
 	push CONNECT_SERVICE $SERVICE
+fi
+if canhas "${CONNECT_TARGETS-}"; then
+	ct_rule_n=$((`{ echo 50; sed -nEe '/^[[:blank:]]*exec.poststart[[:>:]]/{/"ipfw add [56789][[:digit:]] /{s/^.*(ipfw add [56789][[:digit:]])/\1/;s/ipfw add ([56789][[:digit:]]).*$/\1/;p;};}' "${CHROOTDIR-}/etc/jail.conf"; } | sort -n | tail -n 1` + 1))
+	CONNECT_TARGETS=`echo $CONNECT_TARGETS | sed -e 's/ /.jail, /g;s/$/.jail/'`
+	[ $ct_rule_n -le 99 -a $ct_rule_n -ge 51 ]
 fi
 if canhas "${LISTEN_SERVICE-}" || canhas "${CONNECT_SERVICE-}"; then
 	[ $JAIL_TYPE = jail ]
@@ -241,9 +247,10 @@ if canhas "${LISTEN_SERVICE-}"; then
 		nat_conf=`for port in $LISTEN_SERVICE; do for proto in tcp udp; do echo redirect_port $proto $JAIL_NAME.jail:$port ${OPT_PUBLIC_ALIAS:+$ALIAS_IP:}$port; done; done | xargs`
 	fi
 	cat >> "${CHROOTDIR-}/etc/jail.conf" <<EOF
-${OPT_PUBLIC_LISTEN_SERVICE:+	exec.poststart += "ipfw add $fwd_rule_n fwd $JAIL_NAME.jail ip from any to $me${listen_list:+ $listen_list} via $PUBLIC_INTERFACE keep-state";
-	exec.poststart += "\`ipfw nat show config\` $nat_conf";
-}	exec.poststart += "ipfw add $fw_rule_n allow ip from any to $JAIL_NAME.jail${listen_list:+ $listen_list} via \$interface";
+${OPT_PUBLIC_LISTEN_SERVICE:+${OPT_PUBLIC_ALIAS:+	exec.poststart += "ipfw add $fwd_rule_n fwd $JAIL_NAME.jail ip from me to $ALIAS_IP${listen_list:+ $listen_list} keep-state";
+}	exec.poststart += "\`ipfw nat show config\` $nat_conf";
+}${CONNECT_TARGETS:+	exec.poststart += "ipfw add $ct_rule_n nat 123 ip4 from $CONNECT_TARGETS to $JAIL_NAME.jail";
+}exec.poststart += "ipfw add $fw_rule_n allow ip from any to $JAIL_NAME.jail${listen_list:+ $listen_list} via \$interface";
 	exec.poststart += "ipfw add $fw_rule_n allow ip from $JAIL_NAME.jail${listen_list:+ $listen_list} to any via \$interface";
 EOF
 fi
@@ -259,7 +266,8 @@ fi
 if canhas "${LISTEN_SERVICE-}${CONNECT_SERVICE-}"; then
 	cat >> "${CHROOTDIR-}/etc/jail.conf" <<EOF
 ${OPT_PUBLIC_LISTEN_SERVICE:+	exec.prestop += "\`ipfw nat show config | sed -E -e \"s/ redirect_port [[:graph:]]+ \$(getent hosts $JAIL_NAME.jail | cut -w -f 1):[[:digit:]]+ ${OPT_PUBLIC_ALIAS:+[[:digit:]]+\\.[[:digit:]]+\\.[[:digit:]]+\\.[[:digit:]]+:}[[:digit:]]+//g\"\`";
-	exec.prestop += "ipfw delete $fwd_rule_n";
+${OPT_PUBLIC_ALIAS:+	exec.prestop += "ipfw delete $fwd_rule_n";
+}}${CONNECT_TARGETS:+	exec.prestop += "ipfw delete $ct_rule_n";
 }	exec.prestop += "ipfw delete $fw_rule_n";
 EOF
 fi
