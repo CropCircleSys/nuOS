@@ -146,18 +146,28 @@ case $SOFTWARE in
 				fi
 				push partner_ips $h
 				incr num_partners 1
+				push partner_ids $other_mode$num_partners
 			done
 			if [ $num_partners -gt 1 ]; then
-				partner_ips=`echo $partner_ips | sed -e 's/ /, /g;s/^/[/;s/$/]/;'`
+				partner_ip_list=`echo $partner_ips | sed -e 's/ /, /g;s/^/[ /;s/$/ ]/;'`
+				partner_id_list=`echo $partner_ids | sed -e 's/ /, /g;s/^/[ /;s/$/ ]/;'`
+			else
+				partner_ip_list="$partner_ips"
+				partner_id_list="$partner_ids"
 			fi
-			cat >> "$ETC/knot$sufx.conf" <<EOF
-remote:
-  - id: $other_mode
-    address: $partner_ips
+			echo remote: >> "$ETC/knot$sufx.conf"
+			for ip in $partner_ips; do
+				i=$((${i-0} + 1))
+				cat >> "$ETC/knot$sufx.conf" <<EOF
+  - id: $other_mode${SLAVES:+$i}
+    address: $ip
+EOF
+			done
+cat >> "$ETC/knot$sufx.conf" <<EOF
 
 acl:
   - id: acl_$other_mode
-    address: $partner_ips
+    address: $partner_ip_list
     action: $action
 
 EOF
@@ -178,10 +188,11 @@ EOF
 		cat >> "$ETC/knot$sufx.conf" <<EOF
 template:
   - id: default
+    zonefile-load: difference
     semantic-checks: on
 ${MASTERS+    master: master
     acl: acl_master
-}${SLAVES+    notify: slave
+}${SLAVES+    notify: $partner_id_list
     acl: acl_slave
 }${OPT_DNSSEC+    dnssec-signing: on
     dnssec-policy: $ALGORITHM
