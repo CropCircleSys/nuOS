@@ -1,4 +1,4 @@
-zones='cargobay.net nuos.org nuos.net nu.zone nu.software nu.email nu.place nu.chat nu.team nu.show nu.live nu.lol nu.click nu.parts nu.money nu.gold nu.cash cropcircle.systems ccsys.com uhax.tv pawnbase.com freer.trade xng.trade xchng.trade unblind.date blindish.date rose.baby dollhouse.cam daddyoh.life daddyoh.org'
+zones='cargobay.net nuos.net nuos.org nu.cash nu.chat nu.click nu.email nu.gold nu.live nu.lol nu.money nu.parts nu.place nu.school nu.show nu.software nu.team nu.zone ccsys.com cropcircle.systems uhax.tv pawn.today freer.trade xng.trade xchng.trade unblind.date blindish.date bemylil.baby dollhouse.cam dads.wtf'
 
 for z in $zones; do
   
@@ -52,6 +52,8 @@ for z in $zones; do
       department='Advertising and Trend Analysis';;
     nu.parts)
       department='Construction and Manufacturing';;
+    nu.school)
+      department='Knowledge Library and Training Academy';;
     nu.money)
       department='Cryptographic Instrument Issuance and Offering Service';;
     nu.gold)
@@ -60,24 +62,24 @@ for z in $zones; do
       department='Cryptographic Monetary Products';;
     uhax.tv)
       department='Hacker News and Entertainment';;
-    pawnbase.com)
+    pawn.today)
       department='Collateralized Lending Market Portal';;
     freer.trade)
       department='Community Goods and Services Market Portal';;
     xng.trade|xchng.trade)
       department='Cryptographic Instrument Market Portal';;
     blindish.date)
-      department='Casual Dating Information Service';;
+      department='Casual Dating Communication Service';;
     unblind.date)
-      department='Premier Dating Information Service';;
-    rose.baby)
+      department='Premier Dating Communication Service';;
+    bemylil.baby)
       department='Sugar Baby Dating Communication Service';;
     dollhouse.cam)
       department='Live Adult Entertainment';;
-    daddyoh.life|daddyoh.org)
+    dads.wtf)
       province='Ohio'
       locality='Toledo'
-      organization='Daddy-Oh Society'
+      organization='Fatherhood Society'
       department='Supporting Fatherhood and Family Values';;
     *) die
   esac
@@ -118,7 +120,7 @@ for z in $zones; do
   case $z in
     cropcircle.systems|nu.zone|nu.click)
       strict=;;
-    cargobay.net|ccsys.com|nuos.org|uhax.tv|pawnbase.com|nu.software|nu.place|nu.email|nu.chat|nu.team|nu.show|nu.live|nu.lol|nu.money|nu.gold|nu.cash|unblind.date|blindish.date|dominatrixbunny.com|dominatrixbunnies.com|dominatrixbunnys.com|daddyoh.life|daddyoh.org)
+    cargobay.net|ccsys.com|nuos.org|uhax.tv|pawn.today|nu.school|nu.software|nu.place|nu.email|nu.chat|nu.team|nu.show|nu.live|nu.lol|nu.money|nu.gold|nu.cash|unblind.date|blindish.date|bemylil.baby|dads.wtf)
       strict=y;;
     *) die
   esac
