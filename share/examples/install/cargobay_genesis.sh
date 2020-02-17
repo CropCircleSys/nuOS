@@ -1,4 +1,4 @@
-zones='cargobay.net nuos.net nuos.org nu.cash nu.chat nu.click nu.email nu.gold nu.live nu.lol nu.money nu.parts nu.place nu.school nu.show nu.software nu.team nu.zone ccsys.com cropcircle.systems uhax.tv pawn.today freer.trade xng.trade xchng.trade unblind.date blindish.date bemylil.baby dollhouse.cam dads.wtf'
+zones='cargobay.net ccsys.com cropcircle.systems nuos.org nuos.net nu.cash nu.chat nu.click nu.email nu.gold nu.live nu.lol nu.money nu.parts nu.place nu.school nu.show nu.software nu.team nu.zone uhax.tv pawn.today freer.trade xng.trade xchng.trade unblind.date blindish.date bemylil.baby dollhouse.cam dads.wtf faith.agency'
 
 for z in $zones; do
   
@@ -81,6 +81,8 @@ for z in $zones; do
       locality='Toledo'
       organization='Fatherhood Society'
       department='Supporting Fatherhood and Family Values';;
+    faith.agency)
+      department='Supporting Faith and Spirituality';;
     *) die
   esac
   
@@ -120,7 +122,7 @@ for z in $zones; do
   case $z in
     cropcircle.systems|nu.zone|nu.click)
       strict=;;
-    cargobay.net|ccsys.com|nuos.org|uhax.tv|pawn.today|nu.school|nu.software|nu.place|nu.email|nu.chat|nu.team|nu.show|nu.live|nu.lol|nu.money|nu.gold|nu.cash|unblind.date|blindish.date|bemylil.baby|dads.wtf)
+    cargobay.net|ccsys.com|nuos.org|nuos.net|nu.cash|nu.chat|nu.email|nu.gold|nu.live|nu.lol|nu.money|nu.parts|nu.place|nu.school|nu.show|nu.software|nu.team|uhax.tv|pawn.today|freer.trade|xng.trade|xchng.trade|unblind.date|blindish.date|bemylil.baby|dollhouse.cam|dads.wtf|faith.agency)
       strict=y;;
     *) die
   esac

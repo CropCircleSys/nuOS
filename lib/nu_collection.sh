@@ -58,12 +58,12 @@ collection_vars_init () {
 		net/dhcpcd
 		dns/unbound
 	'
-
+	
 	COLL_base='
 		bare
 		security/gnupg
 	'
-
+	
 	COLL_lite='
 		base
 		sysutils/screen
@@ -86,7 +86,7 @@ collection_vars_init () {
 		lang/gawk
 		lang/expect
 	'
-
+	
 	COLL_miniserver='
 		developer
 		net-mgmt/lldpd
@@ -124,6 +124,7 @@ collection_vars_init () {
 		irc/irssi
 		net/kamailio
 		sysutils/ipfs-go
+		security/tor
 	'
 	
 	COLL_mediaserver='
@@ -136,18 +137,25 @@ collection_vars_init () {
 		net-p2p/createtorrent
 		net-p2p/torrentcheck
 	'
-
-	COLL_server='
-		mediaserver
-		security/tor
+	
+	COLL_coinserver='
+		miniserver
 		net-p2p/bitcoin-daemon
 		net-p2p/bitcoin-utils
-		finance/vanitygen
 		net-p2p/namecoin-daemon
 		net-p2p/namecoin-utils
 		net-p2p/litecoin-daemon
 		net-p2p/litecoin-utils
 		net-p2p/monero-cli
+	'
+	
+	COLL_commonserver='
+		mediaserver
+		coinserver
+	'
+	
+	COLL_server='
+		commonserver
 		graphics/optipng
 		graphics/gifsicle
 		lang/phantomjs
