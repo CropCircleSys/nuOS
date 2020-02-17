@@ -210,7 +210,7 @@ cat > "${CHROOTDIR-}/usr/local/etc/$service/Includes/$HOST_NAME.conf" <<EOF
 	ServerName $HOST_NAME${OPT_SSL:+:443}
 	ServerAdmin webmaster@$HOST_NAME
 	DocumentRoot "$user_home/$HOST_NAME/www/public"
-	${loose_app_security:+#}Header always setifempty Content-Security-Policy "default-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'; plugin-types null/void"
+	${loose_app_security:+#}Header always setifempty Content-Security-Policy "default-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'; object-src 'none'"
 	${loose_app_security:+#}Header always setifempty X-Frame-Options SAMEORIGIN
 	${loose_app_security:+#}Header always setifempty X-XSS-Protection "1; mode=block"
 	${loose_app_security:+#}Header always set X-Content-Type-Options nosniff
