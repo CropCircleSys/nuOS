@@ -18,7 +18,7 @@ NUOS_VER=0.0.11.3a0
 
 . "$(dirname "$(realpath "$0")")/../lib/nu_system.sh"
 
-while getopts A:a:b:c:C:d:e:fh:j:kK:l:Lm:Mn:o:p:stT:Su:vW OPT; do case $OPT in
+while getopts A:a:b:c:C:d:e:fh:j:kK:l:Lm:Mn:No:p:stT:Su:vW OPT; do case $OPT in
 	A) KNOT_ALTERNATE=$OPTARG;;
 	a) AUTH_FILE=$OPTARG;;
 	b) KEY_BITS=$OPTARG;;
@@ -36,6 +36,7 @@ while getopts A:a:b:c:C:d:e:fh:j:kK:l:Lm:Mn:o:p:stT:Su:vW OPT; do case $OPT in
 	m) EMAIL=$OPTARG;;
 	M) OPT_MUST_STAPLE=y;;
 	n) COUNTRY=$OPTARG;;
+	N) NEXT_MODE=y;;
 	o) COMPANY=$OPTARG;;
 	p) STATE=$OPTARG;;
 	s) OPT_SELF_SIGNED=y;;
@@ -49,6 +50,9 @@ esac; done; shift $(($OPTIND-1))
 [ $# = 0 ]
 : ${SSL_HOST:=$HOST}
 [ -n "${OPT_EMPTY_SAN_LIST-}" ] && SAN_LIST= || : ${SAN_LIST:=www.%}
+if srsly ${NEXT_MODE-} && canhas ${OPT_EXPORT_TLSA-}; then
+	: ${NEXT_PUBKEY:=/etc/ssl/csrs.next/$SSL_HOST.csr}
+fi
 
 . "$(dirname "$(realpath "$0")")/../lib/nu_common.sh"
 
@@ -171,6 +175,7 @@ maybe_yell
 
 if [ -n "${OPT_LETS_ENCRYPT-}" ]; then
 	[ -n $SSL_HOST ]
+	[ -z "${NEXT_MODE-}" ]
 	[ -z "${CERT_FILE-}" ]
 	[ -z "${AUTH_FILE-}" ]
 	check_ns_server
@@ -217,14 +222,14 @@ fi
 
 if [ -z "${CERT_FILE-}" ]; then
 	
-	if [ ! -d "${CHROOTDIR-}/etc/ssl/private" ]; then
-		(umask 77 && mkdir "${CHROOTDIR-}/etc/ssl/private")
+	if [ ! -d "${CHROOTDIR-}/etc/ssl/private${NEXT_MODE:+.next}" ]; then
+		(umask 77 && mkdir "${CHROOTDIR-}/etc/ssl/private${NEXT_MODE:+.next}")
 	fi
 	if [ ! -d "${CHROOTDIR-}/etc/ssl/certs" ]; then
 		mkdir "${CHROOTDIR-}/etc/ssl/certs"
 	fi
-	if [ -e "${CHROOTDIR-}/etc/ssl/private/$SSL_HOST.key" ]; then
-		echo "WARNING: Using existing $SSL_HOST.key found in /etc/ssl/private. Any specified options related to generating keys will be ignored." >&2
+	if [ -e "${CHROOTDIR-}/etc/ssl/private${NEXT_MODE:+.next}/$SSL_HOST.key" ]; then
+		echo "WARNING: Using existing $SSL_HOST.key found in /etc/ssl/private${NEXT_MODE:+.next}. Any specified options related to generating keys will be ignored." >&2
 	else
 		if [ -z "${OPT_UNSECURE-}" ]; then
 			read -p 'keyfile password:' -r key_password
@@ -236,9 +241,9 @@ if [ -z "${CERT_FILE-}" ]; then
 			cat >| "$key_password_file" <<EOF
 $key_password
 EOF
-			(umask 77 && $SSL_CMD genrsa -des3 -passout "file:$key_password_file" -out "${CHROOTDIR-}/etc/ssl/private/$SSL_HOST.key" $KEY_BITS)
+			(umask 77 && $SSL_CMD genrsa -des3 -passout "file:$key_password_file" -out "${CHROOTDIR-}/etc/ssl/private${NEXT_MODE:+.next}/$SSL_HOST.key" $KEY_BITS)
 		else
-			(umask 77 && $SSL_CMD genrsa -out "${CHROOTDIR-}/etc/ssl/private/$SSL_HOST.key" $KEY_BITS)
+			(umask 77 && $SSL_CMD genrsa -out "${CHROOTDIR-}/etc/ssl/private${NEXT_MODE:+.next}/$SSL_HOST.key" $KEY_BITS)
 		fi
 	fi
 	
@@ -254,7 +259,7 @@ EOF
 	else
 		ca_signed=y
 		sufx=csr
-		dir=csrs
+		dir=csrs${NEXT_MODE:+.next}
 	fi
 
 	if [ ! -d "${CHROOTDIR-}/etc/ssl/$dir" ]; then
@@ -283,11 +288,11 @@ subjectAltName = @alt_names
 		-config "$ssl_cnf" \
 		-new \
 		-subj "$subj" \
-		-key "${CHROOTDIR-}/etc/ssl/private/$SSL_HOST.key" \
+		-key "${CHROOTDIR-}/etc/ssl/private${NEXT_MODE:+.next}/$SSL_HOST.key" \
 		${key_password_file:+-passin "file:$key_password_file"} \
 		${OPT_SELF_SIGNED:+-x509 -nodes -sha$DGST_BITS -days $EXPIRE_DAYS} \
 		-reqexts v3_req \
-		-out "${CHROOTDIR-}/etc/ssl/${OPT_SELF_SIGNED:+certs}${ca_signed:+csrs}/$SSL_HOST.${OPT_SELF_SIGNED:+internal.crt}${ca_signed:+csr}"
+		-out "${CHROOTDIR-}/etc/ssl/${OPT_SELF_SIGNED:+certs}${ca_signed:+csrs${NEXT_MODE:+.next}}/$SSL_HOST.${OPT_SELF_SIGNED:+internal.crt}${ca_signed:+csr}"
 	if [ -n "${key_password_file-}" ]; then
 		rm "$key_password_file"
 	fi
@@ -299,7 +304,7 @@ else
 	
 	grep -q -- '-BEGIN CERTIFICATE-' "$CERT_FILE"
 	grep -q -- '-BEGIN CERTIFICATE-' "$AUTH_FILE"
-	[ -e "${CHROOTDIR-}/etc/ssl/private/$SSL_HOST.key" ] || exit 2
+	[ -e "${CHROOTDIR-}/etc/ssl/private${NEXT_MODE:+.next}/$SSL_HOST.key" ] || exit 2
 	for x in crt ca.crt; do
 		if [ -e "${CHROOTDIR-}/etc/ssl/certs/$SSL_HOST.$x" ]; then
 			mv "${CHROOTDIR-}/etc/ssl/certs/$SSL_HOST.$x" "${CHROOTDIR-}/etc/ssl/certs/$SSL_HOST.$x.${now:=`env TZ=UTC date +%Y-%m-%d-%H%M%S`}.removed_from_service"
