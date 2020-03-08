@@ -1,1 +1,0 @@
-[ ! -f files/patch-src_fs.h ] && grep -q '(namecoin-namecoin-core-nc0\.17\.0_GH0\.tar.gz)' distinfo
