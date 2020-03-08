@@ -18,7 +18,7 @@ NUOS_VER=0.0.11.3a0
 
 . "$(dirname "$(realpath "$0")")/../lib/nu_system.sh"
 
-while getopts a:Ab:C:dfh:i:I:j:n:o:O:p:Pqs:S:t:T:u:vwx OPT; do case $OPT in
+while getopts a:Ab:C:dfh:i:I:j:mn:o:O:p:Pqs:S:t:T:u:vwx OPT; do case $OPT in
 	a) ADMIN_ACCT=$OPTARG;;
 	A) OPT_PUBLIC_ALIAS=y;;
 	b) BD_ACCT=$OPTARG;;
@@ -29,6 +29,7 @@ while getopts a:Ab:C:dfh:i:I:j:n:o:O:p:Pqs:S:t:T:u:vwx OPT; do case $OPT in
 	i) JAIL_IP=$OPTARG;;
 	I) push LISTEN_SERVICE $OPTARG;;
 	j) JAIL_NAME=$OPTARG;;
+	m) OPT_MOUNT_FSTAB=y;;
 	n) ALIAS_IP=$OPTARG;;
 	o) JAIL_OS=$OPTARG;;
 	O) push CONNECT_SERVICE $OPTARG;;
@@ -89,6 +90,8 @@ if srsly "${OPT_DELETE-}"; then
 	for j in `ls "$jail_dir"`; do
 		remove_our_jail_from_hostfile "$jail_dir/$j/etc/hosts" || true
 	done
+	
+	[ ! -f "${CHROOTDIR-}/etc/fstab.$JAIL_NAME_" ] || mv "${CHROOTDIR-}/etc/fstab.$JAIL_NAME_" "${CHROOTDIR-}/etc/fstab.$JAIL_NAME_.`env TZ=UTC date +%Y-%m-%d-%H%M%S`.removed_from_service"
 
 	zfs list -H -r $JAIL_DATA | cut -w -f 1 | tail -r | xargs -n1 zfs destroy
 	rmdir "${CHROOTDIR-}$JAIL_PATH"
@@ -177,6 +180,13 @@ if [ "$JAIL_NAME" != "$JAIL_NAME_" ]; then
 	cat >> "${CHROOTDIR-}/etc/jail.conf" <<EOF
 	path = "/var/jail/$JAIL_NAME";
 	host.hostname = "$JAIL_NAME.jail";
+EOF
+fi
+
+if [ -n "${OPT_MOUNT_FSTAB-}" ]; then
+	touch "${CHROOTDIR-}/etc/fstab.$JAIL_NAME_"
+	cat >> "${CHROOTDIR-}/etc/jail.conf" <<EOF
+	mount.fstab = "/etc/fstab.$JAIL_NAME_";
 EOF
 fi
 
