@@ -16,10 +16,12 @@ set -e; set -u; set -C
 
 NUOS_VER=0.0.11.3a0
 
-while getopts C:eh:p:Psv OPT; do case $OPT in
+while getopts C:deh:j:p:Psv OPT; do case $OPT in
 	C) CHROOTDIR=$OPTARG;;
+	d) OPT_DAV=y;;
 	e) OPT_ELECT=y;;
 	h) HOST_NAME=$OPTARG;;
+	j) JAIL_NAME=$OPTARG;;
 	p) POOL_NAME=$OPTARG;;
 	P) OPT_POP3=y;;
 	s) OPT_SSL=y;;
@@ -34,6 +36,14 @@ esac; done; shift $(($OPTIND-1))
 
 nuos_init
 
+if canhas ${JAIL_NAME-}; then
+	JAIL_NAME_=`echo $JAIL_NAME | tr . _`
+	jail_path="`jls -j $JAIL_NAME_ path`"
+	alt_root=$jail_path
+elif canhas "${CHROOTDIR-}"; then
+	alt_root="${CHROOTDIR-}"
+fi
+
 hostname=${NEW_HOST:-$HOST}
 if [ -n "${OPT_ELECT-}" ]; then
 	default_servername=${hostname#*.}
@@ -44,7 +54,8 @@ fi
 echo 'host name       -h HOST_NAME      ' ${HOST_NAME:=${default_servername}}
 echo 'pool name       -p POOL_NAME      ' ${POOL_NAME:=$POOL_BOOT_NAME}
 echo -n 'promote server  -e OPT_ELECT       ' && [ -n "${OPT_ELECT-}" ] && echo set || echo null
-echo -n 'enable pop3     -P OPT_POP3        ' && [ -n "${OPT_POP3-}" ] && echo set || echo null
+echo -n 'enable DAV      -d OPT_DAV         ' && [ -n "${OPT_DAV-}" ] && echo set || echo null
+echo -n 'enable POP3     -P OPT_POP3        ' && [ -n "${OPT_POP3-}" ] && echo set || echo null
 echo -n 'ssl             -s OPT_SSL         ' && [ -n "${OPT_SSL-}" ] && echo set || echo null
 echo
 
@@ -52,18 +63,21 @@ maybe_yell
 
 [ -n "${OPT_ELECT-}" ] || [ "$HOST_NAME" = "$hostname" ]
 
-[ ! -e "${CHROOTDIR-}/usr/local/etc/cyrus" ]
+[ ! -e "${alt_root-}/usr/local/etc/cyrus" ]
 
-mkdir "${CHROOTDIR-}/usr/local/etc/cyrus"
+mkdir "${alt_root-}/usr/local/etc/cyrus"
 
 export LC_CTYPE=C
 
-sed -i '' -Ee 's/^#([[:blank:]]*idled)[[:>:]]/\1/' "${CHROOTDIR-}/usr/local/etc/cyrus.conf"
+sed -i '' -Ee 's/^#([[:blank:]]*idled)[[:>:]]/\1/' "${alt_root-}/usr/local/etc/cyrus.conf"
 if [ -z "${OPT_POP3-}" ]; then
-	sed -i '' -Ee 's/^([[:blank:]]*pop3)[[:>:]]/#\1/;s/^([[:blank:]]*pop3s)[[:>:]]/#\1/' "${CHROOTDIR-}/usr/local/etc/cyrus.conf"
+	sed -i '' -Ee 's/^([[:blank:]]*pop3s?)[[:>:]]/#\1/' "${alt_root-}/usr/local/etc/cyrus.conf"
+fi
+if [ -z "${OPT_DAV-}" ]; then
+	sed -i '' -Ee 's/^([[:blank:]]*https?)[[:>:]]/#\1/' "${alt_root-}/usr/local/etc/cyrus.conf"
 fi
 
-cat >> "${CHROOTDIR-}/usr/local/etc/imapd.conf" <<EOF
+cat >> "${alt_root-}/usr/local/etc/imapd.conf" <<EOF
 
 altnamespace: yes
 autocreate_quota: 0
@@ -71,51 +85,51 @@ autocreate_post: yes
 EOF
 
 if [ -n "${OPT_SSL-}" ]; then
-	mkdir "${CHROOTDIR-}/usr/local/etc/cyrus/ssl"
-	(umask 77 && mkdir "${CHROOTDIR-}/usr/local/etc/cyrus/ssl/private")
-	${CHROOTDIR:+chroot "$CHROOTDIR"} chown cyrus /usr/local/etc/cyrus/ssl/private
+	mkdir "${alt_root-}/usr/local/etc/cyrus/ssl"
+	(umask 77 && mkdir "${alt_root-}/usr/local/etc/cyrus/ssl/private")
+	${alt_root:+chroot "$alt_root"} chown cyrus /usr/local/etc/cyrus/ssl/private
 	if zfs list $POOL_NAME-pvt > /dev/null 2>&1; then # this check will need to be refined if ever we support CHROOTDIR
-		chflags schg "${CHROOTDIR-}/usr/local/etc/cyrus/ssl/private"
+		chflags schg "${alt_root-}/usr/local/etc/cyrus/ssl/private"
 		zfs create -o mountpoint=/usr/local/etc/cyrus/ssl/private $POOL_NAME-pvt/sys/host/imap-ssl
-		chmod go-rx "${CHROOTDIR-}/usr/local/etc/cyrus/ssl/private"
-		${CHROOTDIR:+chroot "$CHROOTDIR"} chown cyrus /usr/local/etc/cyrus/ssl/private
+		chmod go-rx "${alt_root-}/usr/local/etc/cyrus/ssl/private"
+		${alt_root:+chroot "$alt_root"} chown cyrus /usr/local/etc/cyrus/ssl/private
 	fi
-	if ! cp "${CHROOTDIR-}/etc/ssl/certs/$HOST_NAME.crt" "${CHROOTDIR-}/usr/local/etc/cyrus/ssl/"; then
-		cp "${CHROOTDIR-}/etc/ssl/certs/$HOST_NAME.internal.crt" "${CHROOTDIR-}/usr/local/etc/cyrus/ssl/$HOST_NAME.crt"
+	if ! cp "${alt_root-}/etc/ssl/certs/$HOST_NAME.crt" "${alt_root-}/usr/local/etc/cyrus/ssl/"; then
+		cp "${alt_root-}/etc/ssl/certs/$HOST_NAME.internal.crt" "${alt_root-}/usr/local/etc/cyrus/ssl/$HOST_NAME.crt"
 		internal=y
 	fi
-	mkdir -p "${CHROOTDIR-}/etc/ssl/certs.installed/localhost/$HOST_NAME.${internal:+internal.}crt"
-	ln -s "/usr/local/etc/cyrus/ssl/$HOST_NAME.crt" "${CHROOTDIR-}/etc/ssl/certs.installed/localhost/$HOST_NAME.${internal:+internal.}crt/imapd"
-	cp "${CHROOTDIR-}/etc/ssl/private/$HOST_NAME.key" "${CHROOTDIR-}/usr/local/etc/cyrus/ssl/private/"
-	chown cyrus "${CHROOTDIR-}/usr/local/etc/cyrus/ssl/private/$HOST_NAME.key"
-	cat >> "${CHROOTDIR-}/usr/local/etc/imapd.conf" <<EOF
+	mkdir -p "${alt_root-}/etc/ssl/certs.installed/localhost/$HOST_NAME.${internal:+internal.}crt"
+	ln -s "/usr/local/etc/cyrus/ssl/$HOST_NAME.crt" "${alt_root-}/etc/ssl/certs.installed/localhost/$HOST_NAME.${internal:+internal.}crt/imapd"
+	cp "${alt_root-}/etc/ssl/private/$HOST_NAME.key" "${alt_root-}/usr/local/etc/cyrus/ssl/private/"
+	chown cyrus "${alt_root-}/usr/local/etc/cyrus/ssl/private/$HOST_NAME.key"
+	cat >> "${alt_root-}/usr/local/etc/imapd.conf" <<EOF
 tls_server_cert: /usr/local/etc/cyrus/ssl/$HOST_NAME.crt
 tls_server_key: /usr/local/etc/cyrus/ssl/private/$HOST_NAME.key
 EOF
-	if cp "${CHROOTDIR-}/etc/ssl/certs/$HOST_NAME.ca.crt" "${CHROOTDIR-}/usr/local/etc/cyrus/ssl/"; then
-		mkdir -p "${CHROOTDIR-}/etc/ssl/certs.installed/localhost/$HOST_NAME.ca.crt"
-		ln -s "/usr/local/etc/cyrus/ssl/$HOST_NAME.ca.crt" "${CHROOTDIR-}/etc/ssl/certs.installed/localhost/$HOST_NAME.ca.crt/imapd"
-		cat >> "${CHROOTDIR-}/usr/local/etc/imapd.conf" <<EOF
+	if cp "${alt_root-}/etc/ssl/certs/$HOST_NAME.ca.crt" "${alt_root-}/usr/local/etc/cyrus/ssl/"; then
+		mkdir -p "${alt_root-}/etc/ssl/certs.installed/localhost/$HOST_NAME.ca.crt"
+		ln -s "/usr/local/etc/cyrus/ssl/$HOST_NAME.ca.crt" "${alt_root-}/etc/ssl/certs.installed/localhost/$HOST_NAME.ca.crt/imapd"
+		cat >> "${alt_root-}/usr/local/etc/imapd.conf" <<EOF
 tls_client_ca_file: /usr/local/etc/cyrus/ssl/$HOST_NAME.ca.crt
 EOF
 	fi
 else
-	sed -i '' -Ee 's/^([[:blank:]]*imaps)[[:>:]]/#\1/;s/^([[:blank:]]*pop3s)[[:>:]]/#\1/' "${CHROOTDIR-}/usr/local/etc/cyrus.conf"
+	sed -i '' -Ee 's/^([[:blank:]]*imaps)[[:>:]]/#\1/;s/^([[:blank:]]*pop3s)[[:>:]]/#\1/' "${alt_root-}/usr/local/etc/cyrus.conf"
 fi
 
 if [ "$HOST_NAME" != "$hostname" ]; then
-	echo "servername: $HOST_NAME" >> "${CHROOTDIR-}/usr/local/etc/imapd.conf"
+	echo "servername: $HOST_NAME" >> "${alt_root-}/usr/local/etc/imapd.conf"
 fi
 
 zfs list $POOL_NAME/svc 2> /dev/null || zfs create -o mountpoint=none -o canmount=off $POOL_NAME/svc
 zfs create -o mountpoint=none -o canmount=off $POOL_NAME/svc/imap
-zfs create -o mountpoint=/var/imap $POOL_NAME/svc/imap/cyrus
-zfs create -o mountpoint=/var/spool/imap $POOL_NAME/svc/imap/cyrus/spool
+zfs create -o mountpoint=${jail_path-}/var/imap $POOL_NAME/svc/imap/cyrus
+zfs create -o mountpoint=${jail_path-}/var/spool/imap $POOL_NAME/svc/imap/cyrus/spool
 
-${CHROOTDIR:+chroot "$CHROOTDIR"} /usr/local/cyrus/bin/mkimap
+${alt_root:+chroot "$alt_root"} /usr/local/cyrus/sbin/mkimap
 
 zfs snapshot -r $POOL_NAME/svc/imap/cyrus@genesis
 
-sister enable_svc ${CHROOTDIR:+-C "$CHROOTDIR"} cyrus_imapd
+sister enable_svc ${alt_root:+-C "$alt_root"} cyrus_imapd
 
 echo "Configured $HOST_NAME for imap service."
