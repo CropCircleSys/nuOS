@@ -98,6 +98,8 @@ collection_vars_init () {
 		net/openldap24-server
 		security/openvpn
 		net/mpd5
+		net/avahi
+		dns/nss_mdns
 		net/3proxy
 		ftp/pure-ftpd
 		net/isc-dhcp44-server
@@ -132,6 +134,7 @@ collection_vars_init () {
 		net/netatalk3
 		net/samba410
 		multimedia/ffmpeg
+		multimedia/Bento4
 		www/youtube_dl
 		net-p2p/rtorrent
 		net-p2p/createtorrent
