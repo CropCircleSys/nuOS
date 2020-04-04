@@ -122,7 +122,7 @@ require_ports_tree () {
 }
 
 pkg_name () {
-	local opt_db= opt_installed= output=
+	local port_= metainfo_dir= makeargs= opt_db= opt_installed= output=
 	while getopts di OPT; do case $OPT in
 		d) opt_db=y;;
 		i) opt_installed=y;;
@@ -132,8 +132,9 @@ pkg_name () {
 
 	[ $# = 0 ]
 
+	port_=`echo $port | tr / _`
 	if [ -n "$opt_db" ]; then
-		cat "${CHROOTDIR-}/var/db/nuos/pkg/`echo $port | tr / _`/name"
+		cat "${CHROOTDIR-}/var/db/nuos/pkg/$port_/name"
 	elif [ -n "$opt_installed" ]; then
 		exit 78
 		output=`${CHROOTDIR:+chroot "$CHROOTDIR"} pkg info -qO ${port%%@*}`
@@ -159,7 +160,9 @@ pkg_name () {
 				flavor=${port##*@}
 			;;
 		esac
-		(cd /usr/ports/${port%%@*} && make "__MAKE_CONF=$make_conf" PORT_DBDIR="$PORT_DBDIR" ${flavor:+FLAVOR=$flavor} -VPKGNAME)
+		metainfo_dir="$(dirname "$(realpath "$0")")/../pkg"
+		makeargs="$metainfo_dir/$port_.makeargs"
+		(cd /usr/ports/${port%%@*} && make "__MAKE_CONF=$make_conf" PORT_DBDIR="$PORT_DBDIR" ${flavor:+FLAVOR=$flavor} `cat "$makeargs" 2>/dev/null` -VPKGNAME)
 		$retire_make_conf_cmd make_conf
 	fi
 }
@@ -197,21 +200,24 @@ port_deps () {
 	local port_dir=/usr/ports/${port%%@*}
 	[ -d $port_dir ]
 
-	local make_conf= retire_make_conf_cmd= flavor=
+	local port_= metainfo_dir= makeargs= make_conf= retire_make_conf_cmd= flavor=
 	prepare_make_conf make_conf retire_make_conf_cmd
 	case $port in
 		*@*)
 			flavor=${port##*@}
 		;;
 	esac
-	[ -z "${ret_def_tmp-}" ] || (cd $port_dir && make "__MAKE_CONF=$make_conf" PORT_DBDIR=/var/empty ${flavor:+FLAVOR=$flavor} -D BATCH showconfig) >| "$ret_def_tmp"
-	[ -z "${ret_opt_tmp-}" ] || (cd $port_dir && make "__MAKE_CONF=$make_conf" PORT_DBDIR="$PORT_DBDIR" ${flavor:+FLAVOR=$flavor} -D BATCH showconfig) >| "$ret_opt_tmp"
+	metainfo_dir="$(dirname "$(realpath "$0")")/../pkg"
+	port_=`echo $port | tr / _`
+	makeargs="$metainfo_dir/$port_.makeargs"
+	[ -z "${ret_def_tmp-}" ] || (cd $port_dir && make "__MAKE_CONF=$make_conf" PORT_DBDIR=/var/empty ${flavor:+FLAVOR=$flavor} `cat "$makeargs" 2>/dev/null` -D BATCH showconfig) >| "$ret_def_tmp"
+	[ -z "${ret_opt_tmp-}" ] || (cd $port_dir && make "__MAKE_CONF=$make_conf" PORT_DBDIR="$PORT_DBDIR" ${flavor:+FLAVOR=$flavor} `cat "$makeargs" 2>/dev/null` -D BATCH showconfig) >| "$ret_opt_tmp"
 	for action in lib run build fetch extract patch; do
 		eval local outfile=\"\$ret_${action}_tmp\"
 		if [ $action = build -a $port != ports-mgmt/pkg ]; then
 			echo ports-mgmt/pkg >| "$outfile"
 		fi
-		(cd $port_dir && make "__MAKE_CONF=$make_conf" PORT_DBDIR="$PORT_DBDIR" ${flavor:+FLAVOR=$flavor} -D BATCH -V $(echo $action | tr [:lower:] [:upper:])_DEPENDS | xargs -n 1 | cut -d : -f 2) >> "$outfile"
+		(cd $port_dir && make "__MAKE_CONF=$make_conf" PORT_DBDIR="$PORT_DBDIR" ${flavor:+FLAVOR=$flavor} `cat "$makeargs" 2>/dev/null` -D BATCH -V $(echo $action | tr [:lower:] [:upper:])_DEPENDS | xargs -n 1 | cut -d : -f 2) >> "$outfile"
 	done
 	$retire_make_conf_cmd make_conf
 
