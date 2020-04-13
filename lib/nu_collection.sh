@@ -132,7 +132,7 @@ collection_vars_init () {
 	COLL_mediaserver='
 		miniserver
 		net/netatalk3
-		net/samba410
+		net/samba411
 		multimedia/ffmpeg
 		multimedia/Bento4
 		www/youtube_dl
