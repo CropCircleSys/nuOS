@@ -27,8 +27,11 @@ esac; done; shift $(($OPTIND-1))
 [ -z "${CHROOTDIR-}" ] || exit 43 # CHROOTDIR is unsupported, though we want to some day
 . "$(dirname "$(realpath "$0")")/../lib/nu_system.sh"
 . "$(dirname "$(realpath "$0")")/../lib/nu_common.sh"
+. "$(dirname "$(realpath "$0")")/../lib/nu_make.sh"
+. "$(dirname "$(realpath "$0")")/../lib/nu_ports.sh"
 
 maybe_yell
+require_ports_tree
 
 : ${WORKERS:=3}
 : ${PKG_DBDIR:=/var/db/nuos/pkg}
