@@ -71,6 +71,7 @@ collection_vars_init () {
 		sysutils/pipemeter
 		archivers/lzop
 		archivers/p7zip
+		archivers/p7zip-codec-rar
 		sysutils/pciutils
 		sysutils/smartmontools
 		net/rsync
