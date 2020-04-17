@@ -167,6 +167,7 @@ kern.ipc.semmnu="3000"
 kern.ipc.semmns="7500"
 kern.ipc.semmni="1000"
 kern.racct.enable="1"
+net.inet.tcp.tso="0"
 EOF
 	
 	cat >> $pool_mnt/etc/rc.conf <<'EOF'
@@ -196,16 +197,12 @@ ntpd_sync_on_start="YES"
 EOF
 	
 	cat > $pool_mnt/etc/rc.conf.local <<'EOF'
-#gateway_enable="YES"
-#firewall_nat_enable="YES"
+gateway_enable="YES"
+firewall_nat_enable="YES"
 ifconfig_vtnet0_name="net0" # replace vtnet0 with the name of your primary upstream network interface
 EOF
 	
 	cat >> $pool_mnt/etc/sysctl.conf <<'EOF'
-
-# Only do a single pass through ipfw when using dummynet(4)
-# FreeBSD 11.2 default: 1
-net.inet.ip.fw.one_pass=0
 
 # Maximum number of IPv4 fragment reassembly queue entries
 # FreeBSD 11.2 default: 31311
@@ -364,6 +361,41 @@ case $sw_spc in
 esac
 zfs mount $root_ds/etc
 EOF
+	
+	cat > $pool_mnt/etc/rc.d/nuos_firstboot <<'EOF'
+#!/bin/sh
+
+# PROVIDE: nuos_firstboot
+# KEYWORD: firstboot
+
+. /etc/rc.subr
+
+name="nuos_firstboot"
+desc="Kick off nuOS system site/local/user custom genesis procedure"
+start_cmd="nuos_firstboot_start"
+stop_cmd=":"
+rcvar="nuos_firstboot_enable"
+
+nuos_firstboot_start ()
+{
+	echo "It seems this is the first boot of a nuOS system requiring a genesis procedure"
+	if [ -n "$nuos_firstboot_script" ] && [ "$nuos_firstboot_script" != "${nuos_firstboot_script%.sh}" ] && [ -f "$nuos_firstboot_script" ]; then
+		echo "Evaluating $nuos_firstboot_script in the background and logging to /var/log/nuos_firstboot.log"
+		date >> /var/log/nuos_firstboot.log
+		/bin/sh "$nuos_firstboot_script" >> /var/log/nuos_firstboot.log &
+	elif [ -n "$nuos_firstboot_script" ] && [ "$nuos_firstboot_script" != "${nuos_firstboot_script%.sh}" ]; then
+		echo "ERROR: nuos_firstboot_script '$nuos_firstboot_script' was not found"
+	elif [ -n "$nuos_firstboot_script" ]; then
+		echo "ERROR: nuos_firstboot_script '$nuos_firstboot_script' is not in the proper format"
+	else
+		echo "ERROR: nuos_firstboot_script was not specified in resource control configuration"
+	fi
+}
+
+load_rc_config $name
+run_rc_command "$1"
+EOF
+	chmod a-w+rx $pool_mnt/etc/rc.d/nuos_firstboot
 	
 	mkdir $pool_mnt/etc/nuos
 	if [ -z "${OPT_NOBRAND-}" ]; then
