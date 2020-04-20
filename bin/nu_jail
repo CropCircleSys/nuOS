@@ -143,7 +143,7 @@ zfs list -H -r -t filesystem -o name,mountpoint $POOL_NAME/os/$JAIL_OS/$curr_hos
 		jmp=$JAIL_PATH
 	fi
 	zfs clone ${jmp:+-o mountpoint=$jmp} $POOL_NAME/os/$JAIL_OS/$curr_host_ver${ds:+/${ds#$pat}}@$JAIL_SNAP $JAIL_DATA${ds:+/${ds#$pat}}
-	if canhas "${CHROOTDIR-}" && mkdir "$CHROOTDIR${jmp:-$JAIL_PATH$mp}" 2> /dev/null; then
+	if canhas "${CHROOTDIR-}" && { srsly "${remounted-}" || mkdir "$CHROOTDIR${jmp:-$JAIL_PATH$mp}" 2> /dev/null; }; then
 		eval `stat -f "mode=%OMp%03OLp uid=%Du gid=%Dg flags=%Of" "${jmp:-$JAIL_PATH$mp}"`
 		zfs unmount $JAIL_DATA${ds:+/${ds#$pat}}
 		chown $uid:$gid "${CHROOTDIR-}$jmp"
