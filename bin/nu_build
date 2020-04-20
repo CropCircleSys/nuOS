@@ -42,6 +42,7 @@ nuos_init
 make_vars_init
 collection_vars_init
 build_vars_init
+require_base_src
 
 maybe_pause
 maybe_yell
@@ -382,7 +383,7 @@ nuos_firstboot_start ()
 	if [ -n "$nuos_firstboot_script" ] && [ "$nuos_firstboot_script" != "${nuos_firstboot_script%.sh}" ] && [ -f "$nuos_firstboot_script" ]; then
 		echo "Evaluating $nuos_firstboot_script in the background and logging to /var/log/nuos_firstboot.log"
 		date >> /var/log/nuos_firstboot.log
-		/bin/sh "$nuos_firstboot_script" >> /var/log/nuos_firstboot.log &
+		/bin/sh "$nuos_firstboot_script" >> /var/log/nuos_firstboot.log 2>&1 &
 	elif [ -n "$nuos_firstboot_script" ] && [ "$nuos_firstboot_script" != "${nuos_firstboot_script%.sh}" ]; then
 		echo "ERROR: nuos_firstboot_script '$nuos_firstboot_script' was not found"
 	elif [ -n "$nuos_firstboot_script" ]; then
