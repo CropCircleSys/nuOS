@@ -83,10 +83,10 @@ require_base_src () {
 		(cd /usr/src && make -j $MAKE_JOBS "__MAKE_CONF=$make_conf" buildworld)
 		$retire_make_conf_cmd make_conf
 	fi
+	if [ $TRGT_KERN = NUOS ] && [ ! -e /usr/src/sys/$TRGT_ARCH/conf/NUOS -o /usr/src/sys/$TRGT_ARCH/conf/NUOS -ot "$(realpath "$(dirname "$(realpath "$0")")/../share/kern/NUOS")" ]; then
+		cp -p "$(realpath "$(dirname "$(realpath "$0")")/../share/kern/NUOS")" /usr/src/sys/$TRGT_ARCH/conf/NUOS
+	fi
 	if [ ! -d /usr/obj/usr/src/sys/$TRGT_KERN ]; then
-		if [ $TRGT_KERN = NUOS ] && [ ! -e /usr/src/sys/$TRGT_ARCH/conf/NUOS -o /usr/src/sys/$TRGT_ARCH/conf/NUOS -ot "$(realpath "$(dirname "$(realpath "$0")")/../share/kern/NUOS")" ]; then
-			cp -p "$(realpath "$(dirname "$(realpath "$0")")/../share/kern/NUOS")" /usr/src/sys/$TRGT_ARCH/conf/NUOS
-		fi
 		prepare_make_conf make_conf retire_make_conf_cmd
 		(cd /usr/src && make -j $MAKE_JOBS "__MAKE_CONF=$make_conf" KERNCONF=$TRGT_KERN buildkernel)
 		$retire_make_conf_cmd make_conf
