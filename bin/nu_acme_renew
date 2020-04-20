@@ -17,9 +17,10 @@ set -e; set -u; set -C
 NUOS_VER=0.0.11.3a0
 export PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
 
-while getopts fiv OPT; do case $OPT in
+while getopts fij:v OPT; do case $OPT in
 	f) OPT_FORCE=y;;
 	i) OPT_INSTALL_ONLY=y;;
+	j) NAMESERVER_JAILNAME=$OPTARG;;
 	v) OPT_VERBOSE=y;;
 esac; done; shift $(($OPTIND-1))
 
@@ -43,8 +44,8 @@ for d in $@; do
 	require_tmp acme_out
 	if [ -n "${OPT_INSTALL_ONLY-}" ] || { ! $SSL_CMD x509 -in $SSL_CERTS/$d.crt -noout -checkend $((60*60*24*7*3)); }; then
 		if [ -z "${OPT_INSTALL_ONLY-}" ]; then
-			echo Running: env SAN_LIST=\""$hosts"\" nu_ssl -L -h $d
-			SAN_LIST="$hosts" sister nu_ssl -L -h $d
+			echo Running: env SAN_LIST=\""$hosts"\" nu_ssl ${NAMESERVER_JAILNAME:+-j $NAMESERVER_JAILNAME} -L -h $d
+			SAN_LIST="$hosts" sister nu_ssl ${NAMESERVER_JAILNAME:+-j $NAMESERVER_JAILNAME} -L -h $d
 		fi
 		for x in crt ca.crt full.crt; do
 			for l in `ls $SSL_CERTS.installed/localhost/$d.$x/* 2> /dev/null`; do
