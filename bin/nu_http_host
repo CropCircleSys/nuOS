@@ -16,15 +16,15 @@ set -e; set -u; set -C
 
 NUOS_VER=0.0.11.3a0
 
-while getopts aC:fh:HigGkp:su:vW OPT; do case $OPT in
+while getopts aC:fgGh:Hikp:su:vW OPT; do case $OPT in
 	a) OPT_APP_HARD=y;;
 	C) CHROOTDIR=$OPTARG;;
 	f) OPT_HPKP_FORCE=y;;
+	g) OPT_GZIP=y;;
+	G) OPT_STATIC_GZIP=y;;
 	h) HOST_NAME=$OPTARG;;
 	H) OPT_NO_HTTP2=y;;
 	i) OPT_IMMUTABLE=y;;
-	g) OPT_GZIP=y;;
-	G) OPT_STATIC_GZIP=y;;
 	k) [ -n "${OPT_HPKP-}" ] && OPT_HPKPSUBDOM=y || OPT_HPKP=y;;
 	K) HPKP_BACKUP=$OPTARG;;
 	p) PROXY_TO=$OPTARG;;
@@ -45,6 +45,7 @@ echo 'user name       -u USER_NAME      ' ${USER_NAME:=$(pw -V "${CHROOTDIR-}/et
 echo -n 'hardened app    -a OPT_APP_HARD    ' && [ -n "${OPT_APP_HARD-}" ] && echo set || echo null
 echo -n 'dynamic comprsn -g OPT_GZIP        ' && [ -n "${OPT_GZIP-}" ] && echo set || echo null
 echo -n 'static comprsn  -G OPT_STATIC_GZIP ' && [ -n "${OPT_STATIC_GZIP-}" ] && echo set || echo null
+echo -n 'immutable dir   -i OPT_IMMUTABLE   ' && [ -n "${OPT_IMMUTABLE-}" ] && echo set || echo null
 echo -n 'pubkey pinning  -k OPT_HPKP        ' && [ -n "${OPT_HPKP-}" ] && echo set || echo null
 if [ -n "${OPT_HPKP-}" ]; then
 	echo -n 'hpkp subdoms   -kk OPT_HPKPSUBDOM  ' && [ -n "${OPT_HPKPSUBDOM-}" ] && echo set || echo null
@@ -84,6 +85,35 @@ if [ -n "${OPT_GZIP-}" -o -n "${OPT_STATIC_GZIP-}" ]; then
     ** ** ** ** ** ** ** ** **          implement sufficient mitigations.
      ** ** ** ** ** ** ** ** *
     * ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** *
+EOF
+fi
+if [ -n "${OPT_IMMUTABLE-}" ]; then
+	cat <<EOF
+
+    * ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** *
+    ** ** ** ** ** ** ** ** **
+     ** ** ** ** ** ** ** ** * WARNING: You've enabled an immutable directory
+    * ** ** ** ** ** ** ** **           (/${IMMUTABLE_DIR:=static}) which constitues an unbreakable
+    ** ** ** ** ** ** ** ** **          promise that every resource served from
+     ** ** ** ** ** ** ** ** *          within to any client even but once will
+    * ** ** ** ** ** ** ** **           and shall forevermore be considered the
+    ** ** ** ** ** ** ** ** **          final version of that resource and may
+     ** ** ** ** ** ** ** ** *          optimally be served by any other proxy
+    * ** ** ** ** ** ** ** **           or cache to fulfill any and all similar
+    ** ** ** ** ** ** ** ** **          future requests made by any client, no
+     ** ** ** ** ** ** ** ** *          need to ever again check or notify the
+    * ** ** ** ** ** ** ** **           server. You cannot revoke, expire or
+    ** ** ** ** ** ** ** ** **          invalidate any such served resource so
+     ** ** ** ** ** ** ** ** *          this is best used with identifiers that
+    * ** ** ** ** ** ** ** **           are content-specific or monotonic; the
+    ** ** ** ** ** ** ** ** **          idea being to fulfill a use case where
+     ** ** ** ** ** ** ** ** *          server load is greatly reduced while
+    * ** ** ** ** ** ** ** **           resources are spread among proxies and
+    ** ** ** ** ** ** ** ** **          caches which become authoritative to
+     ** ** ** ** ** ** ** ** *          respond to said client requests in the
+    * ** ** ** ** ** ** ** **           quickest and most scalable manner.
+    ** ** ** ** ** ** ** ** **
+     ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** **
 EOF
 fi
 if [ -n "${OPT_HSTS-}" ]; then
@@ -237,7 +267,7 @@ ${OPT_HSTS:+	Header always set Strict-Transport-Security "max-age=$HSTS_DURATION
 ${OPT_SSL:+	CustomLog "/var/log/httpd-vhost/$HOST_NAME-ssl_request.log" "%t %h %{SSL_PROTOCOL\}x %{SSL_CIPHER\}x \"%r\" %b"
 }	ErrorLog "/var/log/httpd-vhost/$HOST_NAME-error.log"
 ${h2:+	Protocols h2${no_ssl:+c} http/1.1
-}${OPT_IMMUTABLE:+	<Location "/${IMMUTABLE_DIR:=static}/">
+}${OPT_IMMUTABLE:+	<Location "/$IMMUTABLE_DIR/">
 		Options -Indexes
 		Header onsuccess set Cache-Control "max-age=31536000, immutable"
 	</Location>
