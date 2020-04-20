@@ -48,7 +48,7 @@ while getopts A:a:b:c:C:d:e:fh:j:kK:l:Lm:Mn:No:p:stT:Su:vW OPT; do case $OPT in
 	W) OPT_EMPTY_SAN_LIST=y;;
 esac; done; shift $(($OPTIND-1))
 [ $# = 0 ]
-: ${SSL_HOST:=$HOST}
+: ${SSL_HOST:=${HOST:=`hostname`}}
 [ -n "${OPT_EMPTY_SAN_LIST-}" ] && SAN_LIST= || : ${SAN_LIST:=www.%}
 if srsly ${OPT_NEXT_MODE-} && srsly ${OPT_EXPORT_TLSA-}; then
 	: ${NEXT_PUBKEY:=/etc/ssl/csrs.next/$SSL_HOST.csr}
@@ -220,13 +220,11 @@ if [ -n "${OPT_LETS_ENCRYPT-}" ]; then
 	fi
 fi
 
+mkdir -p "${CHROOTDIR-}/etc/ssl/certs" "${CHROOTDIR-}/etc/ssl/csrs"
 if [ -z "${CERT_FILE-}" ]; then
 	
 	if [ ! -d "${CHROOTDIR-}/etc/ssl/private${OPT_NEXT_MODE:+.next}" ]; then
 		(umask 77 && mkdir "${CHROOTDIR-}/etc/ssl/private${OPT_NEXT_MODE:+.next}")
-	fi
-	if [ ! -d "${CHROOTDIR-}/etc/ssl/certs" ]; then
-		mkdir "${CHROOTDIR-}/etc/ssl/certs"
 	fi
 	if [ -e "${CHROOTDIR-}/etc/ssl/private${OPT_NEXT_MODE:+.next}/$SSL_HOST.key" ]; then
 		echo "WARNING: Using existing $SSL_HOST.key found in /etc/ssl/private${OPT_NEXT_MODE:+.next}. Any specified options related to generating keys will be ignored." >&2

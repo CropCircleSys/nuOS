@@ -44,7 +44,7 @@ elif canhas "${CHROOTDIR-}"; then
 	alt_root="${CHROOTDIR-}"
 fi
 
-hostname=${NEW_HOST:-$HOST}
+hostname=${NEW_HOST:-${HOST:=`hostname`}}
 if [ -n "${OPT_ELECT-}" ]; then
 	default_servername=${hostname#*.}
 else

@@ -30,7 +30,7 @@ esac; done; shift $(($OPTIND-1))
 
 nuos_init
 
-: ${HOST_NAME:=$HOST}
+: ${HOST_NAME:=${HOST:=`hostname`}}
 echo 'cert authority  -a CERT_AUTH      ' ${CERT_AUTH:=ca.$HOST_NAME}
 echo 'valid lifetime  -e EXPIRE_DAYS    ' ${EXPIRE_DAYS:=365}
 echo 'host name       -h HOST_NAME      ' $HOST_NAME

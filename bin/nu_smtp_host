@@ -29,7 +29,7 @@ esac; done; shift $(($OPTIND-1))
 
 nuos_init
 
-hostname=${NEW_HOST:-$HOST}
+hostname=${NEW_HOST:-${HOST:=`hostname`}}
 if [ -n "${OPT_ELECT-}" ]; then
 	default_servername=${hostname#*.}
 else
