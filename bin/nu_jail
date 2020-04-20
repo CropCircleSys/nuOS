@@ -43,7 +43,7 @@ while getopts a:Ab:C:dfh:i:I:j:mn:o:O:p:Pqs:S:t:T:u:vwx OPT; do case $OPT in
 	u) USER_ACCT=$OPTARG;;
 	v) OPT_VERBOSE=y;;
 	w) OPT_RW_SRC=y;;
-	x) ADMIN_ACCT=; BD_ACCT=; USER_ACCT=;;
+	x) ADMIN_ACCT=; BD_ACCT=; USER_ACCT=; ADMIN_PASS=; BD_PASS=; USER_PASS=;;
 esac; done; shift $(($OPTIND-1))
 [ $# = 0 ]
 
