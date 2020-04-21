@@ -1,0 +1,150 @@
+#!/bin/sh
+set -e; set -u; set -C
+
+# nuOS 0.0.11.3a0 - bin/nu_http_host_snowtube
+#
+# Copyright (c) 2008-2019 Chad Jacob Milios and Crop Circle Systems.
+# All rights reserved.
+#
+# This Source Code Form is subject to the terms of the Simplified BSD License.
+# If a copy of the Simplified BSD License was not distributed alongside this file, you can
+# obtain one at https://www.freebsd.org/copyright/freebsd-license.html . This software
+# project is not affiliated with the FreeBSD Project.
+#
+# Official updates and community support available at https://nuos.org .
+# Professional services available at https://ccsys.com .
+
+NUOS_VER=0.0.11.3a0
+
+
+while getopts h:l:r: OPT; do case $OPT in
+	h) WWW_HOST=$OPTARG;;
+	l) LINK=$OPTARG;;
+	r) HTTP_ROOT=$OPTARG;;
+esac; done; shift $(($OPTIND-1))
+[ $# = 0 ]
+
+: ${WWW_HOST:=${HOST:=`hostname`}}
+: ${HTTP_ROOT:=${HOME:=$(pw usershow -n `whoami` | cut -d : -f 9)}/$WWW_HOST/www/public}
+: ${IMMUTABLE_DIR:=static}
+
+if [ -d "$HTTP_ROOT/$IMMUTABLE_DIR" ]; then
+	gen_hash=y
+fi
+
+cat > $HTTP_ROOT/index.css <<EOF
+html, body {
+	height: 100%;
+	margin: 0;
+	background: black;
+}
+#d {
+	position: relative;
+	height: 100%;
+	width: 100%;
+	font-family: "Lucida Console", Monaco, Menlo, monospace;
+	font-size: 15vmin;
+	line-height: 15vmin;
+	font-weight: bold;
+}
+#c {
+	position: absolute;
+	left: 0;
+	top: 0;
+	height: 100%;
+	width: 100%;
+	filter: blur(0.3333vmin);
+}
+#o, #a${LINK:+, #p} {
+	filter: blur(0.25vmin);
+	text-shadow: 0 0 0.1em black;
+}
+#o {
+	position: absolute;
+	right: 5vw;
+	top: 5vh;
+	z: 1;
+	letter-spacing: -0.067em;
+	color: #0f0;
+}
+#a {
+	position: absolute;
+	left: 5vw;
+	bottom: 5vh;
+	z: 1;
+	color: #f00;
+	font-size: 50%;
+	transform: scaleX(1.25);
+}${LINK:+
+#p {
+	position: absolute;
+	margin: 0;
+	right: 8vw;
+	bottom: 6vh;
+	color: #000;
+	font-size: 58.33%;
+	opacity: 0.6667;
+	font-weight: normal;
+	transform: scaleX(1.25);
+	transition: opacity 2s ease-in-out, text-shadow 1s ease-in-out, filter 0.5s ease-in-out;
+\}
+#p a {
+	color: #000;
+	text-decoration: none;
+\}
+#p:hover {
+	opacity: 1;
+	filter: blur(0.0625vmin);
+	text-shadow: 0 0 0.1em white, 0 0 0.1em white;
+	transition: opacity 0.25s ease-in-out, text-shadow 0.125s ease-in-out, filter 0.5s ease-in-out;
+\}}
+EOF
+
+cat > $HTTP_ROOT/index.js <<'EOF'
+function a(){
+	var t,e,n,i,r=0;
+	for(t=0;d>t;t++)
+		for(e=0;g>e;e++)
+			n=(s=s*48271%2147483647)%2?239:0,h.data[r]=n,h.data[r+1]=n,h.data[r+2]=n,r+=4;
+	k.putImageData(h,0,0),setTimeout(a,40);
+}
+var h,n,p,q,s=7,t=document.getElementById("c"),k=t.getContext("2d"),d=t.width=160,g=t.height=240;
+for(h=k.createImageData(d,g),p=n=0;d>p;p++)
+	for(q=0;g>q;q++)
+		h.data[n+3]=255,n+=4;
+a();
+EOF
+for x in css js; do
+	eval $x=index${gen_hash:+.`md5 -q $HTTP_ROOT/index.$x | head -c 20`}.$x
+	if [ -n "${gen_hash-}" ]; then
+		eval mv $HTTP_ROOT/index.$x $HTTP_ROOT/static/\$$x
+	fi
+	eval gzip -k9 $HTTP_ROOT/${gen_hash:+static/}\$$x
+done
+
+cat > $HTTP_ROOT/index.html <<EOF
+<!DOCTYPE HTML>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<link href="${gen_hash:+static/}$css" rel="stylesheet" type="text/css" />
+<script src="${gen_hash:+static/}$js" defer="defer"></script>
+<title>$WWW_HOST</title>
+</head>
+<body>
+<div id="d">
+<canvas id="c"></canvas>
+<div id="o">
+$WWW_HOST
+</div>
+<div id="a">
+MUTE
+</div>
+${LINK:+<div id="p">
+<a href="$LINK">&pi;</a>
+</div>
+}</div>
+</body>
+EOF
+
+gzip -k9 $HTTP_ROOT/index.html
