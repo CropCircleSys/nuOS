@@ -114,12 +114,13 @@ for(h=k.createImageData(d,g),p=n=0;d>p;p++)
 		h.data[n+3]=255,n+=4;
 a();
 EOF
+
 for x in css js; do
 	eval $x=index${gen_hash:+.`md5 -q $HTTP_ROOT/index.$x | head -c 20`}.$x
 	if [ -n "${gen_hash-}" ]; then
-		eval mv $HTTP_ROOT/index.$x $HTTP_ROOT/static/\$$x
+		eval mv $HTTP_ROOT/index.$x $HTTP_ROOT/$IMMUTABLE_DIR/\$$x
 	fi
-	eval gzip -k9 $HTTP_ROOT/${gen_hash:+static/}\$$x
+	eval gzip -k9 $HTTP_ROOT/${gen_hash:+$IMMUTABLE_DIR/}\$$x
 done
 
 cat > $HTTP_ROOT/index.html <<EOF
@@ -127,8 +128,8 @@ cat > $HTTP_ROOT/index.html <<EOF
 <html>
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-<link href="${gen_hash:+static/}$css" rel="stylesheet" type="text/css" />
-<script src="${gen_hash:+static/}$js" defer="defer"></script>
+<link href="${gen_hash:+$IMMUTABLE_DIR/}$css" rel="stylesheet" type="text/css" />
+<script src="${gen_hash:+$IMMUTABLE_DIR/}$js" defer="defer"></script>
 <title>$WWW_HOST</title>
 </head>
 <body>
