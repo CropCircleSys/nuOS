@@ -45,7 +45,7 @@ admin_init () {
 
 admin_install () {
 	local opt_zfs_create=
-	if [ -z = $1 ]; then
+	if [ x-z = x$1 ]; then
 		opt_zfs_create=y
 		shift
 	fi		
@@ -96,7 +96,7 @@ admin_install () {
 	}
 
 	acct_install () {
-		local opt_zfs_create=
+		local opt_zfs_create= user_home_fresh= user_home_existed=
 		if [ x-z = x$1 ]; then
 			opt_zfs_create=y
 			shift
@@ -121,7 +121,14 @@ admin_install () {
 						fi
 					fi
 				fi
+			else
+				if mkdir "$trgt_path/home" || [ ! -d "$trgt_path/home/$acct" ]; then
+					user_home_fresh=y
+				else
+					user_home_existed=y
+				fi
 			fi
+			
 			chroot "$trgt_path" pw groupadd -n $acct $groupadd_flags
 			
 			if [ -n "$pass" ]; then
