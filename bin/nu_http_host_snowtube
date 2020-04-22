@@ -16,13 +16,17 @@ set -e; set -u; set -C
 
 NUOS_VER=0.0.11.3a0
 
+. "$(dirname "$(realpath "$0")")/../lib/nu_system.sh"
 
-while getopts h:l:r: OPT; do case $OPT in
+while getopts h:l:r:v OPT; do case $OPT in
 	h) WWW_HOST=$OPTARG;;
 	l) LINK=$OPTARG;;
 	r) HTTP_ROOT=$OPTARG;;
+	v) OPT_VERBOSE=y;;
 esac; done; shift $(($OPTIND-1))
 [ $# = 0 ]
+
+maybe_yell
 
 : ${WWW_HOST:=${HOST:=`hostname`}}
 : ${HTTP_ROOT:=${HOME:=$(pw usershow -n `whoami` | cut -d : -f 9)}/$WWW_HOST/www/public}
