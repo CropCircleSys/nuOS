@@ -88,12 +88,13 @@ if [ -n "${OPT_GZIP-}" -o -n "${OPT_STATIC_GZIP-}" ]; then
 EOF
 fi
 if [ -n "${OPT_IMMUTABLE-}" ]; then
+	: ${IMMUTABLE_DIR:=static}
 	cat <<EOF
 
     * ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** *
     ** ** ** ** ** ** ** ** **
      ** ** ** ** ** ** ** ** * WARNING: You've enabled an immutable directory
-    * ** ** ** ** ** ** ** **           (/${IMMUTABLE_DIR:=static}) which constitues an unbreakable
+    * ** ** ** ** ** ** ** **           (/$IMMUTABLE_DIR) which constitues an unbreakable
     ** ** ** ** ** ** ** ** **          promise that every resource served from
      ** ** ** ** ** ** ** ** *          within to any client even but once will
     * ** ** ** ** ** ** ** **           and shall forevermore be considered the
