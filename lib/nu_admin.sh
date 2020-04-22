@@ -148,6 +148,6 @@ EOF
 	}
 
 	acct_install "$BD_ACCT" "${BD_PASS-}" "${BD_NAME-}" "${BD_CPNY-}" "${BD_KEYS-}" "$KEYS_FROM_BD_ACCT" "-u 1000 -G wheel -d /var/bd -s csh" "-g 1000"
-	acct_install ${opt_zfs_create:+-z} "$ADMIN_ACCT" "${ADMIN_PASS-}" "${ADMIN_NAME-}" "${ADMIN_CPNY-}" "${ADMIN_KEYS-}" "$KEYS_FROM_ADMIN_ACCT" "-G wheel"
+	acct_install ${opt_zfs_create:+-z} "$ADMIN_ACCT" "${ADMIN_PASS-}" "${ADMIN_NAME-}" "${ADMIN_CPNY-}" "${ADMIN_KEYS-}" "$KEYS_FROM_ADMIN_ACCT" "-G wheel -s csh"
 	acct_install ${opt_zfs_create:+-z} "$USER_ACCT" "${USER_PASS-}" "${USER_NAME-}" "${USER_CPNY-}" "${USER_KEYS-}" "$KEYS_FROM_USER_ACCT"
 }
