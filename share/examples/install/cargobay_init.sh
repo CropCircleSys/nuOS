@@ -37,7 +37,7 @@ fi
 
 cat >> "$TRGT"/etc/rc.conf.local <<EOF
 ${primary_if:+ifconfig_${primary_if}_name="net0"
-}ifconfig_net0="inet $my_ip netmask $netmask"
+}ifconfig_net0="inet $my_ip netmask $netmask -rxcsum -rxcsum6 -txcsum -txcsum6 -lro -tso -vlanhwtso"
 defaultrouter="$defaultrouter"
 EOF
 
@@ -52,11 +52,19 @@ sister enable_svc -C "$TRGT" ntpd openssh
 
 case $NAME in
 	willy)
-		#sister nu_ns_server -C $TRGT -d -k 4096 -z 2048 -i $ip_1 -i $ip_2 -i $ip_3 -i $ip_4 -s $ip_2 -s $ip_3 -s $ip_4
+		##sister nu_ns_server -C $TRGT -d -k 4096 -z 2048 -i $ip_1 -i $ip_2 -i $ip_3 -i $ip_4 -s $ip_2 -s $ip_3 -s $ip_4
 		#sister nu_ns_server -C $TRGT -d -k 4096 -z 2048 -i $ip_1 -i $ip_2 -s $ip_2
+		cat >> "$TRGT"/etc/rc.conf.local <<EOF
+ifconfig_net0_alias0="inet ${my_ip%.*}.$((${my_ip##*.}+1)) netmask 0xffffffff"
+EOF
 	;;
 	*)
-		#sister nu_ns_server -C $TRGT -i $ip_1 -i $ip_2 -i $ip_3 -i $ip_4 -m $ip_1
+		##sister nu_ns_server -C $TRGT -i $ip_1 -i $ip_2 -i $ip_3 -i $ip_4 -m $ip_1
 		#sister nu_ns_server -C $TRGT -i $ip_1 -i $ip_2 -m $ip_1
 	;;
 esac
+
+sister enable_svc -C "$TRGT" nuos_firstboot
+cp -v "$NUOS/share/examples/install/cargobay_genesis.sh" "$TRGT/root/"
+echo 'nuos_firstboot_script="/root/cargobay_genesis.sh"' >> "$TRGT/etc/rc.conf.d/nuos_firstboot"
+touch "$TRGT/firstboot"
