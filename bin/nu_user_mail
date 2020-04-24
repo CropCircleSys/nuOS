@@ -47,9 +47,11 @@ fi
 cat >> "${CHROOTDIR-}/usr/local/etc/postfix/virtual" <<EOF
 $MAIL_ADDRESS	$USER_NAME@localhost
 EOF
-cat >> "${CHROOTDIR-}/usr/local/etc/postfix/senders" <<EOF
+if [ "${MAIL_ADDRESS#@}" = "$MAIL_ADDRESS" ]; then
+	cat >> "${CHROOTDIR-}/usr/local/etc/postfix/senders" <<EOF
 $MAIL_ADDRESS	$USER_NAME@$HOST_NAME
 EOF
+fi
 require_tmp domains
 cut -w -f 1 < "${CHROOTDIR-}/usr/local/etc/postfix/virtual" | cut -d @ -f 2 | sort -u | sed -e 's/$/	OK/' >| "$domains"
 if ! cmp -z -s "${CHROOTDIR-}/usr/local/etc/postfix/domains" "$domains"; then

@@ -107,9 +107,10 @@ if [ -z "${OPT_NO_PASSWD-}" ]; then
 fi
 dataset="$POOL_NAME`dirname "$USER_PATH"`"
 if zfs list $dataset; then
-	echo "Creating dataset $dataset/$USER_NAME for user home."
-	zfs create $dataset/$USER_NAME
-	zfs_created=y
+	if zfs create $dataset/$USER_NAME; then
+		echo "Creating dataset $dataset/$USER_NAME for user home."
+		zfs_created=y
+	fi
 else
 	echo "No immediate parent dataset, not creating user home dataset."
 fi
@@ -155,5 +156,7 @@ if [ -n "${OPT_ELI-}" ] && zfs list $POOL_NAME-pvt > /dev/null 2>&1; then
 	chown $uid:$gid "${CHROOTDIR-}$USER_PATH/private"
 fi
 
-zfs snapshot $dataset/$USER_NAME@genesis
+if srsly ${zfs_created-}; then
+	zfs snapshot $dataset/$USER_NAME@genesis
+fi
 echo "Account for user $USER_NAME created."

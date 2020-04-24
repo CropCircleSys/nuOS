@@ -1,6 +1,9 @@
 export PATH=$PATH:/usr/local/sbin:/usr/local/bin:/usr/nuos/bin
 export HOME=/root
 
+OWNER_ACCT=chuck
+OWNER_NAME='Charles Jacob Milios'
+
 # This must be two characters. (standard: ISO 3166-1 alpha-2; e.g. blank is XX)
 country=US
 
@@ -105,8 +108,14 @@ echo /var/jail/postoffice/var/imap/socket /var/jail/postmaster/var/imap/socket n
 
 service jail restart postmaster postoffice
 
+nu_user -C /var/jail/postmaster -h $infra_domain -a -d net -u $OWNER_ACCT -n "$OWNER_NAME" < /root/owner_pass
+nu_user -C /var/jail/postoffice -h $infra_domain -a -u $OWNER_ACCT -n "$OWNER_NAME" < /root/owner_pass
 for z in $infra_domain $client_zones; do
 	nu_smtp_host -C /var/jail/postmaster -h $z
+	nu_user_mail -C /var/jail/postmaster -h $infra_domain -u $OWNER_ACCT -m whois-data@$z
+done
+for m in milios@ccsys.com chad@ccsys.com @ccsys.com chuck@nu.email jake@nu.email chad@nu.email; do
+	nu_user_mail -C /var/jail/postmaster -h $infra_domain -u $OWNER_ACCT -m $m
 done
 
 for z in $client_zones; do

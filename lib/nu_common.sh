@@ -21,6 +21,9 @@ nuos_lib_common_loaded=y
 
 nuos_init () {
 	for conf_file in /usr/nuos/conf /etc/nuos.conf /etc/nuos/conf; do
+		if [ -r "$conf_file" ]; then
+			. "$conf_file"
+		fi
 		if [ -r "${CHROOTDIR-}$conf_file" ]; then
 			. "${CHROOTDIR-}$conf_file"
 		fi
