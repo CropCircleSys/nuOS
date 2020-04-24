@@ -51,7 +51,7 @@ else
 	echo -n 'samba access    -s OPT_SAMBA       ' && [ -n "${OPT_SAMBA-}" ] && echo set || echo null
 	echo -n 'passwordless    -P OPT_NO_PASSWD   ' && [ -n "${OPT_NO_PASSWD-}" ] && echo set || echo null
 	echo -n 'sasl account    -a OPT_SASL        ' && [ -n "${OPT_SASL-}" ] && echo set || echo null
-	hostname=${NEW_HOST:-$HOST}
+	hostname=${NEW_HOST:-${HOST:=`hostname`}}
 	: ${HOST_NAME:=$hostname}
 	echo -n 'user domain     -h HOST_NAME       ' && [ -n "${OPT_SASL-}" -o -z "${OPT_NOMAIL-}" ] && echo $HOST_NAME || echo n/a
 	echo -n 'no mail inbox   -M OPT_NOMAIL      ' && [ -n "${OPT_NOMAIL-}" ] && echo set || echo null

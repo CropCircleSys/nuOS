@@ -31,7 +31,7 @@ esac; done; shift $(($OPTIND-1))
 nuos_init
 
 echo 'system user     -u USER_NAME      ' $USER_NAME
-hostname=${NEW_HOST:-$HOST}
+hostname=${NEW_HOST:-${HOST:=`hostname`}}
 : ${HOST_NAME:=$hostname}
 echo 'user domain     -h HOST_NAME      ' $HOST_NAME
 echo "${MAIL_ADDRESS:=$USER_NAME@$HOST_NAME}" | grep -q @ || MAIL_ADDRESS="$MAIL_ADDRESS@$HOST_NAME"
