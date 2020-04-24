@@ -106,7 +106,7 @@ service jail start postoffice
 nu_imap -j postoffice -s -e -h $infra_domain
 echo /var/jail/postoffice/var/imap/socket /var/jail/postmaster/var/imap/socket nullfs ro > /etc/fstab.postoffice
 if [ -d /root/nuos_migrate_in/postoffice ]; then
-	tar -cf - -C /root/nuos_migrate_in/postoffice/imapuser . | tar -xvf - -C /var/jail/postoffice/var/spool/imap/user
+	tar -cf - -C /root/nuos_migrate_in/postoffice . | tar -xvf - -C /var/jail/postoffice/var
 fi
 
 service jail restart postmaster postoffice
