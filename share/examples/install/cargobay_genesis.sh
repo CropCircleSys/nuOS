@@ -105,6 +105,9 @@ nu_jail -j postoffice -i 127.1.0.6 -m -P -I imap -I imaps -I pop3 -I pop3s -I si
 service jail start postoffice
 nu_imap -j postoffice -s -e -h $infra_domain
 echo /var/jail/postoffice/var/imap/socket /var/jail/postmaster/var/imap/socket nullfs ro > /etc/fstab.postoffice
+if [ -d /root/nuos_migrate_in/postoffice ]; then
+	tar -cf - -C /root/nuos_migrate_in/postoffice/imapuser . | tar -xvf - -C /var/jail/postoffice/var/spool/imap/user
+fi
 
 service jail restart postmaster postoffice
 
