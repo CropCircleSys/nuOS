@@ -104,6 +104,14 @@ nu_jail -j postoffice -i 127.1.0.6 -m -P -I imap -I imaps -I pop3 -I pop3s -I si
 (cd /etc/ssl && tar -cf - certs/$infra_domain.ca.crt certs/$infra_domain.crt csrs.next/cargobay.net.csr csrs/$infra_domain.csr private/$infra_domain.key | tar -xvf - -C /var/jail/postoffice/etc/ssl/)
 service jail start postoffice
 nu_imap -j postoffice -s -e -h $infra_domain
+while read -r proto procs; do
+	prgm="${prgm-}${prgm:+ }/#?[[:blank:]]$proto\\>/s/\\<(prefork)=[[:digit:]]+/\1=$procs/;"
+done <<'EOF'
+imap 8
+imaps 2
+lmtp(unix)? 1
+EOF
+sed -i '' -E -e "/^SERVICES {/,/^}/{$prgm}" /var/jail/postoffice/usr/local/etc/cyrus.conf
 echo /var/jail/postoffice/var/imap/socket /var/jail/postmaster/var/imap/socket nullfs ro > /etc/fstab.postoffice
 if [ -d /root/nuos_migrate_in/postoffice ]; then
 	tar -cf - -C /root/nuos_migrate_in/postoffice . | tar -xvf - -C /var/jail/postoffice/var
