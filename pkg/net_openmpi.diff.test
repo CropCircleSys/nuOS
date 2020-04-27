@@ -1,1 +1,0 @@
-[ ! -f files/patch-ompi_contrib_vt_vt_vtlib_vt__mallocwrap.c ] && grep -q '\$FreeBSD: head/net/openmpi/Makefile 507877 2019-08-02 13:30:40Z jbeich \$' Makefile
