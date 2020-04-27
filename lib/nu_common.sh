@@ -115,7 +115,11 @@ ns_master_zone () {
 	echo $zone
 }
 
-clear_primary_if_from_conf () {
-	local rc_conf_file=$1
-	sed -i '' -E -e '/^ifconfig_.+_name="?net0"?/d' $rc_conf_file
+set_primary_phys_netif () {
+	local primary_if=$1
+	local trgt=${2-}
+	sed -i '' -E -e '/^ifconfig_.+_name="?net0"?/d' "$trgt/etc/rc.conf.local"
+	cat >> "$trgt/etc/rc.conf.local" <<EOF
+ifconfig_${primary_if}_name="net0"
+EOF
 }
