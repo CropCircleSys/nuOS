@@ -1,0 +1,1 @@
+grep -q ^@owner pkg-plist
