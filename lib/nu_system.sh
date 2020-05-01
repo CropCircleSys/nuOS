@@ -215,12 +215,6 @@ retire_tmp () {
 	eval unset "$1"
 }
 
-choose_random () {
-	local var=$1; shift
-	local rand=$((`dd bs=4 count=1 if=/dev/urandom 2> /dev/null | od -D | head -n 1 | cut -w -f 2` % $# + 1))
-	eval setvar $var \$$rand
-}
-
 sets_union () {
 	local ret_var=$1; shift
 	
