@@ -168,7 +168,6 @@ kern.ipc.semmnu="3000"
 kern.ipc.semmns="7500"
 kern.ipc.semmni="1000"
 kern.racct.enable="1"
-net.inet.tcp.tso="0"
 EOF
 	
 	cat >> $pool_mnt/etc/rc.conf <<'EOF'
@@ -204,6 +203,10 @@ ifconfig_vtnet0_name="net0" # replace vtnet0 with the name of your primary upstr
 EOF
 	
 	cat >> $pool_mnt/etc/sysctl.conf <<'EOF'
+
+# Enable TCP Segmentation Offload
+# FreeBSD 11.2 default: 1
+net.inet.tcp.tso=0
 
 # Maximum number of IPv4 fragment reassembly queue entries
 # FreeBSD 11.2 default: 31311
