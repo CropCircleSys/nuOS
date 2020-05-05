@@ -123,7 +123,9 @@ nu_user -C /var/jail/postmaster -h $infra_domain -a -d net -u $OWNER_ACCT -n "$O
 nu_user -C /var/jail/postoffice -h $infra_domain -a -u $OWNER_ACCT -n "$OWNER_NAME" < /root/owner_pass
 for z in $infra_domain $client_zones; do
 	nu_smtp_host -C /var/jail/postmaster -h $z
-	nu_user_mail -C /var/jail/postmaster -h $infra_domain -u $OWNER_ACCT -m whois-data@$z
+	for b in operator security hostmaster postmaster whois-data; do
+		nu_user_mail -C /var/jail/postmaster -h $infra_domain -u $OWNER_ACCT -m $b@$z
+	done
 done
 for m in milios@ccsys.com chad@ccsys.com @ccsys.com chuck@nu.email jake@nu.email chad@nu.email; do
 	nu_user_mail -C /var/jail/postmaster -h $infra_domain -u $OWNER_ACCT -m $m
