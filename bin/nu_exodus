@@ -75,7 +75,20 @@ for role in $roles; do
 		vpn) # virtual private network server
 			if [ -d /etc/ssl/private -a "certs/*.internal.crt" != "`cd /etc/ssl && echo certs/*.internal.crt`" ]; then
 				mkdir -p "$OUTPUT/vpn/ssl"
-				(cd /etc/ssl && tar -cf - --exclude 'private/ca.*.key' --exclude 'certs/ca.*.internal.crt' `find certs -depth 1 -name '*.internal.crt' | sed -e 's:^certs/::;s/\.internal\.crt$//;/^ca\./d;s:^:private/:;s/$/.key/'` certs/*.internal.crt) | tar -xvf - -C "$OUTPUT/vpn/ssl"
+				(cd /etc/ssl \
+					&& tar -cf - \
+						--exclude 'private/ca.*.key' \
+						--exclude 'certs/ca.*.internal.crt' \
+						certs/*.internal.crt \
+						`find certs -depth 1 -name '*.internal.crt' \
+							| sed -E -e '
+								s/^.{6}(.*).{13}$/\1/
+								/^ca\./d
+								s|^(.*)$|\
+							private/\1.key \
+							csrs/\1.csr|'
+						` \
+				) | tar -xvf - -C "$OUTPUT/vpn/ssl"
 			else push err $role; fi
 		;;
 		po) # post office (imap) server
