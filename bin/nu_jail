@@ -165,11 +165,13 @@ EOF
 sed -i '' -e "s/\.my\.domain\$/.`echo $JAIL_HOST | sed -e 's/^[^\.]*\.//'` $JAIL_HOST `echo $JAIL_HOST | sed -e 's/\..*//'`/" "${CHROOTDIR-}$JAIL_PATH/etc/hosts"
 
 add_our_jail_to_hostfile "${CHROOTDIR-}/etc/hosts"
+add_our_jail_to_hostfile "${CHROOTDIR-}$JAIL_PATH/etc/hosts" 
 for j in `ls "$jail_dir"`; do
 	if [ $j != $JAIL_NAME ]; then
-		${CHROOTDIR:+chroot "$CHROOTDIR"} getent hosts $j.jail >> "$jail_dir/$JAIL_NAME/etc/hosts"
+		${CHROOTDIR:+chroot "$CHROOTDIR"} getent hosts $j.jail >> "$jail_dir/$JAIL_NAME/etc/hosts" \
+			&& add_our_jail_to_hostfile "$jail_dir/$j/etc/hosts" \
+			|| echo "WARNING: skipping jail $j on pool because it is unknown to the host system" >&2
 	fi
-	add_our_jail_to_hostfile "$jail_dir/$j/etc/hosts"
 done
 
 cat >> "${CHROOTDIR-}/etc/jail.conf" <<EOF

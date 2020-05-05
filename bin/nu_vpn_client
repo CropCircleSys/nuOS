@@ -42,7 +42,12 @@ maybe_yell
 
 [ -r "${CHROOTDIR-}/usr/local/etc/openvpn/${ALTERNATE:+${ALTERNATE}_}ca.crt" ]
 [ -r "${CHROOTDIR-}/usr/local/etc/openvpn/${ALTERNATE:+${ALTERNATE}_}dh"*".pem" ]
-[ -r "${CHROOTDIR-}/usr/local/etc/openvpn/private/${ALTERNATE:+${ALTERNATE}_}ta.key" ]
+[ -r "${CHROOTDIR-}/usr/local/etc/openvpn/private/${ALTERNATE:+${ALTERNATE}_}hs.key" ]
+
+hs=`grep -o -w -E '^tls-(auth|crypt)' "${CHROOTDIR-}/usr/local/etc/openvpn/openvpn${ALTERNATE:+_$ALTERNATE}.conf"`
+if [ tls-auth = "$hs" ]; then
+	keydir=1
+fi
 
 cat <<EOF
 `grep '^dev ' "${CHROOTDIR-}/usr/local/etc/openvpn/openvpn${ALTERNATE:+_$ALTERNATE}.conf"`
@@ -51,14 +56,18 @@ client
 remote $SERVER_HOST
 verify-x509-name $SERVER_HOST name
 float
+ncp-disable
+opt-verify
 `grep '^cipher ' "${CHROOTDIR-}/usr/local/etc/openvpn/openvpn${ALTERNATE:+_$ALTERNATE}.conf"`
+`grep '^auth ' "${CHROOTDIR-}/usr/local/etc/openvpn/openvpn${ALTERNATE:+_$ALTERNATE}.conf"`
 `grep '^compress ' "${CHROOTDIR-}/usr/local/etc/openvpn/openvpn${ALTERNATE:+_$ALTERNATE}.conf"`
 user nobody
 group nobody
 persist-key
 persist-tun
 keepalive 15 90
-key-direction 1
+${keydir:+key-direction 1
+}
 <key>
 `cat "$KEY_FILE" 2>/dev/null || echo %%-PRIVATE_KEY-%%`
 </key>
@@ -68,10 +77,7 @@ key-direction 1
 <ca>
 `cat "${CHROOTDIR-}/usr/local/etc/openvpn/${ALTERNATE:+${ALTERNATE}_}ca.crt"`
 </ca>
-<dh>
-`cat "${CHROOTDIR-}/usr/local/etc/openvpn/${ALTERNATE:+${ALTERNATE}_}dh"*".pem"`
-</dh>
-<tls-auth>
-`cat "${CHROOTDIR-}/usr/local/etc/openvpn/private/${ALTERNATE:+${ALTERNATE}_}ta.key"`
-</tls-auth>
+<$hs>
+`cat "${CHROOTDIR-}/usr/local/etc/openvpn/private/${ALTERNATE:+${ALTERNATE}_}hs.key"`
+</$hs>
 EOF

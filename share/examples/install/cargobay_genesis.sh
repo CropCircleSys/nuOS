@@ -50,7 +50,7 @@ nu_ns_server -C /var/jail/ns -d -k 4096 -z 2048 -i $mikey_ip -i $mouth_ip -s a.n
 nu_ns_server -C /var/jail/a.ns -i $mikey_ip -i $mouth_ip -m ns.jail
 nu_ns_server -C /var/jail/b.ns -i $mikey_ip -i $mouth_ip -m ns.jail
 if [ -d /root/nuos_migrate_in/ns ]; then
-	cp -av /root/nuos_migrate_in/ns/knotdb/keys /var/jail/ns/var/db/knot/
+	tar -cf - -C /root/nuos_migrate_in/ns/knotdb keys | tar -xvf - -C /var/jail/ns/var/db/knot
 fi
 service jail start resolv ns a.ns b.ns
 for z in $infra_domain $client_zones; do
@@ -71,25 +71,25 @@ p=$!
 echo "(kill -STOP $p; kill -CONT $p) to pause and resume"
 wait $p
 
-if [ -d /root/nuos_migrate_in/lb ]; then
-	for d in private csrs certs private.next csrs.next; do
-		cp -av /root/nuos_migrate_in/lb/ssl/$d /etc/ssl/
-	done
-fi
+for s in lb ca; do
+	if [ -d /root/nuos_migrate_in/$s ]; then
+		tar -cf - -C /root/nuos_migrate_in/$s/ssl . | tar -xvf - -C /etc/ssl
+	fi
+done
 
-if [ -d /root/nuos_migrate_in/ca ]; then
-	cp -av /root/nuos_migrate_in/ca/ssl/serials /etc/ssl/
-	cp -av /root/nuos_migrate_in/ca/ssl/private/* /etc/ssl/private/
+if [ ! -f /etc/ssl/private/ca.$infra_domain.key ] || [ ! -f /etc/ssl/certs/ca.$infra_domain.internal.crt ]; then
+	nu_ssl -h ca.$infra_domain -b 4096 -s -W -d 512 -n $country -p "$province" -l "$locality" -o "$organization" -u 'System and Network Security' -S
 fi
-
-# if [ ! -f /etc/ssl/private/ca.$infra_domain.key ] || [ ! -f /etc/ssl/certs/ca.$infra_domain.internal.crt ]; then
-# 	nu_ssl -h ca.$infra_domain -b 4096 -s -W -d 512 -n $country -p "$province" -l "$locality" -o "$organization" -u 'System and Network Security' -S
-# fi
 if [ ! -f /etc/ssl/private/$infra_domain.key ] || [ ! -f /etc/ssl/csrs/$infra_domain.csr ]; then
 	nu_ssl -h $infra_domain -b 4096 -n $country -p "$province" -l "$locality" -o "$organization" -u 'Network Infrastructure' -S
 fi
+if [ ! -f /etc/ssl/certs/$infra_domain.internal.crt ]; then
+	nu_ca -h $infra_domain
+fi
+nu_vpn -h $infra_domain
+
 if [ ! -f /etc/ssl/csrs.next/$infra_domain.csr ]; then
-	nu_ssl -N -h $infra_domain -b 4096 -n $country -p "$province" -l "$locality" -o "$organization" -u 'Network Infrastructure' -S
+	nu_ssl -h $infra_domain -b 4096 -n $country -p "$province" -l "$locality" -o "$organization" -u 'Network Infrastructure' -S -N
 fi
 nu_acme_renew -j ns $infra_domain
 nu_ssl -j ns -h $infra_domain -tt
@@ -113,8 +113,8 @@ lmtp(unix)? 1
 EOF
 sed -i '' -E -e "/^SERVICES {/,/^}/{$prgm}" /var/jail/postoffice/usr/local/etc/cyrus.conf
 echo /var/jail/postoffice/var/imap/socket /var/jail/postmaster/var/imap/socket nullfs ro > /etc/fstab.postoffice
-if [ -d /root/nuos_migrate_in/postoffice ]; then
-	tar -cf - -C /root/nuos_migrate_in/postoffice . | tar -xvf - -C /var/jail/postoffice/var
+if [ -d /root/nuos_migrate_in/po ]; then
+	tar -cf - -C /root/nuos_migrate_in/po . | tar -xvf - -C /var/jail/postoffice/var
 fi
 
 service jail restart postmaster postoffice
@@ -315,8 +315,6 @@ service jail start www
 
 # for z in $zones; do
 #   if first $z of $zones; then
-#     nu_ca -h $z
-#     nu_vpn -h $z -q
 #     nu_vm -i
 #     #nu_pgsql -n -s -h $z
 #     #nu_ftp -s -h $z
