@@ -27,7 +27,7 @@ stef_ip=66.206.20.46
 infra_domain=cargobay.net
 corp_zones='ccsys.com cropcircle.systems'
 org_zones='nuos.org nuos.net nu.cash nu.chat nu.click nu.email nu.gold nu.live nu.lol nu.money nu.parts nu.place nu.school nu.show nu.software nu.team nu.zone'
-prod_zones='uhax.tv pawn.today freer.trade xng.trade xchng.trade unblind.date blindish.date bemylil.baby dollhouse.cam dads.wtf faith.agency'
+prod_zones='uhax.tv pawn.today freer.trade xng.trade xchng.trade unblind.date blindish.date bemylil.baby dollhouse.cam wifeknows.best dadsmore.fun daddy.bar dads.wtf dad.university faith.agency'
 
 
 client_zones="$corp_zones $org_zones $prod_zones"
@@ -186,13 +186,20 @@ for z in $client_zones; do
 				department='Sugar Baby Dating Communication Service';;
 			dollhouse.cam)
 				department='Live Adult Entertainment';;
-			dads.wtf)
+			wifeknows.best)
+				province='Florida'
+				locality='Venice'
+				organization='Feminine Society'
+				department='Encouraging Ladies and Family Values';;
+			dadsmore.fun|daddy.bar|dads.wtf)
 				province='Ohio'
 				locality='Toledo'
 				organization='Fatherhood Society'
 				department='Supporting Fatherhood and Family Values';;
+			dad.university)
+				department='Coaching Men and Fathers';;
 			faith.agency)
-				department='Supporting Faith and Spirituality';;
+				department='Promoting Faith and Spirituality';;
 			*)
 				echo "ERROR: skipping ssl key generation and certificate registration for client zone $z" >&2
 				continue
