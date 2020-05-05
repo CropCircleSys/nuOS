@@ -38,7 +38,7 @@ env
 
 enable_svc jail
 
-nu_jail -v -j resolv -S domain -T a.ns -T b.ns -x -q -i 127.1.0.1
+nu_jail -j resolv -S domain -T a.ns -T b.ns -x -q -i 127.1.0.1
 nu_ns_cache -C /var/jail/resolv -s
 { grep -w -v nameserver /var/jail/resolv/etc/resolv.conf; getent hosts resolv.jail | cut -w -f 1 | xargs -n 1 echo nameserver; } > /etc/resolv.conf
 cp -av /var/jail/resolv/etc/resolvconf.conf /etc/resolvconf.conf
@@ -229,7 +229,7 @@ for z in $infra_domain $client_zones; do
 			echo "ERROR: skipping http service configuration for client zone $z" >&2
 			continue
 	esac
-	nu_http_host -v -C /var/jail/www -a -s${strict:+sss} -kkf -G -i -u ${ADMIN_USER:-root} -h $z
+	nu_http_host -C /var/jail/www -a -s${strict:+sss} -kkf -G -i -u ${ADMIN_USER:-root} -h $z
 done
 
 for z in ccsys.com; do
