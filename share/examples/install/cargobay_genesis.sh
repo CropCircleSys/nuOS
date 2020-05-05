@@ -49,8 +49,8 @@ env ALIAS_IP=$mouth_ip nu_jail -j b.ns -i 127.1.0.4 -AP -S domain -x -q
 nu_ns_server -C /var/jail/ns -d -k 4096 -z 2048 -i $mikey_ip -i $mouth_ip -s a.ns.jail -s b.ns.jail
 nu_ns_server -C /var/jail/a.ns -i $mikey_ip -i $mouth_ip -m ns.jail
 nu_ns_server -C /var/jail/b.ns -i $mikey_ip -i $mouth_ip -m ns.jail
-if [ -d /root/nuos_migrate_in/ns ]; then
-	tar -cf - -C /root/nuos_migrate_in/ns/knotdb keys | tar -xvf - -C /var/jail/ns/var/db/knot
+if [ -d /root/nuos_deliverance/ns ]; then
+	tar -cf - -C /root/nuos_deliverance/ns/knotdb keys | tar -xvf - -C /var/jail/ns/var/db/knot
 fi
 service jail start resolv ns a.ns b.ns
 for z in $infra_domain $client_zones; do
@@ -72,8 +72,8 @@ echo "(kill -STOP $p; kill -CONT $p) to pause and resume"
 wait $p
 
 for s in lb ca; do
-	if [ -d /root/nuos_migrate_in/$s ]; then
-		tar -cf - -C /root/nuos_migrate_in/$s/ssl . | tar -xvf - -C /etc/ssl
+	if [ -d /root/nuos_deliverance/$s ]; then
+		tar -cf - -C /root/nuos_deliverance/$s/ssl . | tar -xvf - -C /etc/ssl
 	fi
 done
 
@@ -113,8 +113,8 @@ lmtp(unix)? 1
 EOF
 sed -i '' -E -e "/^SERVICES {/,/^}/{$prgm}" /var/jail/postoffice/usr/local/etc/cyrus.conf
 echo /var/jail/postoffice/var/imap/socket /var/jail/postmaster/var/imap/socket nullfs ro > /etc/fstab.postoffice
-if [ -d /root/nuos_migrate_in/po ]; then
-	tar -cf - -C /root/nuos_migrate_in/po . | tar -xvf - -C /var/jail/postoffice/var
+if [ -d /root/nuos_deliverance/po ]; then
+	tar -cf - -C /root/nuos_deliverance/po . | tar -xvf - -C /var/jail/postoffice/var
 fi
 
 service jail restart postmaster postoffice
