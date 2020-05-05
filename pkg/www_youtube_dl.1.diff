@@ -1,0 +1,11 @@
+--- ../youtube_dl.orig/Makefile	2020-05-02 20:42:14.186252000 +0000
++++ ./Makefile	2020-05-02 20:42:30.208747000 +0000
+@@ -1,7 +1,7 @@
+ # $FreeBSD: head/www/youtube_dl/Makefile 530950 2020-04-07 07:21:52Z mikael $
+ 
+ PORTNAME=	youtube_dl
+-PORTVERSION=	2020.03.24
++PORTVERSION=	2020.05.03
+ CATEGORIES=	www
+ MASTER_SITES=	https://yt-dl.org/downloads/${PORTVERSION}/
+ DISTNAME=	youtube-dl-${PORTVERSION}
