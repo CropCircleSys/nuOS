@@ -71,7 +71,7 @@ p=$!
 echo "(kill -STOP $p; kill -CONT $p) to pause and resume"
 wait $p
 
-for s in lb ca; do
+for s in lb vpn ca; do
 	if [ -d /root/nuos_deliverance/$s ]; then
 		tar -cf - -C /root/nuos_deliverance/$s/ssl . | tar -xvf - -C /etc/ssl
 	fi
@@ -225,7 +225,7 @@ for z in $infra_domain $client_zones; do
 	case $z in
 		cropcircle.systems|nu.zone|nu.click)
 			strict=;;
-		cargobay.net|ccsys.com|nuos.org|nuos.net|nu.cash|nu.chat|nu.email|nu.gold|nu.live|nu.lol|nu.money|nu.parts|nu.place|nu.school|nu.show|nu.software|nu.team|uhax.tv|pawn.today|freer.trade|xng.trade|xchng.trade|unblind.date|blindish.date|bemylil.baby|dollhouse.cam|dads.wtf|faith.agency)
+		cargobay.net|ccsys.com|nuos.org|nuos.net|nu.cash|nu.chat|nu.email|nu.gold|nu.live|nu.lol|nu.money|nu.parts|nu.place|nu.school|nu.show|nu.software|nu.team|uhax.tv|pawn.today|freer.trade|xng.trade|xchng.trade|unblind.date|blindish.date|bemylil.baby|dollhouse.cam|wifeknows.best|dadsmore.fun|daddy.bar|dads.wtf|dad.university|faith.agency)
 			strict=y;;
 		*)
 			echo "ERROR: skipping http service configuration for client zone $z" >&2
