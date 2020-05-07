@@ -40,6 +40,11 @@ echo
 
 maybe_yell
 
+echo "$MAIL_ADDRESS" | grep -q @
+echo "$MAIL_ADDRESS" | grep -v -q ^@
+echo "$MAIL_ADDRESS" | grep -v -q '*' || echo "$MAIL_ADDRESS" | grep -q '^*@'
+MAIL_ADDRESS=${MAIL_ADDRESS#'*'}
+
 if grep -q "^$MAIL_ADDRESS	" "${CHROOTDIR-}/usr/local/etc/postfix/virtual"; then
 	exit 1
 fi
