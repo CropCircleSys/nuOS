@@ -185,13 +185,13 @@ if [ -n "${OPT_LETS_ENCRYPT-}" ]; then
 		dom_args="${dom_args:+$dom_args }-d $a"
 	done
 	sister ${NAMESERVER_JAILNAME:+-j $NAMESERVER_JAILNAME} nu_ns_host ${CHROOTDIR:+-C "$CHROOTDIR"} ${OPT_VERBOSE:+-v} ${KNOT_ALTERNATE:+-A $KNOT_ALTERNATE} -h $SSL_HOST -c letsencrypt.org
-	sleep 5
+	sleep 3
 	parent_zone=$(ns_master_zone ${NAMESERVER_JAILNAME:+-j $NAMESERVER_JAILNAME} ${CHROOTDIR:+-c} ${KNOT_ALTERNATE:+-A $KNOT_ALTERNATE} $SSL_HOST)
 	#${CHROOTDIR:+chroot "$CHROOTDIR"} knotc ${KNOT_ALTERNATE:+-c /usr/local/etc/knot/knot_$KNOT_ALTERNATE.conf} zone-flush $parent_zone
-	sleep 5
+	sleep 3
 	#${CHROOTDIR:+chroot "$CHROOTDIR"} knotc ${KNOT_ALTERNATE:+-c /usr/local/etc/knot/knot_$KNOT_ALTERNATE.conf} zone-reload $parent_zone
 	echo acme.sh --signcsr --csr /etc/ssl/csrs/$SSL_HOST.csr --dns $dom_args --yes-I-know-dns-manual-mode-enough-go-ahead-please ${OPT_FORCE:+--force}
-	sleep 180
+	sleep 120
 	require_tmp acme_output
 	acme.sh --signcsr --csr /etc/ssl/csrs/$SSL_HOST.csr --dns $dom_args --yes-I-know-dns-manual-mode-enough-go-ahead-please ${OPT_FORCE:+--force} >| "$acme_output" 2>&1 || true
 	require_tmp acme_challenge
@@ -203,14 +203,14 @@ if [ -n "${OPT_LETS_ENCRYPT-}" ]; then
 		if [ -n "$txt" ]; then
 			sister ${NAMESERVER_JAILNAME:+-j $NAMESERVER_JAILNAME} nu_ns_host ${CHROOTDIR:+-C "$CHROOTDIR"} ${OPT_VERBOSE:+-v} ${KNOT_ALTERNATE:+-A $KNOT_ALTERNATE} -d -r txt -h $h || true
 			sister ${NAMESERVER_JAILNAME:+-j $NAMESERVER_JAILNAME} nu_ns_host ${CHROOTDIR:+-C "$CHROOTDIR"} ${OPT_VERBOSE:+-v} ${KNOT_ALTERNATE:+-A $KNOT_ALTERNATE} -r txt -h $h -i $txt
-			sleep 5
+			sleep 3
 		fi
 	done
 	#${CHROOTDIR:+chroot "$CHROOTDIR"} knotc ${KNOT_ALTERNATE:+-c /usr/local/etc/knot/knot_$KNOT_ALTERNATE.conf} zone-flush $parent_zone
-	sleep 5
+	sleep 3
 	#${CHROOTDIR:+chroot "$CHROOTDIR"} knotc ${KNOT_ALTERNATE:+-c /usr/local/etc/knot/knot_$KNOT_ALTERNATE.conf} zone-reload $parent_zone
 	echo acme.sh --renew $dom_args --yes-I-know-dns-manual-mode-enough-go-ahead-please ${OPT_FORCE:+--force}
-	sleep 180
+	sleep 120
 	acme.sh --renew $dom_args --yes-I-know-dns-manual-mode-enough-go-ahead-please ${OPT_FORCE:+--force} 2>&1 || true
 	sister ${NAMESERVER_JAILNAME:+-j $NAMESERVER_JAILNAME} nu_ns_host ${CHROOTDIR:+-C "$CHROOTDIR"} ${OPT_VERBOSE:+-v} ${KNOT_ALTERNATE:+-A $KNOT_ALTERNATE} -h $SSL_HOST -c -d
 	CERT_FILE=$HOME/.acme.sh/$SSL_HOST/$SSL_HOST.cer

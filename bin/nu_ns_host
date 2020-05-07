@@ -200,10 +200,10 @@ case $SOFTWARE in
 					fi
 					: ${TTL:=$default_ttl}
 					if [ -n "${OPT_DELETE-}" ]; then
-						$knotc_cmd zone-read $zone $host $([ A = $REC_TYPE -o AAAA = $REC_TYPE ] || echo $REC_TYPE) >| /dev/null || { sleep 5; service knot restart; sleep 5; exit 0; }
+						$knotc_cmd zone-read $zone $host $([ A = $REC_TYPE -o AAAA = $REC_TYPE ] || echo $REC_TYPE) >| /dev/null || { sleep 2; service knot restart; sleep 3; exit 0; }
 					fi
 					$knotc_cmd zone-begin $zone
-					sleep 2
+					sleep 0.5
 					if [ -n "${OPT_SINGLE_RECORD-}" ]; then
 						if [ -n "${OPT_DELETE-}" ]; then
 							$knotc_cmd zone-unset $zone $host $REC_TYPE "$PUB_IPS" || ex=1
@@ -219,7 +219,7 @@ case $SOFTWARE in
 							done
 						fi
 					fi
-					sleep 2
+					sleep 0.5
 					if [ 1 = "${ex-}" ]; then
 						$knotc_cmd zone-abort $zone
 					else
@@ -279,7 +279,7 @@ EOF
 				fi
 			fi
 		fi
-		sleep 2
+		sleep 0.5
 		[ -z "${conf_failed-}" ] || { $knotc_cmd conf-abort && exit 1; }
 		[ -z "${conf_began-}" ] || $knotc_cmd conf-commit
 	;;
