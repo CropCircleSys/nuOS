@@ -86,7 +86,7 @@ fi
 if [ ! -f /etc/ssl/certs/$infra_domain.internal.crt ]; then
 	nu_ca -h $infra_domain
 fi
-nu_vpn -h $infra_domain
+nu_vpn -q -h $infra_domain
 
 if [ ! -f /etc/ssl/csrs.next/$infra_domain.csr ]; then
 	nu_ssl -h $infra_domain -b 4096 -n $country -p "$province" -l "$locality" -o "$organization" -u 'Network Infrastructure' -S -N
