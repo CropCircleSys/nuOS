@@ -239,7 +239,7 @@ if [ -z "${CERT_FILE-}" ]; then
 			cat >| "$key_password_file" <<EOF
 $key_password
 EOF
-			(umask 77 && $SSL_CMD genrsa -des3 -passout "file:$key_password_file" -out "${CHROOTDIR-}/etc/ssl/private${OPT_NEXT_MODE:+.next}/$SSL_HOST.key" $KEY_BITS)
+			(umask 77 && $SSL_CMD genrsa -aes256 -passout "file:$key_password_file" -out "${CHROOTDIR-}/etc/ssl/private${OPT_NEXT_MODE:+.next}/$SSL_HOST.key" $KEY_BITS)
 		else
 			(umask 77 && $SSL_CMD genrsa -out "${CHROOTDIR-}/etc/ssl/private${OPT_NEXT_MODE:+.next}/$SSL_HOST.key" $KEY_BITS)
 		fi
