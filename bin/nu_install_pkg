@@ -113,7 +113,7 @@ for port in $*; do
 				fi
 				[ -n "${OPT_NOCLEAN_BEFORE-}" ] || make ${new_flavor:+FLAVORS="$def_flavors $new_flavor"} ${flavor:+FLAVOR=$flavor} -DNOCLEANDEPENDS clean
 				[ -n "${OPT_NOBUILD-}" ] || env `cat "$env" 2>/dev/null` make "__MAKE_CONF=$make_conf" PORT_DBDIR="$PORT_DBDIR" ${new_flavor:+FLAVORS="$def_flavors $new_flavor"} ${flavor:+FLAVOR=$flavor} `cat "$makeargs" 2>/dev/null` -DBATCH -DNO_DEPENDS package
-				[ -n "${OPT_NOBUILD-}" ] || lockf "${CHROOTDIR-}/tmp/nu_install_pkg.pkgdb.lock" env `cat "$env" 2>/dev/null` make "__MAKE_CONF=$make_conf" PORT_DBDIR="$PORT_DBDIR" ${new_flavor:+FLAVORS="$def_flavors $new_flavor"} ${flavor:+FLAVOR=$flavor} `cat "$makeargs" 2>/dev/null` -DBATCH -DNO_DEPENDS install
+				[ -n "${OPT_NOBUILD-}" ] || lockf -k "${CHROOTDIR-}/tmp/nu_install_pkg.pkgdb.lock" env `cat "$env" 2>/dev/null` make "__MAKE_CONF=$make_conf" PORT_DBDIR="$PORT_DBDIR" ${new_flavor:+FLAVORS="$def_flavors $new_flavor"} ${flavor:+FLAVOR=$flavor} `cat "$makeargs" 2>/dev/null` -DBATCH -DNO_DEPENDS install
 				[ -n "${OPT_NOCLEAN_AFTER-}" ] || make ${new_flavor:+FLAVORS="$def_flavors $new_flavor"} ${flavor:+FLAVOR=$flavor} -DNOCLEANDEPENDS clean
 			)
 			[ -f $pkg_file ]
