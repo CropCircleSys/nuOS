@@ -113,6 +113,14 @@ EOF
 					}
 				}
 			' "${CHROOTDIR-}/usr/local/etc/unbound/unbound.conf"
+		else
+			sed -i '' -Ee '
+				/^server:/,/^[[:graph:]]/{
+					/^[[:blank:]]*#[[:blank:]]*auto-trust-anchor-file:/{
+						s/(^[[:blank:]]*)#[[:blank:]]*/\1/
+					}
+				}
+			' "${CHROOTDIR-}/usr/local/etc/unbound/unbound.conf"
 		fi
 		
 		if [ -z "${OPT_SELF_SUFFICIENT-}" ]; then
