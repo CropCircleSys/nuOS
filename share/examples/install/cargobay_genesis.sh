@@ -134,6 +134,7 @@ for z in $infra_domain $client_zones; do
 	for j in ns a.ns b.ns; do
 		nu_ns_host -j $j -h $z
 	done
+	nu_sshfp -j ns -F -h $z
 done
 
 echo

@@ -66,6 +66,16 @@ nuos_ssl_init () {
 	fi
 }
 
+nuos_ssh_init () {
+	if [ -x /usr/local/bin/ssh ]; then
+		SSH_CMD=/usr/local/bin/ssh
+		SSH_SUITE=openssh-port
+	else
+		SSH_CMD=/usr/bin/ssh
+		SSH_SUITE=openssh-freebsd-base
+	fi
+}
+
 nuos_sha_fngr () {
 	local bytes=24
 	while getopts b:f OPT; do case $OPT in

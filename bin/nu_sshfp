@@ -1,0 +1,51 @@
+#!/bin/sh
+set -e; set -u; set -C
+
+# nuOS 0.0.11.3a0 - bin/nu_sshfp
+#
+# Copyright (c) 2008-2019 Chad Jacob Milios and Crop Circle Systems.
+# All rights reserved.
+#
+# This Source Code Form is subject to the terms of the Simplified BSD License.
+# If a copy of the Simplified BSD License was not distributed alongside this file, you can
+# obtain one at https://www.freebsd.org/copyright/freebsd-license.html . This software
+# project is not affiliated with the FreeBSD Project.
+#
+# Official updates and community support available at https://nuos.org .
+# Professional services available at https://ccsys.com .
+
+NUOS_VER=0.0.11.3a0
+
+. "$(dirname "$(realpath "$0")")/../lib/nu_system.sh"
+
+while getopts A:C:Fh:j:l:v OPT; do case $OPT in
+	A) KNOT_ALTERNATE=$OPTARG;;
+	C) CHROOTDIR=$OPTARG;;
+	F) OPT_ASSUME_FRESH=y;;
+	h) HOST_NAME=$OPTARG;;
+	j) NAMESERVER_JAILNAME=$OPTARG;;
+	v) OPT_VERBOSE=y;;
+esac; done; shift $(($OPTIND-1))
+[ $# = 0 ]
+
+. "$(dirname "$(realpath "$0")")/../lib/nu_common.sh"
+
+maybe_yell
+
+nuos_ssh_init
+
+: ${HOST_NAME:=${HOST:=`hostname`}}
+
+${CHROOTDIR:+chroot "$CHROOTDIR"} $SSH_CMD-keygen -r __inconsequential_ | while read name class type key_type fp_type fp; do
+	[ "$name" = __inconsequential_ ]
+	[ "$class" = IN ]
+	[ "$type" = SSHFP ]
+	[ "$fp_type" -gt 1 ] || continue # sha1 no good
+	if ! srsly "${OPT_ASSUME_FRESH-}"; then
+		srsly "${deld-}" || sister ${NAMESERVER_JAILNAME:+-j $NAMESERVER_JAILNAME} nu_ns_host ${OPT_VERBOSE:+-v} ${KNOT_ALTERNATE:+-A $KNOT_ALTERNATE} -dd -h $HOST_NAME -r sshfp
+		deld=y
+	fi
+	sister ${NAMESERVER_JAILNAME:+-j $NAMESERVER_JAILNAME} nu_ns_host ${OPT_VERBOSE:+-v} ${KNOT_ALTERNATE:+-A $KNOT_ALTERNATE} -h $HOST_NAME -r sshfp -s -i "$key_type $fp_type $fp"
+done
+
+echo "Configured $HOST_NAME with SSH fingerprint DNS records."
