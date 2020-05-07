@@ -169,7 +169,7 @@ if [ ! -f /etc/ssl/csrs.next/$infra_domain.csr ]; then
 	nu_ssl -h $infra_domain -b 4096 -n $country -p "$province" -l "$locality" -o "$organization" -u 'Network Infrastructure' -S -N
 fi
 nu_acme_renew -j ns $infra_domain
-nu_ssl -j ns -h $infra_domain -tt
+nu_ssl -j ns -F -h $infra_domain -tt
 
 nu_jail -j postmaster -i 127.1.0.5 -P -S smtp -I submission -x -q
 (cd /etc/ssl && tar -cf - certs/$infra_domain.ca.crt certs/$infra_domain.crt csrs.next/$infra_domain.csr csrs/$infra_domain.csr private/$infra_domain.key | tar -xvf - -C /var/jail/postmaster/etc/ssl/)
@@ -291,7 +291,7 @@ for z in $client_zones; do
 		fi
 	)
 	nu_acme_renew -j ns $z
-	nu_ssl -j ns -h $z -tt
+	nu_ssl -j ns -F -h $z -tt
 done
 
 ADMIN_USER=`pw usershow -u 1001 | cut -d : -f 1`

@@ -18,7 +18,7 @@ NUOS_VER=0.0.11.3a0
 
 . "$(dirname "$(realpath "$0")")/../lib/nu_system.sh"
 
-while getopts A:a:b:c:C:d:e:fh:j:kK:l:Lm:Mn:No:p:stT:Su:vW OPT; do case $OPT in
+while getopts A:a:b:c:C:d:e:fFh:j:kK:l:Lm:Mn:No:p:stT:Su:vW OPT; do case $OPT in
 	A) KNOT_ALTERNATE=$OPTARG;;
 	a) AUTH_FILE=$OPTARG;;
 	b) KEY_BITS=$OPTARG;;
@@ -27,6 +27,7 @@ while getopts A:a:b:c:C:d:e:fh:j:kK:l:Lm:Mn:No:p:stT:Su:vW OPT; do case $OPT in
 	d) DGST_BITS=$OPTARG;;
 	e) EXPIRE_DAYS=$OPTARG;;
 	f) OPT_FORCE=y;;
+	F) OPT_ASSUME_FRESH=y;;
 	h) SSL_HOST=$OPTARG;;
 	j) NAMESERVER_JAILNAME=$OPTARG;;
 	k) OPT_EXPORT_HPKP=y;;
@@ -120,7 +121,7 @@ if [ -n "${OPT_EXPORT_TLSA-}" -o -n "${OPT_EXPORT_HPKP-}" ]; then
 			: ${TLSA_TRANSPORT:=tcp}
 			check_ns_server
 			for h in $SSL_HOST $SAN_LIST; do
-				sister ${NAMESERVER_JAILNAME:+-j $NAMESERVER_JAILNAME} nu_ns_host ${CHROOTDIR:+-C "$CHROOTDIR"} ${OPT_VERBOSE:+-v} ${KNOT_ALTERNATE:+-A $KNOT_ALTERNATE} -dd -h _$port._$TLSA_TRANSPORT.$h -r tlsa
+				[ -n "${OPT_ASSUME_FRESH-}" ] || sister ${NAMESERVER_JAILNAME:+-j $NAMESERVER_JAILNAME} nu_ns_host ${CHROOTDIR:+-C "$CHROOTDIR"} ${OPT_VERBOSE:+-v} ${KNOT_ALTERNATE:+-A $KNOT_ALTERNATE} -dd -h _$port._$TLSA_TRANSPORT.$h -r tlsa
 				sister ${NAMESERVER_JAILNAME:+-j $NAMESERVER_JAILNAME} nu_ns_host ${CHROOTDIR:+-C "$CHROOTDIR"} ${OPT_VERBOSE:+-v} ${KNOT_ALTERNATE:+-A $KNOT_ALTERNATE} -h _$port._$TLSA_TRANSPORT.$h -r tlsa -s -i "$record_data"
 			done
 		else
