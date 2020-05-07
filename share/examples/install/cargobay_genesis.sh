@@ -1,16 +1,6 @@
 export PATH=$PATH:/usr/local/sbin:/usr/local/bin:/usr/nuos/bin
 export HOME=/root
 
-OWNER_ACCT=chuck
-OWNER_NAME='Charles Jacob Milios'
-
-# This must be two characters. (standard: ISO 3166-1 alpha-2; e.g. blank is XX)
-country=US
-
-# These must be defined, but they can be the empty string.
-province='Florida'
-locality='Kissimmee'
-organization='Crop Circle Systems'
 
 mikey_ip=23.111.168.34
 mouth_ip=23.111.168.35
@@ -24,11 +14,98 @@ sloth_ip=66.206.20.44
 andy_ip=66.206.20.45
 stef_ip=66.206.20.46
 
-infra_domain=cargobay.net
-corp_zones='ccsys.com cropcircle.systems'
-org_zones='nuos.org nuos.net nu.cash nu.chat nu.click nu.email nu.gold nu.live nu.lol nu.money nu.parts nu.place nu.school nu.show nu.software nu.team nu.zone'
-prod_zones='uhax.tv pawn.today freer.trade xng.trade xchng.trade unblind.date blindish.date bemylil.baby dollhouse.cam wifeknows.best dadsmore.fun daddy.bar dads.wtf dad.university faith.agency'
-
+case `hostname -d | tr [[:upper:]] [[:lower:]]` in
+	
+	cargobay.net|ccsys.com|cropcircle.systems)
+		
+		# This must be two characters. (standard: ISO 3166-1 alpha-2; e.g. blank is XX)
+		country=US
+		
+		# These must be defined, but they can be the empty string.
+		province='Florida'
+		locality='Kissimmee'
+		organization='Crop Circle Systems'
+		
+		OWNER_ACCT=chuck
+		OWNER_NAME='Charles Jacob Milios'
+		
+		primary_ip=$mikey_ip
+		secondary_ip=$mouth_ip
+		
+		infra_domain=cargobay.net
+		corp_zones='ccsys.com cropcircle.systems'
+		org_zones='nuos.org nuos.net nu.cash nu.chat nu.click nu.email nu.gold nu.live nu.lol nu.money nu.parts nu.place nu.school nu.show nu.software nu.team nu.zone'
+		prod_zones='uhax.tv pawn.today freer.trade xng.trade xchng.trade unblind.date blindish.date bemylil.baby dollhouse.cam wifeknows.best dadsmore.fun daddy.bar dads.wtf dad.university faith.agency'
+		
+		init_emails='chad@ccsys.com milios@ccsys.com *@ccsys.com chuck@nu.email chad@nu.email jake@nu.email'
+	;;
+	
+	woneye.site|uglybagsofmostlywater.club)
+		
+		country=US
+		
+		province='Oregon'
+		locality='Astoria'
+		organization='Lighthouse Lounge'
+		
+		OWNER_ACCT=anne
+		OWNER_NAME='Angelina Fratelli'
+		
+		primary_ip=$jake_ip
+		secondary_ip=$francis_ip
+		
+		infra_domain=woneye.site
+		corp_zones='uglybagsofmostlywater.club'
+		org_zones='nuos.xyz'
+		
+		init_emails='willy@woneye.site giant@uglybagsofmostlywater.club'
+	;;
+	
+	entire.ninja)
+		
+		country=QU
+		
+		province='Hi no Kuni'
+		locality='Konohagakure'
+		organization='Foundation'
+		
+		OWNER_ACCT=naruto
+		OWNER_NAME='Naruto Uzumaki'
+		
+		primary_ip=$chunk_ip
+		secondary_ip=$brand_ip
+		
+		infra_domain=entire.ninja
+		
+		init_emails='naruto@entire.ninja hokage@entire.ninja jonin@entire.ninja'
+	;;
+	
+	macleod.host|goonies.pro)
+		
+		country=UK
+		
+		# These must be defined, but they can be the empty string.
+		province='Scotland'
+		locality='Glenfinnan'
+		organization='Russell Nash Antiques & Curiosities'
+		
+		OWNER_ACCT=one
+		OWNER_NAME='Connor MacLeod'
+		
+		primary_ip=$andy_ip
+		secondary_ip=$stef_ip
+		
+		infra_domain=macleod.host
+		corp_zones='goon.store goonies.pro'
+		org_zones='gangsta.tech thug.digital bully.ninja'
+		prod_zones='emptier.space bravest.world'
+		
+		init_emails='connor@macleod.host one@bravest.world zero@emptier.space mikey@goonies.pro mouth@goonies.pro data@goonies.pro chunk@goonies.pro brand@goonies.pro stef@goonies.pro andy@goonies.pro mama@goon.store jake@goon.store francis@goon.store sloth@goon.store'
+	;;
+	*)
+		echo "ERROR: unsure of identity and ownership, check configuration" >&2
+		exit 1
+esac
 
 client_zones="$corp_zones $org_zones $prod_zones"
 
@@ -44,11 +121,11 @@ nu_ns_cache -C /var/jail/resolv -s
 cp -av /var/jail/resolv/etc/resolvconf.conf /etc/resolvconf.conf
 
 nu_jail -j ns -S domain -x -q -i 127.1.0.2
-env ALIAS_IP=$mikey_ip nu_jail -j a.ns -i 127.1.0.3 -AP -S domain -x -q
-env ALIAS_IP=$mouth_ip nu_jail -j b.ns -i 127.1.0.4 -AP -S domain -x -q
-nu_ns_server -C /var/jail/ns -d -k 4096 -z 2048 -i $mikey_ip -i $mouth_ip -s a.ns.jail -s b.ns.jail
-nu_ns_server -C /var/jail/a.ns -i $mikey_ip -i $mouth_ip -m ns.jail
-nu_ns_server -C /var/jail/b.ns -i $mikey_ip -i $mouth_ip -m ns.jail
+env ALIAS_IP=$primary_ip nu_jail -j a.ns -i 127.1.0.3 -AP -S domain -x -q
+env ALIAS_IP=$secondary_ip nu_jail -j b.ns -i 127.1.0.4 -AP -S domain -x -q
+nu_ns_server -C /var/jail/ns -d -k 4096 -z 2048 -i $primary_ip -i $secondary_ip -s a.ns.jail -s b.ns.jail
+nu_ns_server -C /var/jail/a.ns -i $primary_ip -i $secondary_ip -m ns.jail
+nu_ns_server -C /var/jail/b.ns -i $primary_ip -i $secondary_ip -m ns.jail
 if [ -d /root/nuos_deliverance/ns ]; then
 	tar -cf - -C /root/nuos_deliverance/ns/knotdb keys | tar -xvf - -C /var/jail/ns/var/db/knot
 fi
@@ -127,7 +204,7 @@ for z in $infra_domain $client_zones; do
 		nu_user_mail -C /var/jail/postmaster -h $infra_domain -u $OWNER_ACCT -m $b@$z
 	done
 done
-for m in milios@ccsys.com chad@ccsys.com @ccsys.com chuck@nu.email jake@nu.email chad@nu.email; do
+for m in $init_emails; do
 	nu_user_mail -C /var/jail/postmaster -h $infra_domain -u $OWNER_ACCT -m $m
 done
 
@@ -223,9 +300,17 @@ nu_http -C /var/jail/www -s -IIII
 for z in $infra_domain $client_zones; do
 	(cd /etc/ssl && tar -cf - certs/$z.ca.crt certs/$z.crt csrs.next/$z.csr csrs/$z.csr private/$z.key | tar -xvf - -C /var/jail/www/etc/ssl/)
 	case $z in
+		goonies.pro|\
+		nuos.xyz|\
 		cropcircle.systems|nu.zone|nu.click)
 			strict=;;
-		cargobay.net|ccsys.com|nuos.org|nuos.net|nu.cash|nu.chat|nu.email|nu.gold|nu.live|nu.lol|nu.money|nu.parts|nu.place|nu.school|nu.show|nu.software|nu.team|uhax.tv|pawn.today|freer.trade|xng.trade|xchng.trade|unblind.date|blindish.date|bemylil.baby|dollhouse.cam|wifeknows.best|dadsmore.fun|daddy.bar|dads.wtf|dad.university|faith.agency)
+		woneye.site|uglybagsofmostlywater.club|\
+		entire.ninja|\
+		macleod.host|goon.store|gangsta.tech|thug.digital|bully.ninja|emptier.space|bravest.world|\
+		cargobay.net|ccsys.com|nuos.org|nuos.net|\
+		nu.cash|nu.chat|nu.email|nu.gold|nu.live|nu.lol|nu.money|nu.parts|nu.place|nu.school|nu.show|nu.software|nu.team|\
+		uhax.tv|pawn.today|freer.trade|xng.trade|xchng.trade|unblind.date|blindish.date|bemylil.baby|dollhouse.cam|\
+		wifeknows.best|dadsmore.fun|daddy.bar|dads.wtf|dad.university|faith.agency)
 			strict=y;;
 		*)
 			echo "ERROR: skipping http service configuration for client zone $z" >&2
@@ -316,7 +401,7 @@ EOF
 done
 
 for z in $org_zones; do
-	${ADMIN_USER:+env -i} chroot ${ADMIN_USER:+-u 1001 -g 1001} /var/jail/www `which nu_http_host_snowtube` -h $z -l https://ccsys.com/
+	${ADMIN_USER:+env -i} chroot ${ADMIN_USER:+-u 1001 -g 1001} /var/jail/www `which nu_http_host_snowtube` -h $z -l home/
 done
 
 service jail start www
