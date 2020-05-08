@@ -1,7 +1,3 @@
-export PATH=$PATH:/usr/local/sbin:/usr/local/bin:/usr/nuos/bin
-export HOME=/root
-
-
 mikey_ip=23.111.168.34
 mouth_ip=23.111.168.35
 data_ip=23.111.168.36
