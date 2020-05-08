@@ -57,7 +57,6 @@ remote $SERVER_HOST
 verify-x509-name $SERVER_HOST name
 float
 ncp-disable
-opt-verify
 `grep '^cipher ' "${CHROOTDIR-}/usr/local/etc/openvpn/openvpn${ALTERNATE:+_$ALTERNATE}.conf"`
 `grep '^auth ' "${CHROOTDIR-}/usr/local/etc/openvpn/openvpn${ALTERNATE:+_$ALTERNATE}.conf"`
 `grep '^compress ' "${CHROOTDIR-}/usr/local/etc/openvpn/openvpn${ALTERNATE:+_$ALTERNATE}.conf"`
