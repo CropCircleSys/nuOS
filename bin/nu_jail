@@ -262,7 +262,7 @@ if canhas "${LISTEN_SERVICE-}"; then
 ${OPT_PUBLIC_LISTEN_SERVICE:+${OPT_PUBLIC_ALIAS:+	exec.poststart += "ipfw add $fwd_rule_n fwd $JAIL_NAME.jail ip from me to $ALIAS_IP${listen_list:+ $listen_list} keep-state";
 }	exec.poststart += "\`ipfw nat show config\` $nat_conf";
 }${CONNECT_TARGETS:+	exec.poststart += "ipfw add $ct_rule_n nat 123 ip4 from $CONNECT_TARGETS to $JAIL_NAME.jail";
-}exec.poststart += "ipfw add $fw_rule_n allow ip from any to $JAIL_NAME.jail${listen_list:+ $listen_list} via \$interface";
+}	exec.poststart += "ipfw add $fw_rule_n allow ip from any to $JAIL_NAME.jail${listen_list:+ $listen_list} via \$interface";
 	exec.poststart += "ipfw add $fw_rule_n allow ip from $JAIL_NAME.jail${listen_list:+ $listen_list} to any via \$interface";
 EOF
 fi
