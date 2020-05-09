@@ -31,7 +31,10 @@ case `hostname -d | tr [[:upper:]] [[:lower:]]` in
 		infra_domain=cargobay.net
 		corp_zones='ccsys.com cropcircle.systems'
 		org_zones='nuos.org nuos.net nu.cash nu.chat nu.click nu.email nu.gold nu.live nu.lol nu.money nu.parts nu.place nu.school nu.show nu.software nu.team nu.zone'
-		prod_zones='uhax.tv pawn.today freer.trade xng.trade xchng.trade unblind.date blindish.date bemylil.baby dollhouse.cam wifeknows.best dadsmore.fun daddy.bar dads.wtf dad.university faith.agency'
+		prod_zones='uhax.tv pawn.today freer.trade xng.trade xchng.trade unblind.date blindish.date bemylil.baby dollhouse.cam wifeknows.best dadsmore.fun daddy.bar dads.wtf dad.university man.coach faith.agency'
+		
+		sec_dept='System & Network Security'
+		net_dept='Network Infrastructure & Operations'
 		
 		init_emails='chad@ccsys.com milios@ccsys.com *@ccsys.com chuck@nu.email chad@nu.email jake@nu.email'
 	;;
@@ -54,6 +57,9 @@ case `hostname -d | tr [[:upper:]] [[:lower:]]` in
 		corp_zones='uglybagsofmostlywater.club'
 		org_zones='nuos.xyz'
 		
+		sec_dept='Development & Production Quality Assurance'
+		net_dept='Architecture Quality Assurance'
+		
 		init_emails='willy@woneye.site giant@uglybagsofmostlywater.club'
 	;;
 	
@@ -72,6 +78,9 @@ case `hostname -d | tr [[:upper:]] [[:lower:]]` in
 		secondary_ip=$brand_ip
 		
 		infra_domain=entire.ninja
+		
+		sec_dept='Advanced Network & System Operations'
+		net_dept='Advanced System Engineering'
 		
 		init_emails='naruto@entire.ninja hokage@entire.ninja jonin@entire.ninja'
 	;;
@@ -95,6 +104,9 @@ case `hostname -d | tr [[:upper:]] [[:lower:]]` in
 		corp_zones='goon.store goonies.pro'
 		org_zones='gangsta.tech thug.digital bully.ninja'
 		prod_zones='emptier.space bravest.world'
+		
+		sec_dept='Infrastructure & Operations Quality Assurance'
+		net_dept='System Engineering Quality Assurance'
 		
 		init_emails='connor@macleod.host one@bravest.world zero@emptier.space mikey@goonies.pro mouth@goonies.pro data@goonies.pro chunk@goonies.pro brand@goonies.pro stef@goonies.pro andy@goonies.pro mama@goon.store jake@goon.store francis@goon.store sloth@goon.store'
 	;;
@@ -152,10 +164,10 @@ for s in lb vpn ca; do
 done
 
 if [ ! -f /etc/ssl/private/ca.$infra_domain.key ] || [ ! -f /etc/ssl/certs/ca.$infra_domain.internal.crt ]; then
-	nu_ssl -h ca.$infra_domain -b 4096 -s -W -d 512 -n $country -p "$province" -l "$locality" -o "$organization" -u 'System and Network Security' -S
+	nu_ssl -h ca.$infra_domain -b 4096 -s -W -d 512 -n $country -p "$province" -l "$locality" -o "$organization" -u "$sec_dept" -S
 fi
 if [ ! -f /etc/ssl/private/$infra_domain.key ] || [ ! -f /etc/ssl/csrs/$infra_domain.csr ]; then
-	nu_ssl -h $infra_domain -b 4096 -n $country -p "$province" -l "$locality" -o "$organization" -u 'Network Infrastructure' -S
+	nu_ssl -h $infra_domain -b 4096 -n $country -p "$province" -l "$locality" -o "$organization" -u "$net_dept" -S
 fi
 if [ ! -f /etc/ssl/certs/$infra_domain.internal.crt ]; then
 	nu_ca -h $infra_domain
@@ -164,7 +176,7 @@ nu_vpn -q -h $infra_domain
 service openvpn start
 
 if [ ! -f /etc/ssl/csrs.next/$infra_domain.csr ]; then
-	nu_ssl -h $infra_domain -b 4096 -n $country -p "$province" -l "$locality" -o "$organization" -u 'Network Infrastructure' -S -N
+	nu_ssl -h $infra_domain -b 4096 -n $country -p "$province" -l "$locality" -o "$organization" -u "$net_dept" -S -N
 fi
 nu_acme_renew -j ns $infra_domain
 nu_ssl -j ns -F -h $infra_domain -tt
@@ -216,13 +228,13 @@ for z in $client_zones; do
 			nuos.org)
 				department='Next Underground Operating System';;
 			nuos.net)
-				department='National Union Online Service';;
+				department='National Union Organizational Society';;
 			nu.zone)
-				department='Authority Registration';;
+				department='Identity & Authority Registration';;
 			nu.software)
-				department='Software Distribution Center';;
+				department='Universal Software Distribution Center';;
 			nu.place)
-				department='Secure Storage Service';;
+				department='Secure Site-Specific Storage Service';;
 			nu.email)
 				department='Secure Electronic Post Office';;
 			nu.chat)
@@ -234,7 +246,7 @@ for z in $client_zones; do
 			nu.live)
 				department='Realtime Media Distribution';;
 			nu.lol)
-				department='Social Media Archival and Chronology';;
+				department='Social Media Chronology & Archival';;
 			nu.click)
 				department='Advertising and Trend Analysis';;
 			nu.parts)
@@ -242,17 +254,35 @@ for z in $client_zones; do
 			nu.school)
 				department='Knowledge Library and Training Academy';;
 			nu.money)
-				department='Cryptographic Instrument Issuance and Offering Service';;
+				department='Cryptographic Instrument Issuance & Offering Service';;
 			nu.gold)
 				department='Cryptographic Assets and Democratic Service';;
 			nu.cash)
 				department='Cryptographic Monetary Products';;
+			uglybagsofmostlywater.club)
+				department='Cordial Community Contributor Coterie Clan';;
+			nuos.xyz)
+				department='Advanced Software Research & Development';;
+			gangsta.tech)
+				department='Advanced Software Architecture';;
+			bully.ninja)
+				department='Advanced Software Engineering';;
+			thug.digital)
+				department='Advanced Software Production';;
+			goonies.pro)
+				department='Faux Customer Service';;
+			goon.store)
+				department='Faux Sales & Customer Support';;
+			emptier.space)
+				department='Testbed System Host Service';;
+			bravest.world)
+				department='Testbed Application Service';;
 			uhax.tv)
 				department='Hacker News and Entertainment';;
 			pawn.today)
 				department='Collateralized Lending Market Portal';;
 			freer.trade)
-				department='Community Goods and Services Market Portal';;
+				department='Community Goods & Services Market Portal';;
 			xng.trade|xchng.trade)
 				department='Cryptographic Instrument Market Portal';;
 			blindish.date)
@@ -271,12 +301,14 @@ for z in $client_zones; do
 			dadsmore.fun|daddy.bar|dads.wtf)
 				province='Ohio'
 				locality='Toledo'
-				organization='Fatherhood Society'
+				organization='Lost & Found Fathers Coalition'
 				department='Supporting Fatherhood and Family Values';;
-			dad.university)
+			dad.university|man.coach)
+				organization='Fatherhood Society'
 				department='Coaching Men and Fathers';;
 			faith.agency)
-				department='Promoting Faith and Spirituality';;
+				organization='Family Uplifting Inclusive Religious Society'
+				department='Promoting Faith, Spirituality and Family Unity';;
 			*)
 				echo "ERROR: skipping ssl key generation and certificate registration for client zone $z" >&2
 				continue
@@ -308,7 +340,7 @@ for z in $infra_domain $client_zones; do
 		cargobay.net|ccsys.com|nuos.org|nuos.net|\
 		nu.cash|nu.chat|nu.email|nu.gold|nu.live|nu.lol|nu.money|nu.parts|nu.place|nu.school|nu.show|nu.software|nu.team|\
 		uhax.tv|pawn.today|freer.trade|xng.trade|xchng.trade|unblind.date|blindish.date|bemylil.baby|dollhouse.cam|\
-		wifeknows.best|dadsmore.fun|daddy.bar|dads.wtf|dad.university|faith.agency)
+		wifeknows.best|dadsmore.fun|daddy.bar|dads.wtf|dad.university|man.coach|faith.agency)
 			strict=y;;
 		*)
 			echo "ERROR: skipping http service configuration for client zone $z" >&2
