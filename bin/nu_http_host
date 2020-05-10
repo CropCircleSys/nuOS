@@ -299,14 +299,16 @@ ${OPT_HSTS:+	Header always set Strict-Transport-Security "max-age=$HSTS_DURATION
 }${OPT_HPKP:+	${hpkp_commented:+#}Header always set Public-Key-Pins '$hpkp_header_value'
 }	${loose_app_security:+#}Header always set Content-Security-Policy "frame-ancestors 'none'"
 	${loose_app_security:+#}Header always set X-Frame-Options DENY
-	Redirect permanent / https://$HOST_NAME/
+${h2:+	Protocols h2 http/1.1
+}	Redirect permanent / https://$HOST_NAME/
 </VirtualHost>
 }<VirtualHost *:80>
 	ServerName ${no_ssl:+www.}$HOST_NAME
 ${OPT_SSL:+	ServerAlias www.$HOST_NAME
 }	${loose_app_security:+#}Header always set Content-Security-Policy "frame-ancestors 'none'"
 	${loose_app_security:+#}Header always set X-Frame-Options DENY
-	Redirect permanent / http${OPT_SSL:+s}://$HOST_NAME/
+${h2:+	Protocols h2c http/1.1
+}	Redirect permanent / http${OPT_SSL:+s}://$HOST_NAME/
 </VirtualHost>
 <Directory "$user_home/$HOST_NAME/www/public">
 	Options Indexes FollowSymLinks
