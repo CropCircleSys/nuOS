@@ -436,7 +436,8 @@ case $infra_domain in
 	macleod.host) link=home/;;
 esac
 i=1; for z in $org_zones; do
-	${ADMIN_USER:+env -i} chroot ${ADMIN_USER:+-u 1001 -g 1001} /var/jail/www `which nu_http_host_snowtube` -h $z -l $link -S "`echo $org_zones | xargs -n 1 | sed -E -e 's|^(.*)$|https://\1/|'`" -s $i
+	mkdir -p /var/jail/www/usr/local/etc/apache24/Includes/VirtualHost.custom
+	${ADMIN_USER:+env -i} chroot ${ADMIN_USER:+-u 1001 -g 1001} /var/jail/www `which nu_http_host_snowtube` -h $z -l $link -S "`echo $org_zones | xargs -n 1 | sed -E -e 's|^(.*)$|https://\1/|'`" -s $i -g >> /var/jail/www/usr/local/etc/apache24/Includes/VirtualHost.custom/$z.conf
 i=$(($i+1)); done
 
 service jail start www

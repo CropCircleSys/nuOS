@@ -18,7 +18,8 @@ NUOS_VER=0.0.11.3a0
 
 . "$(dirname "$(realpath "$0")")/../lib/nu_system.sh"
 
-while getopts h:l:r:s:S:v OPT; do case $OPT in
+while getopts gh:l:r:s:S:v OPT; do case $OPT in
+	g) OPT_GENERATE_CONF=y;;
 	h) WWW_HOST=$OPTARG;;
 	l) LINK=$OPTARG;;
 	r) HTTP_ROOT=$OPTARG;;
@@ -211,3 +212,12 @@ ${LINK:+<div id="p">
 EOF
 
 gzip -k9 $HTTP_ROOT/index.html
+
+if srsly "${OPT_GENERATE_CONF-}"; then
+	cat <<EOF
+<Location "/">
+	Header add Link "</${gen_hash:+$IMMUTABLE_DIR/}$css>; rel=preload; as=style"
+	Header add Link "</${gen_hash:+$IMMUTABLE_DIR/}$js>; rel=preload; as=script"
+</Location>
+EOF
+fi

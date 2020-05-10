@@ -287,6 +287,8 @@ ${h2:+	Protocols h2${no_ssl:+c} http/1.1
 		Header append Content-Encoding gzip
 		Header append Vary Accept-Encoding
 	</If>
+	IncludeOptional etc/$service/Includes/VirtualHost.custom/$HOST_NAME.conf
+	IncludeOptional etc/$service/Includes/VirtualHost.custom/$HOST_NAME/*.conf
 }</VirtualHost>
 ${OPT_SSL:+<VirtualHost _default_:443>
 	ServerName www.$HOST_NAME:443
