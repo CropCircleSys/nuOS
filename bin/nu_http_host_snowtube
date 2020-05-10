@@ -18,10 +18,12 @@ NUOS_VER=0.0.11.3a0
 
 . "$(dirname "$(realpath "$0")")/../lib/nu_system.sh"
 
-while getopts h:l:r:v OPT; do case $OPT in
+while getopts h:l:r:s:S:v OPT; do case $OPT in
 	h) WWW_HOST=$OPTARG;;
 	l) LINK=$OPTARG;;
 	r) HTTP_ROOT=$OPTARG;;
+	s) STATION_NUM=$OPTARG;;
+	S) push STATIONS $OPTARG;;
 	v) OPT_VERBOSE=y;;
 esac; done; shift $(($OPTIND-1))
 [ $# = 0 ]
@@ -36,11 +38,30 @@ if [ -d "$HTTP_ROOT/$IMMUTABLE_DIR" ]; then
 	gen_hash=y
 fi
 
+
+for s in ${STATION_NUM:+$STATIONS}; do
+	i=$((${i-0} + 1))
+	up_spc=
+	if [ $((i + 1)) -eq $STATION_NUM ]; then
+		down=$s
+		up_spc=y
+	elif [ $((i - 1)) -eq $STATION_NUM ]; then
+		up=$s
+	fi
+done
+
 cat > $HTTP_ROOT/index.css <<EOF
 html, body {
 	height: 100%;
 	margin: 0;
-	background: black;
+	background: #000;
+	color: #000;
+	cursor: none;
+}
+a {
+	color: inherit;
+	text-decoration: inherit;
+	cursor: inherit;
 }
 #d {
 	position: relative;
@@ -51,31 +72,51 @@ html, body {
 	line-height: 15vmin;
 	font-weight: bold;
 }
-#c {
+#c, #m {
 	position: absolute;
 	left: 0;
 	top: 0;
+}
+#c {
 	height: 100%;
 	width: 100%;
-	filter: blur(0.3333vmin);
 }
-#o, #a${LINK:+, #p} {
+#c:not(*:root) {
 	filter: blur(0.25vmin);
-	text-shadow: 0 0 0.1em black;
 }
-#o {
+#m {
+	visibility: hidden;
+	transform: rotate(180deg) translate(0.05em, 0.25em);
+	z-index: 1;
+	pointer-events: none;
+	font-size: 80%;
+	text-shadow: 0 0 0.1em #fff;
+}
+#o, #a${s:+, #n}${LINK:+, #p}, #m {
+	filter: blur(0.25vmin);
+}
+#o, #a${s:+, #n}${LINK:+, #p} {
+	text-shadow: 0 0 0.1em #333;
+}
+${s:+#n, }#o {
 	position: absolute;
-	right: 5vw;
 	top: 5vh;
-	z: 1;
 	letter-spacing: -0.067em;
 	color: #0f0;
+}
+${s:+#n {
+	left: 5vw;
+\}
+#n a:hover {
+	color: #ff0;
+\}
+}#o {
+	right: 5vw;
 }
 #a {
 	position: absolute;
 	left: 5vw;
 	bottom: 5vh;
-	z: 1;
 	color: #f00;
 	font-size: 50%;
 	transform: scaleX(1.25);
@@ -85,37 +126,48 @@ html, body {
 	margin: 0;
 	right: 8vw;
 	bottom: 6vh;
-	color: #000;
-	font-size: 58.33%;
-	opacity: 0.6667;
+	font-size: 50%;
+	opacity: 0.5;
 	font-weight: normal;
-	transform: scaleX(1.25);
-	transition: opacity 2s ease-in-out, text-shadow 1s ease-in-out, filter 0.5s ease-in-out;
-\}
-#p a {
-	color: #000;
-	text-decoration: none;
+	transform: scaleX(1.33);
+	transition: opacity 2s ease-in-out, color 0.5s ease-in-out, text-shadow 1s ease-in-out, filter 0.5s ease-in-out;
 \}
 #p:hover {
+	color: #00f;
 	opacity: 1;
-	filter: blur(0.0625vmin);
-	text-shadow: 0 0 0.1em white, 0 0 0.1em white;
-	transition: opacity 0.25s ease-in-out, text-shadow 0.125s ease-in-out, filter 0.5s ease-in-out;
+	filter: blur(0.1vmin);
+	text-shadow: 0 0 0.1em #fff, 0 0 0.1em #fff;
+	transition: opacity 0.25s ease-in-out, color 0.25s ease-in-out, text-shadow 0.125s ease-in-out, filter 0.5s ease-in-out;
 \}}
 EOF
 
 cat > $HTTP_ROOT/index.js <<'EOF'
 function a(){
-	var t,e,n,i,r=0;
-	for(t=0;d>t;t++)
-		for(e=0;g>e;e++)
-			n=(s=s*48271%2147483647)%2?239:0,h.data[r]=n,h.data[r+1]=n,h.data[r+2]=n,r+=4;
-	k.putImageData(h,0,0),setTimeout(a,40);
+	var x,y,i;
+	for(i=y=0;w>y;y++)
+		for(x=0;h>x;x++,i+=4)
+			z[i]=z[i+1]=z[i+2]=(s=s*48271%2147483647)%2?204:51;
+	k.putImageData(d,0,0);
+	setTimeout(()=>{
+		requestAnimationFrame(a);
+	},20);
 }
-var h,n,p,q,s=7,t=document.getElementById("c"),k=t.getContext("2d"),d=t.width=160,g=t.height=240;
-for(h=k.createImageData(d,g),p=n=0;d>p;p++)
-	for(q=0;g>q;q++)
-		h.data[n+3]=255,n+=4;
+var x,y,i,s=7,m=document.getElementById("m").style,c=document.getElementById("c"),w=c.width=160,h=c.height=240,k=c.getContext("2d",{alpha:false}),d=k.createImageData(w,h),z=d.data;
+for(i=y=0;w>y;y++)
+	for(x=0;h>x;x++,i+=4)
+		z[i+3]=255;
+document.addEventListener("mousemove",e=>{
+	requestAnimationFrame(t=>{
+		m.visibility="visible";
+		m.left=e.pageX+"px";
+		m.top=e.pageY+"px";
+	});
+});
+window.addEventListener("mouseout",e=>{
+	requestAnimationFrame(t=>{
+		m.visibility="hidden";
+	});
+});
 a();
 EOF
 
@@ -139,7 +191,13 @@ cat > $HTTP_ROOT/index.html <<EOF
 <body>
 <div id="d">
 <canvas id="c"></canvas>
-<div id="o">
+<div id="m">
+&#10136;
+</div>
+${s:+<div id="n">
+${up:+<a href="$up">&#9650;</a>}${up_spc:+&nbsp;}${down:+<br><a href="$down">&#9660</a>}
+</div>
+}<div id="o">
 $WWW_HOST
 </div>
 <div id="a">
