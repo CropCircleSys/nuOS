@@ -30,7 +30,7 @@ case `hostname -d | tr [[:upper:]] [[:lower:]]` in
 		
 		infra_domain=cargobay.net
 		corp_zones='ccsys.com cropcircle.systems'
-		org_zones='nuos.org nuos.net nu.cash nu.chat nu.click nu.email nu.gold nu.live nu.lol nu.money nu.parts nu.place nu.school nu.show nu.software nu.team nu.zone'
+		org_zones='nuos.net nuos.org nu.cash nu.chat nu.click nu.email nu.gold nu.live nu.lol nu.money nu.parts nu.place nu.school nu.show nu.software nu.team nu.zone'
 		prod_zones='uhax.tv pawn.today freer.trade xng.trade xchng.trade unblind.date blindish.date bemylil.baby dollhouse.cam wifeknows.best dadsmore.fun daddy.bar dads.wtf dad.university man.coach faith.agency'
 		
 		sec_dept='System & Network Security'
