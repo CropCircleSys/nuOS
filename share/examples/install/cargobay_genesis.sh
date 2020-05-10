@@ -430,9 +430,14 @@ EOF
 EOF
 done
 
-for z in $org_zones; do
-	${ADMIN_USER:+env -i} chroot ${ADMIN_USER:+-u 1001 -g 1001} /var/jail/www `which nu_http_host_snowtube` -h $z -l home/
-done
+case $infra_domain in
+	cargobay.net) link=https://ccsys.com/;;
+	woneye.site) link=https://uglybagsofmostlywater.club/;;
+	macleod.host) link=home/;;
+esac
+i=1; for z in $org_zones; do
+	${ADMIN_USER:+env -i} chroot ${ADMIN_USER:+-u 1001 -g 1001} /var/jail/www `which nu_http_host_snowtube` -h $z -l $link -S "`echo $org_zones | xargs -n 1 | sed -E -e 's|^(.*)$|https://\1/|'`" -s $i
+i=$(($i+1)); done
 
 service jail start www
 
