@@ -33,12 +33,62 @@ nuos_init -q
 
 : ${POOL_NAME:=$POOL_BOOT_NAME}
 
+elim_dup_snaps () {
+	local d= s= r= l= guid=
+	xargs -L 1 | while read -r r; do
+		l=${r##* }
+		d=${l%%@*} s=${l#*@}
+		[ "x$d" != "x$l" ] && [ "x$s" != "x$l" ] || return 1
+		guid=`zfs get -H -p -o value guid "$d@$s"`
+		if eval [ -z \"\${_elim_dup_snap_seen_$guid-}\" ]; then
+			setvar _elim_dup_snap_seen_$guid y
+			echo $r
+		fi
+	done
+}
+
+all_prior_snaps () {
+	local d= s= r=
+	xargs -n 1 | while read -r r; do
+		d=${r%%@*} s=${r#*@}
+		[ "x$d" != "x$r" ] && [ "x$s" != "x$r" ] || return 1
+		zfs list -r -d 1 -t snapshot -H -p -s createtxg -o name "$d" \
+			| sed -n -e "1,\\|^$d@$s\\>|p" \
+			| awk '
+				!x {print $0}
+				x {print "-i", x, $0}
+				{x = $0}'
+	done
+}
+
+all_descendant_snaps () {
+	local d= s= r=
+	xargs -n 1 | while read -r r; do
+		d=${r%%@*} s=${r#*@}
+		[ "x$d" != "x$r" ] && [ "x$s" != "x$r" ] || return 1
+		zfs list -r -t snapshot -H -o name $d \
+			| grep "@$s\$"
+	done
+}
+
+all_origins () {
+	local d= s= r= o=
+	xargs -n 1 | while read -r r; do
+		d=${r%%@*} s=${r#*@} o=
+		[ "x$d" != "x$r" ] && [ "x$s" != "x$r" ] || return 1
+		o=$d@$s
+		while
+			echo $o
+			o=`zfs list -H -o origin ${o%@*}`
+			[ x- != x$o ]
+		do :;
+		done
+	done
+}
+
 maybe_yell
 
-if [ -n "${FROM_SNAP-}" ]; then
-	[ -z "${OPT_ONLY_SNAP-}" ]
-	send_add_args="-I @$FROM_SNAP"
-fi
+[ -z "${FROM_SNAP-}" -o -z "${OPT_ONLY_SNAP-}" ]
 
 snaptime=${SNAP_LABEL:+${SNAP_LABEL}-}t`date +%s`
 
@@ -50,7 +100,7 @@ else
 	grep -Ev '^#|^$' < /etc/nuos/backup >| "$backlist"
 fi
 
-require_tmp output_backlist
+require_tmp snaplist
 while read ds; do
 	case "$ds" in
 		\?*)
@@ -69,60 +119,23 @@ EOF
 		ds="$left$val$right"
 	done
 	if zfs list "$ds" > /dev/null 2> /dev/null; then
-		printf '%s\n' "$ds" >> "$output_backlist"
+		printf '%s\n' "$ds"
 	else
 		[ -n "$optional" ] || { echo "FATAL: cannot open '$ds': dataset does not exist"; exit 1; }
 	fi
-done < "$backlist"
+done < "$backlist" | grep -v @ | sort -u | sed -e "s/\$/@$snaptime/" >| "$snaplist"
 retire_tmp backlist
 
-grep -v @ "$output_backlist" | sed -e "s/\$/@$snaptime/" | xargs zfs snapshot -r
+xargs zfs snapshot -r < "$snaplist"
 
 if [ -z "${OPT_ONLY_SNAP-}" ]; then
-	require_tmp backup_log
 	while IFS=@ read ds snap; do
 		: ${snap:=$snaptime}
-		echo "nu_backup.zfs_ds_start	$ds" >> "$backup_log"
-		if [ -z "${FROM_SNAP-}" ]; then
-			for sub_ds in `zfs get -Hp -r -t filesystem,volume -o value name $ds`; do
-				echo "nu_backup.zfs_sub_ds_start	$sub_ds" >> "$backup_log"
-				ds_mnt_info $sub_ds >> "$backup_log"
-				found_root_ds=
-				check_ds=$sub_ds
-				require_tmp add_snaps
-				while [ -z "$found_root_ds" ]; do
-					origin=`zfs get -Hp -o value origin $check_ds`
-					if [ "$origin" = - ]; then
-						found_root_ds=y
-					else
-						echo $origin >> "$add_snaps"
-						check_ds=${origin%@*}
-					fi
-				done
-				tail -r "$add_snaps" | while read add_snap; do
-					snap_guid=`zfs get -H -p -o value guid $add_snap`
-					if eval [ -z \"\${seen_snap_$snap_guid-}\" ]; then
-						setvar seen_snap_$snap_guid y
-						echo "nu_backup.zfs_snap_start	$add_snap" >> "$backup_log"
-						ds_guid=`zfs get -H -p -o value guid ${add_snap%@*}`
-						if eval [ -z \"\${seen_ds_$ds_guid-}\" ]; then
-							setvar seen_ds_$ds_guid y
-							ds_mnt_info ${add_snap%@*} >> "$backup_log"
-						fi
-						zfs send -L -e -c -p $add_snap
-						echo "nu_backup.zfs_snap_end	$add_snap" >> "$backup_log"
-					fi
-				done
-				retire_tmp add_snaps
-				echo "nu_backup.zfs_sub_ds_end	$sub_ds" >> "$backup_log"
-			done
+		printf '%s\n' "$ds@$snap" | if canhas "${FROM_SNAP-}"; then
+			cat
+		else
+			all_origins | all_descendant_snaps | all_prior_snaps | elim_dup_snaps
 		fi
-		cmd="zfs send -L -e -c -R ${send_add_args-} $ds@$snap"
-		$cmd
-		echo "nu_backup.zfs_ds_end	$ds" >> "$backup_log"
-	done < "$output_backlist"
+	done < "$snaplist" | xargs -L 1 zfs send -L -e -c -p ${FROM_SNAP:+-R -I @$FROM_SNAP}
 fi
-
-retire_tmp output_backlist
-
-#retire_tmp backup_log
+retire_tmp snaplist
