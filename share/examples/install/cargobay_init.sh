@@ -1,5 +1,3 @@
-domain=cargobay.net
-
 case $NAME in
 	willy)
 		my_ip=23.111.168.34
