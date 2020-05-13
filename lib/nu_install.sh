@@ -38,16 +38,16 @@ build_vars_init () {
 
 install_vars_init () {
 	: ${HOST:=`hostname`}
-	echo 'pool name       -p POOL_NAME      ' ${POOL_NAME:=$POOL_BOOT_NAME}
-	echo 'swap size       -s SWAP_SIZE      ' ${SWAP_SIZE:=1G}
+	canhas ${1-} || echo 'pool name       -p POOL_NAME      ' ${POOL_NAME:=$POOL_BOOT_NAME}
+	echo 'swap size       -s SWAP_SIZE      ' ${SWAP_SIZE:=2G}
 	echo 'new host name   -h NEW_HOST       ' ${NEW_HOST:=$POOL_NAME.${HOST#*.}}
-	echo 'target arch        TRGT_ARCH      ' $TRGT_ARCH
-	echo 'target proc        TRGT_PROC      ' $TRGT_PROC
-	echo 'target kern        TRGT_KERN      ' ${TRGT_KERN:=NUOS}
-	echo -n 'copy ports         COPY_PORTS      ' && [ -n "${COPY_PORTS-}" ] && echo set || echo null
-	echo -n 'copy all pkgs      COPY_DEV_PKGS   ' && [ -n "${COPY_DEV_PKGS-}" ] && echo set || echo null
+	canhas ${1-} || echo 'target arch        TRGT_ARCH      ' $TRGT_ARCH
+	canhas ${1-} || echo 'target proc        TRGT_PROC      ' $TRGT_PROC
+	canhas ${1-} || echo 'target kern        TRGT_KERN      ' ${TRGT_KERN:=NUOS}
 	echo -n 'copy src           COPY_SRC        ' && [ -n "${COPY_SRC-}" ] && echo set || echo null
-	echo -n 'copy svn repo      COPY_SVN        ' && [ -n "${COPY_SRC-}" ] && ([ -n "${COPY_SVN-}" ] && echo set || echo null) || echo n/a
+	echo -n 'copy ports src     COPY_PORTS      ' && [ -n "${COPY_PORTS-}" ] && echo set || echo null
+	echo -n 'copy svn repos     COPY_SVN        ' && [ -n "${COPY_SRC-}" ] && ([ -n "${COPY_SVN-}" ] && echo set || echo null) || echo n/a
+	echo -n 'copy all pkgs      COPY_DEV_PKGS   ' && [ -n "${COPY_DEV_PKGS-}" ] && echo set || echo null
 }
 
 require_subversion () {

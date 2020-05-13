@@ -92,15 +92,15 @@ maybe_yell
 
 snaptime=${SNAP_LABEL:+${SNAP_LABEL}-}t`date +%s`
 
-require_tmp backlist
+require_tmp input_list
 
 if [ $# -ge 1 ]; then
-	echo $@ | xargs -n 1 >| "$backlist"
+	echo $@ | xargs -n 1 >| "$input_list"
 else
-	grep -Ev '^#|^$' < /etc/nuos/backup >| "$backlist"
+	grep -Ev '^#|^$' < /etc/nuos/backup >| "$input_list"
 fi
 
-require_tmp snaplist
+require_tmp output_list
 while read ds; do
 	case "$ds" in
 		\?*)
@@ -123,10 +123,10 @@ EOF
 	else
 		[ -n "$optional" ] || { echo "FATAL: cannot open '$ds': dataset does not exist"; exit 1; }
 	fi
-done < "$backlist" | grep -v @ | sort -u | sed -e "s/\$/@$snaptime/" >| "$snaplist"
-retire_tmp backlist
+done < "$input_list" >| "$output_list"
+retire_tmp input_list
 
-xargs zfs snapshot -r < "$snaplist"
+grep -v @ < "$output_list" | sed -e "s/\$/@$snaptime/" | xargs zfs snapshot -r
 
 if [ -z "${OPT_ONLY_SNAP-}" ]; then
 	while IFS=@ read ds snap; do
@@ -136,6 +136,6 @@ if [ -z "${OPT_ONLY_SNAP-}" ]; then
 		else
 			all_origins | all_descendant_snaps | all_prior_snaps | elim_dup_snaps
 		fi
-	done < "$snaplist" | xargs -L 1 zfs send -L -e -c -p ${FROM_SNAP:+-R -I @$FROM_SNAP}
+	done < "$output_list" | xargs -L 1 zfs send -L -e -c -p ${FROM_SNAP:+-R -I @$FROM_SNAP}
 fi
-retire_tmp snaplist
+retire_tmp output_list

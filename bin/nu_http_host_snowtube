@@ -32,7 +32,8 @@ esac; done; shift $(($OPTIND-1))
 maybe_yell
 
 : ${WWW_HOST:=${HOST:=`hostname`}}
-: ${HTTP_ROOT:=${HOME:=$(pw usershow -n `whoami` | cut -d : -f 9)}/$WWW_HOST/www/public}
+WWW_HOST_lc=`echo $WWW_HOST | tr [[:upper:]] [[:lower:]]`
+: ${HTTP_ROOT:=${HOME:=$(pw usershow -n `whoami` | cut -d : -f 9)}/$WWW_HOST_lc/www/public}
 : ${IMMUTABLE_DIR:=static}
 
 if [ -d "$HTTP_ROOT/$IMMUTABLE_DIR" ]; then

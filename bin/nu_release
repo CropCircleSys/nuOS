@@ -1,0 +1,110 @@
+#!/bin/sh
+set -e; set -u; set -C
+
+# nuOS 0.0.11.3a0 - bin/nu_release
+#
+# Copyright (c) 2008-2019 Chad Jacob Milios and Crop Circle Systems.
+# All rights reserved.
+#
+# This Source Code Form is subject to the terms of the Simplified BSD License.
+# If a copy of the Simplified BSD License was not distributed alongside this file, you can
+# obtain one at https://www.freebsd.org/copyright/freebsd-license.html . This software
+# project is not affiliated with the FreeBSD Project.
+#
+# Official updates and community support available at https://nuos.org .
+# Professional services available at https://ccsys.com .
+
+NUOS_VER=0.0.11.3a0
+
+. "$(dirname "$(realpath "$0")")/../lib/nu_system.sh"
+
+while getopts c:l:h:ko:p:qs:vw:z: OPT; do case $OPT in
+	c) PKG_COLLECTION=$OPTARG;;
+	h) NEW_HOST=$OPTARG;;
+	k) incr KEEP_ONLINE 1;;
+	l) LOCAL_SCRIPT=$OPTARG;;
+	o) OUTPUT_POOL_NAME=$OPTARG;;
+	p) POOL_NAME=$OPTARG;;
+	q) OPT_QUICK=y;;
+	s) SWAP_SIZE=$OPTARG;;
+	v) OPT_VERBOSE=y;;
+	w) WORK_POOL_NAME=$OPTARG;;
+	z) ZVOL_SIZE=$OPTARG;;
+esac; done; shift $(($OPTIND-1))
+[ $# = 0 ]
+
+. "$(dirname "$(realpath "$0")")/../lib/nu_common.sh"
+. "$(dirname "$(realpath "$0")")/../lib/nu_collection.sh"
+. "$(dirname "$(realpath "$0")")/../lib/nu_make.sh"
+. "$(dirname "$(realpath "$0")")/../lib/nu_ports.sh"
+. "$(dirname "$(realpath "$0")")/../lib/nu_install.sh"
+
+baseos_init
+nuos_init
+make_vars_init
+collection_vars_init
+build_vars_init
+require_base_src
+install_vars_init -q
+
+echo 'new zvol sizes (2x)  -z ZVOL_SIZE        ' ${ZVOL_SIZE:=15000000K}
+echo 'work pool            -w WORK_POOL_NAME   ' ${WORK_POOL_NAME:=spawn}
+echo 'output pool          -o OUTPUT_POOL_NAME ' ${OUTPUT_POOL_NAME:=spore}
+echo 'local init script    -l LOCAL_SCRIPT     ' ${LOCAL_SCRIPT:-<none>}
+
+maybe_pause
+maybe_yell
+
+
+feport=`ctladm portlist -q -f camsim | cut -w -f 1 | tail -n 1`
+echo NOTICE: using CAM subsystem front end port $feport
+sbdev=`camcontrol devlist -b | awk '$3 ~ /^camsim[[:digit:]]/ {print $1}' | tail -n 1`
+echo NOTICE: using CAM simulated SCSI bus device $sbdev
+
+zfs create -o compression=off -o volmode=dev -V $ZVOL_SIZE -b 4K -s $POOL_NAME/$WORK_POOL_NAME
+ctladm create -b block -o pblocksize=4096 -o ublocksize=4096 -o file=/dev/zvol/$POOL_NAME/$WORK_POOL_NAME
+work_zvol_escd=`echo $POOL_NAME/$WORK_POOL_NAME | sed -e 's/\\./\\\\./g;s|/|\\\\/|g'`
+work_ctlun=$(ctladm devlist -b block -v | tail -n +2 | awk '/^ +[[:digit:]]+ block /{x = $1} /^ +file=\/dev\/zvol\/'"$work_zvol_escd"'$/{r = x} END{print r}')
+echo NOTICE: using CAM target LUN $work_ctlun
+ctladm reqsense $work_ctlun
+ctladm start $work_ctlun
+work_felun=`ctladm portlist -q -l -p $feport | tail -n +2 | awk '{if ($2 != (NR - 1) ":") {f = 1; print NR - 1; exit}} END{if (! f) print NR}'`
+echo NOTICE: using CAM front end LUN $work_felun
+ctladm lunmap -p $feport -l $work_felun -L $work_ctlun
+ctladm port -p $feport -o on
+work_zvdev=`camcontrol devlist | sed -nEe '/^.+ at '"$sbdev"' target [[:digit:]]+ lun '"$work_felun"' \((.+)\)$/{s//\1/;p;}' | tr , '\n' | grep '^da[[:digit:]]'`
+echo NOTICE: using CAM simulated SCSI disk $work_zvdev
+
+sister nu_hdd -b -u 100 -a 128 -q -p $WORK_POOL_NAME $work_zvdev
+sister nu_build -p $WORK_POOL_NAME -c $PKG_COLLECTION -q
+
+zfs create -o compression=off -o volmode=dev -V $ZVOL_SIZE -b 4K -s $POOL_NAME/$OUTPUT_POOL_NAME
+ctladm create -b block -o pblocksize=4096 -o ublocksize=4096 -o file=/dev/zvol/$POOL_NAME/$OUTPUT_POOL_NAME
+output_zvol_escd=`echo $POOL_NAME/$OUTPUT_POOL_NAME | sed -e 's/\\./\\\\./g;s|/|\\\\/|g'`
+output_ctlun=$(ctladm devlist -b block -v | tail -n +2 | awk '/^ +[[:digit:]]+ block /{x = $1} /^ +file=\/dev\/zvol\/'"$output_zvol_escd"'$/{r = x} END{print r}')
+echo NOTICE: using CAM target LUN $output_ctlun
+ctladm reqsense $output_ctlun
+ctladm start $output_ctlun
+output_felun=`ctladm portlist -q -l -p $feport | tail -n +2 | awk '{if ($2 != (NR - 1) ":") {f = 1; print NR - 1; exit}} END{if (! f) print NR}'`
+echo NOTICE: using CAM front end LUN $output_felun
+ctladm lunmap -p $feport -l $output_felun -L $output_ctlun
+ctladm port -p $feport -o on
+output_zvdev=`camcontrol devlist | sed -nEe '/^.+ at '"$sbdev"' target [[:digit:]]+ lun '"$output_felun"' \((.+)\)$/{s//\1/;p;}' | tr , '\n' | grep '^da[[:digit:]]'`
+echo NOTICE: using CAM simulated SCSI disk $output_zvdev
+
+sister nu_hdd -b -u 100 -a 128 -q -p $OUTPUT_POOL_NAME $output_zvdev
+sister nu_os_install -P $WORK_POOL_NAME -p $OUTPUT_POOL_NAME -c $PKG_COLLECTION -q
+[ ${KEEP_ONLINE-0} -ge 2 ] || zpool export $WORK_POOL_NAME
+[ ${KEEP_ONLINE-0} -ge 2 ] || ctladm lunmap -p $feport -l $work_felun
+[ ${KEEP_ONLINE-0} -ge 2 ] || ctladm port -p $feport -o on
+[ ${KEEP_ONLINE-0} -ge 2 ] || ctladm remove -b block -l $work_ctlun
+
+sister nu_sys -s $SWAP_SIZE -p $OUTPUT_POOL_NAME -u '' -b '' -h $NEW_HOST -c $PKG_COLLECTION ${LOCAL_SCRIPT:+-l $LOCAL_SCRIPT} -q
+[ ${KEEP_ONLINE-0} -ge 1 ] || zpool export $OUTPUT_POOL_NAME
+[ ${KEEP_ONLINE-0} -ge 1 ] || ctladm lunmap -p $feport -l $output_felun
+[ ${KEEP_ONLINE-0} -ge 1 ] || ctladm port -p $feport -o on
+[ ${KEEP_ONLINE-0} -ge 1 ] || ctladm remove -b block -l $output_ctlun
+
+[ ${KEEP_ONLINE-0} -ge 1 ] || zfs snapshot $POOL_NAME/$OUTPUT_POOL_NAME@birth
+
+echo "Created a work image at $POOL_NAME/$WORK_POOL_NAME and a release image at $POOL_NAME/$OUTPUT_POOL_NAME."

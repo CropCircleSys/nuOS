@@ -1,11 +1,11 @@
 case $NAME in
-	willy)
+	mama)
 		my_ip=23.111.168.34
 		netmask=0xfffffff8
 		defaultrouter=23.111.168.33
 		primary_if=igb0
 	;;
-	mama)
+	willy)
 		my_ip=66.206.20.42
 		netmask=0xfffffff8
 		defaultrouter=66.206.20.41

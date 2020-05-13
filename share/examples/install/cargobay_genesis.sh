@@ -28,10 +28,10 @@ case `hostname -d | tr [[:upper:]] [[:lower:]]` in
 		primary_ip=$mikey_ip
 		secondary_ip=$mouth_ip
 		
-		infra_domain=cargobay.net
-		corp_zones='ccsys.com cropcircle.systems'
-		org_zones='nuos.net nuos.org nu.cash nu.chat nu.click nu.email nu.gold nu.live nu.lol nu.money nu.parts nu.place nu.school nu.show nu.software nu.team nu.zone'
-		prod_zones='uhax.tv pawn.today freer.trade xng.trade xchng.trade unblind.date blindish.date bemylil.baby dollhouse.cam wifeknows.best dadsmore.fun daddy.bar dads.wtf dad.university man.coach faith.agency'
+		infra_domain=CargoBay.net
+		corp_zones='CCSys.com CropCircle.Systems'
+		org_zones='nuOS.net nuOS.org nu.Cash nu.Chat nu.Click nu.Email nu.Gold nu.Live nu.Lol nu.Money nu.Parts nu.Place nu.School nu.Show nu.Software nu.Team nu.Zone'
+		prod_zones='UHax.TV Pawn.Today Freer.Trade Xng.Trade Xchng.trade Unblind.Date Blindish.Date BeMyLil.Baby DollHouse.Cam WifeKnows.Best DadsMore.Fun Daddy.Bar Dads.WTF Dad.University Man.Coach Faith.Agency'
 		
 		sec_dept='System & Network Security'
 		net_dept='Network Infrastructure & Operations'
@@ -53,9 +53,9 @@ case `hostname -d | tr [[:upper:]] [[:lower:]]` in
 		primary_ip=$jake_ip
 		secondary_ip=$francis_ip
 		
-		infra_domain=woneye.site
-		corp_zones='uglybagsofmostlywater.club'
-		org_zones='nuos.xyz'
+		infra_domain=WonEye.Site
+		corp_zones='UglyBagsOfMostlyWater.club'
+		org_zones='nuOS.xyz'
 		
 		sec_dept='Development & Production Quality Assurance'
 		net_dept='Architecture Quality Assurance'
@@ -77,7 +77,7 @@ case `hostname -d | tr [[:upper:]] [[:lower:]]` in
 		primary_ip=$chunk_ip
 		secondary_ip=$brand_ip
 		
-		infra_domain=entire.ninja
+		infra_domain=Entire.Ninja
 		
 		sec_dept='Advanced Network & System Operations'
 		net_dept='Advanced System Engineering'
@@ -100,10 +100,10 @@ case `hostname -d | tr [[:upper:]] [[:lower:]]` in
 		primary_ip=$andy_ip
 		secondary_ip=$stef_ip
 		
-		infra_domain=macleod.host
-		corp_zones='goon.store goonies.pro'
-		org_zones='gangsta.tech thug.digital bully.ninja'
-		prod_zones='emptier.space bravest.world'
+		infra_domain=MacLeod.host
+		corp_zones='Goon.Store Goonies.Pro'
+		org_zones='Gangsta.Tech Thug.Digital Bully.Ninja'
+		prod_zones='Emptier.Space Bravest.World'
 		
 		sec_dept='Infrastructure & Operations Quality Assurance'
 		net_dept='System Engineering Quality Assurance'
@@ -120,6 +120,9 @@ client_zones="$corp_zones $org_zones $prod_zones"
 echo infra_domain=$infra_domain
 echo client_zones=$client_zones
 env
+
+
+infra_domain_lc=`echo $infra_domain | tr [[:upper:]] [[:lower:]]`
 
 enable_svc jail
 
@@ -138,7 +141,8 @@ if [ -d /root/nuos_deliverance/ns ]; then
 	tar -cf - -C /root/nuos_deliverance/ns/knotdb keys | tar -xvf - -C /var/jail/ns/var/db/knot
 fi
 service jail start resolv ns a.ns b.ns
-for z in $infra_domain $client_zones; do
+for Z in $infra_domain $client_zones; do
+	z=`echo $Z | tr [[:upper:]] [[:lower:]]`
 	for j in ns a.ns b.ns; do
 		nu_ns_host -j $j -h $z
 	done
@@ -146,7 +150,8 @@ for z in $infra_domain $client_zones; do
 done
 
 echo
-for z in $infra_domain $client_zones; do
+for Z in $infra_domain $client_zones; do
+	z=`echo $Z | tr [[:upper:]] [[:lower:]]`
 	nu_ns_host -j ns -h $z -k
 done
 
@@ -163,34 +168,34 @@ for s in lb vpn ca; do
 	fi
 done
 
-if [ ! -f /etc/ssl/private/ca.$infra_domain.key ] || [ ! -f /etc/ssl/certs/ca.$infra_domain.internal.crt ]; then
-	nu_ssl -h ca.$infra_domain -b 4096 -s -W -d 512 -n $country -p "$province" -l "$locality" -o "$organization" -u "$sec_dept" -S
+if [ ! -f /etc/ssl/private/ca.$infra_domain_lc.key ] || [ ! -f /etc/ssl/certs/ca.$infra_domain_lc.internal.crt ]; then
+	nu_ssl -h ca.$infra_domain_lc -b 4096 -s -W -d 512 -n $country -p "$province" -l "$locality" -o "$organization" -u "$sec_dept" -S
 fi
-if [ ! -f /etc/ssl/private/$infra_domain.key ] || [ ! -f /etc/ssl/csrs/$infra_domain.csr ]; then
-	nu_ssl -h $infra_domain -b 4096 -n $country -p "$province" -l "$locality" -o "$organization" -u "$net_dept" -S
+if [ ! -f /etc/ssl/private/$infra_domain_lc.key ] || [ ! -f /etc/ssl/csrs/$infra_domain_lc.csr ]; then
+	nu_ssl -h $infra_domain_lc -b 4096 -n $country -p "$province" -l "$locality" -o "$organization" -u "$net_dept" -S
 fi
-if [ ! -f /etc/ssl/certs/$infra_domain.internal.crt ]; then
-	nu_ca -h $infra_domain
+if [ ! -f /etc/ssl/certs/$infra_domain_lc.internal.crt ]; then
+	nu_ca -h $infra_domain_lc
 fi
-nu_vpn -q -h $infra_domain
+nu_vpn -q -h $infra_domain_lc
 service openvpn start
 
-if [ ! -f /etc/ssl/csrs.next/$infra_domain.csr ]; then
-	nu_ssl -h $infra_domain -b 4096 -n $country -p "$province" -l "$locality" -o "$organization" -u "$net_dept" -S -N
+if [ ! -f /etc/ssl/csrs.next/$infra_domain_lc.csr ]; then
+	nu_ssl -h $infra_domain_lc -b 4096 -n $country -p "$province" -l "$locality" -o "$organization" -u "$net_dept" -S -N
 fi
-nu_acme_renew -j ns $infra_domain
-nu_ssl -j ns -F -h $infra_domain -tt
+nu_acme_renew -j ns $infra_domain_lc
+nu_ssl -j ns -F -h $infra_domain_lc -tt
 
 nu_jail -j postmaster -i 127.1.0.5 -P -S smtp -I submission -x -q
-(cd /etc/ssl && tar -cf - certs/$infra_domain.ca.crt certs/$infra_domain.crt csrs.next/$infra_domain.csr csrs/$infra_domain.csr private/$infra_domain.key | tar -xvf - -C /var/jail/postmaster/etc/ssl/)
+(cd /etc/ssl && tar -cf - certs/$infra_domain_lc.ca.crt certs/$infra_domain_lc.crt csrs.next/$infra_domain_lc.csr csrs/$infra_domain_lc.csr private/$infra_domain_lc.key | tar -xvf - -C /var/jail/postmaster/etc/ssl/)
 mkdir -p /var/jail/postmaster/var/imap/socket
 service jail start postmaster
-nu_smtp -j postmaster -s -e -h $infra_domain
+nu_smtp -j postmaster -s -e -h $infra_domain_lc
 
 nu_jail -j postoffice -i 127.1.0.6 -m -P -I imap -I imaps -I pop3 -I pop3s -I sieve -x -q
-(cd /etc/ssl && tar -cf - certs/$infra_domain.ca.crt certs/$infra_domain.crt csrs.next/cargobay.net.csr csrs/$infra_domain.csr private/$infra_domain.key | tar -xvf - -C /var/jail/postoffice/etc/ssl/)
+(cd /etc/ssl && tar -cf - certs/$infra_domain_lc.ca.crt certs/$infra_domain_lc.crt csrs.next/cargobay.net.csr csrs/$infra_domain_lc.csr private/$infra_domain_lc.key | tar -xvf - -C /var/jail/postoffice/etc/ssl/)
 service jail start postoffice
-nu_imap -j postoffice -s -e -h $infra_domain
+nu_imap -j postoffice -s -e -h $infra_domain_lc
 while read -r proto procs; do
 	prgm="${prgm-}${prgm:+ }/#?[[:blank:]]$proto\\>/s/\\<(prefork)=[[:digit:]]+/\1=$procs/;"
 done <<'EOF'
@@ -206,19 +211,21 @@ fi
 
 service jail restart postmaster postoffice
 
-nu_user -C /var/jail/postmaster -h $infra_domain -a -d net -u $OWNER_ACCT -n "$OWNER_NAME" < /root/owner_pass
-nu_user -C /var/jail/postoffice -h $infra_domain -a -u $OWNER_ACCT -n "$OWNER_NAME" < /root/owner_pass
-for z in $infra_domain $client_zones; do
+nu_user -C /var/jail/postmaster -h $infra_domain_lc -a -d net -u $OWNER_ACCT -n "$OWNER_NAME" < /root/owner_pass
+nu_user -C /var/jail/postoffice -h $infra_domain_lc -a -u $OWNER_ACCT -n "$OWNER_NAME" < /root/owner_pass
+for Z in $infra_domain $client_zones; do
+	z=`echo $Z | tr [[:upper:]] [[:lower:]]`
 	nu_smtp_host -C /var/jail/postmaster -h $z
 	for b in operator security hostmaster postmaster whois-data; do
-		nu_user_mail -C /var/jail/postmaster -h $infra_domain -u $OWNER_ACCT -m $b@$z
+		nu_user_mail -C /var/jail/postmaster -h $infra_domain_lc -u $OWNER_ACCT -m $b@$z
 	done
 done
 for m in $init_emails; do
-	nu_user_mail -C /var/jail/postmaster -h $infra_domain -u $OWNER_ACCT -m $m
+	nu_user_mail -C /var/jail/postmaster -h $infra_domain_lc -u $OWNER_ACCT -m $m
 done
 
-for z in $client_zones; do
+for Z in $client_zones; do
+	z=`echo $Z | tr [[:upper:]] [[:lower:]]`
 	(
 		case $z in
 			cropcircle.systems)
@@ -327,7 +334,8 @@ done
 ADMIN_USER=`pw usershow -u 1001 | cut -d : -f 1`
 nu_jail -j www -i 127.1.0.7 -P -I http -I https -x ${ADMIN_USER:+-u $ADMIN_USER} -q
 nu_http -C /var/jail/www -s -IIII
-for z in $infra_domain $client_zones; do
+for Z in $infra_domain $client_zones; do
+	z=`echo $Z | tr [[:upper:]] [[:lower:]]`
 	(cd /etc/ssl && tar -cf - certs/$z.ca.crt certs/$z.crt csrs.next/$z.csr csrs/$z.csr private/$z.key | tar -xvf - -C /var/jail/www/etc/ssl/)
 	case $z in
 		goonies.pro|\
@@ -349,7 +357,8 @@ for z in $infra_domain $client_zones; do
 	nu_http_host -C /var/jail/www -a -s${strict:+sss} -kkf -G -i -u ${ADMIN_USER:-root} -h $z
 done
 
-for z in ccsys.com; do
+for Z in CCSys.com; do
+	z=`echo $Z | tr [[:upper:]] [[:lower:]]`
 	sed -i '' -e "/\\<Content-Security-Policy\\>/s:object-src 'none':plugin-types application/pdf:" /var/jail/www/usr/local/etc/apache*/Includes/$z.conf
 	${ADMIN_USER:+env -i} chroot ${ADMIN_USER:+-u 1001 -g 1001} /var/jail/www /bin/sh <<EOF
 d=\`mktemp -d\`
@@ -430,14 +439,15 @@ EOF
 EOF
 done
 
-case $infra_domain in
-	cargobay.net) link=https://ccsys.com/;;
-	woneye.site) link=https://uglybagsofmostlywater.club/;;
+case $infra_domain_lc in
+	cargobay.net) link=https://CCSys.com/;;
+	woneye.site) link=https://UglyBagsOfMostlyWater.club/;;
 	macleod.host) link=home/;;
 esac
-i=1; for z in $org_zones; do
+i=1; for Z in $org_zones; do
+	z=`echo $Z | tr [[:upper:]] [[:lower:]]`
 	mkdir -p /var/jail/www/usr/local/etc/apache24/Includes/VirtualHost.custom
-	${ADMIN_USER:+env -i} chroot ${ADMIN_USER:+-u 1001 -g 1001} /var/jail/www `which nu_http_host_snowtube` -h $z -l $link -S "`echo $org_zones | xargs -n 1 | sed -E -e 's|^(.*)$|https://\1/|'`" -s $i -g >> /var/jail/www/usr/local/etc/apache24/Includes/VirtualHost.custom/$z.conf
+	${ADMIN_USER:+env -i} chroot ${ADMIN_USER:+-u 1001 -g 1001} /var/jail/www `which nu_http_host_snowtube` -h $Z -l $link -S "`echo $org_zones | xargs -n 1 | sed -E -e 's|^(.*)$|https://\1/|'`" -s $i -g >> /var/jail/www/usr/local/etc/apache24/Includes/VirtualHost.custom/$z.conf
 i=$(($i+1)); done
 
 service jail start www
