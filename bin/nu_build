@@ -42,7 +42,6 @@ nuos_init
 make_vars_init
 collection_vars_init
 build_vars_init
-require_base_src
 
 maybe_pause
 maybe_yell
@@ -59,6 +58,8 @@ fbsd_bin_ds=$fbsd_os_ds/$TRGT_MACH
 if [ -n "${OPT_SKIP_FBSD-}" -o -n "${OPT_SKIP_NUOS-}" ]; then
 	fbsd_sysroot_ds=$fbsd_bin_ds/`zfs get -H -o value org.nuos:active_revision $fbsd_bin_ds`
 else
+
+	require_base_src
 	
 	zfs create -p -o mountpoint=none -o canmount=off $os_software_ds
 	zfs create -p -o mountpoint=none -o canmount=off $fbsd_proj_ds
