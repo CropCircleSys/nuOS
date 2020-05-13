@@ -61,24 +61,29 @@ echo NOTICE: using CAM subsystem front end port $feport
 sbdev=`camcontrol devlist -b | awk '$3 ~ /^camsim[[:digit:]]/ {print $1}' | tail -n 1`
 echo NOTICE: using CAM simulated SCSI bus device $sbdev
 
-zfs create -o compression=off -o volmode=dev -V $ZVOL_SIZE -b 4K -s $POOL_NAME/$WORK_POOL_NAME
-ctladm create -b block -o pblocksize=4096 -o ublocksize=4096 -o file=/dev/zvol/$POOL_NAME/$WORK_POOL_NAME
-work_zvol_escd=`echo $POOL_NAME/$WORK_POOL_NAME | sed -e 's/\\./\\\\./g;s|/|\\\\/|g'`
-work_ctlun=$(ctladm devlist -b block -v | tail -n +2 | awk '/^ +[[:digit:]]+ block /{x = $1} /^ +file=\/dev\/zvol\/'"$work_zvol_escd"'$/{r = x} END{print r}')
-echo NOTICE: using CAM target LUN $work_ctlun
-ctladm reqsense $work_ctlun
-ctladm start $work_ctlun
-work_felun=`ctladm portlist -q -l -p $feport | tail -n +2 | awk '{if ($2 != (NR - 1) ":") {f = 1; print NR - 1; exit}} END{if (! f) print NR}'`
-echo NOTICE: using CAM front end LUN $work_felun
-ctladm lunmap -p $feport -l $work_felun -L $work_ctlun
-ctladm port -p $feport -o on
-work_zvdev=`camcontrol devlist | sed -nEe '/^.+ at '"$sbdev"' target [[:digit:]]+ lun '"$work_felun"' \((.+)\)$/{s//\1/;p;}' | tr , '\n' | grep '^da[[:digit:]]'`
-echo NOTICE: using CAM simulated SCSI disk $work_zvdev
-
-sister nu_hdd -b -u 100 -a 128 -q -p $WORK_POOL_NAME $work_zvdev
-sister nu_build -p $WORK_POOL_NAME -c $PKG_COLLECTION -q
-
 zfs create -o compression=off -o volmode=dev -V $ZVOL_SIZE -b 4K -s $POOL_NAME/$OUTPUT_POOL_NAME
+
+if ! zpool list $WORK_POOL_NAME; then
+	zfs create -o compression=off -o volmode=dev -V $ZVOL_SIZE -b 4K -s $POOL_NAME/$WORK_POOL_NAME
+	ctladm create -b block -o pblocksize=4096 -o ublocksize=4096 -o file=/dev/zvol/$POOL_NAME/$WORK_POOL_NAME
+	work_zvol_escd=`echo $POOL_NAME/$WORK_POOL_NAME | sed -e 's/\\./\\\\./g;s|/|\\\\/|g'`
+	work_ctlun=$(ctladm devlist -b block -v | tail -n +2 | awk '/^ +[[:digit:]]+ block /{x = $1} /^ +file=\/dev\/zvol\/'"$work_zvol_escd"'$/{r = x} END{print r}')
+	echo NOTICE: using CAM target LUN $work_ctlun
+	ctladm reqsense $work_ctlun
+	ctladm start $work_ctlun
+	work_felun=`ctladm portlist -q -l -p $feport | tail -n +2 | awk '{if ($2 != (NR - 1) ":") {f = 1; print NR - 1; exit}} END{if (! f) print NR}'`
+	echo NOTICE: using CAM front end LUN $work_felun
+	ctladm lunmap -p $feport -l $work_felun -L $work_ctlun
+	ctladm port -p $feport -o on
+	work_zvdev=`camcontrol devlist | sed -nEe '/^.+ at '"$sbdev"' target [[:digit:]]+ lun '"$work_felun"' \((.+)\)$/{s//\1/;p;}' | tr , '\n' | grep '^da[[:digit:]]'`
+	echo NOTICE: using CAM simulated SCSI disk $work_zvdev
+	sister nu_hdd -b -u 100 -a 128 -q -p $WORK_POOL_NAME $work_zvdev
+fi
+
+if ! zfs list $WORK_POOL_NAME/os/nuOS; then
+	sister nu_build -p $WORK_POOL_NAME -c $PKG_COLLECTION -q
+fi
+
 ctladm create -b block -o pblocksize=4096 -o ublocksize=4096 -o file=/dev/zvol/$POOL_NAME/$OUTPUT_POOL_NAME
 output_zvol_escd=`echo $POOL_NAME/$OUTPUT_POOL_NAME | sed -e 's/\\./\\\\./g;s|/|\\\\/|g'`
 output_ctlun=$(ctladm devlist -b block -v | tail -n +2 | awk '/^ +[[:digit:]]+ block /{x = $1} /^ +file=\/dev\/zvol\/'"$output_zvol_escd"'$/{r = x} END{print r}')

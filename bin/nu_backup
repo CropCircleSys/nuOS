@@ -16,9 +16,10 @@ set -e; set -u; set -C
 
 NUOS_VER=0.0.11.3a0
 
-while getopts f:l:p:sv OPT; do case $OPT in
+while getopts f:l:np:sv OPT; do case $OPT in
 	f) FROM_SNAP=$OPTARG;;
 	l) SNAP_LABEL=$OPTARG;;
+	n) OPT_BACKUP_NULL=y;;
 	p) POOL_NAME=$OPTARG;;
 	s) OPT_ONLY_SNAP=y;;
 	v) OPT_VERBOSE=y;;
@@ -42,22 +43,30 @@ elim_dup_snaps () {
 		guid=`zfs get -H -p -o value guid "$d@$s"`
 		if eval [ -z \"\${_elim_dup_snap_seen_$guid-}\" ]; then
 			setvar _elim_dup_snap_seen_$guid y
-			echo $r
+			printf '%s\n' "$r"
 		fi
 	done
 }
 
 all_prior_snaps () {
-	local d= s= r=
+	local d= s= r= f= o= p= n=
 	xargs -n 1 | while read -r r; do
 		d=${r%%@*} s=${r#*@}
 		[ "x$d" != "x$r" ] && [ "x$s" != "x$r" ] || return 1
 		zfs list -r -d 1 -t snapshot -H -p -s createtxg -o name "$d" \
 			| sed -n -e "1,\\|^$d@$s\\>|p" \
-			| awk '
-				!x {print $0}
-				x {print "-i", x, $0}
-				{x = $0}'
+			| {
+				read -r f
+				o=`zfs list -H -o origin ${f%@*}`
+				if [ "x$o" = x- ]; then
+					printf '%s\n' "$f"
+				else
+					printf '%s\n' "-i $o $f"
+				fi
+				while p=${n:-$f}; read -r n; do
+					printf '%s\n' "-i @${p##*@} $n"
+				done
+			}
 	done
 }
 
@@ -83,7 +92,7 @@ all_origins () {
 			[ x- != x$o ]
 		do :;
 		done
-	done
+	done | tail -r
 }
 
 maybe_yell
@@ -136,6 +145,6 @@ if [ -z "${OPT_ONLY_SNAP-}" ]; then
 		else
 			all_origins | all_descendant_snaps | all_prior_snaps | elim_dup_snaps
 		fi
-	done < "$output_list" | xargs -L 1 zfs send -L -e -c -p ${FROM_SNAP:+-R -I @$FROM_SNAP}
+	done < "$output_list" | xargs -L 1 ${OPT_BACKUP_NULL:+echo} zfs send -L -e -c -p ${FROM_SNAP:+-R -I @$FROM_SNAP}
 fi
 retire_tmp output_list
