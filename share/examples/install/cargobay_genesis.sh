@@ -60,7 +60,7 @@ case `hostname -d | tr [[:upper:]] [[:lower:]]` in
 		sec_dept='Development & Production Quality Assurance'
 		net_dept='Architecture Quality Assurance'
 		
-		init_emails='willy@woneye.site giant@uglybagsofmostlywater.club'
+		init_emails='willy@woneye.site giant@uglybagsofmostlywater.club bofh@nuOS.xyz'
 	;;
 	
 	entire.ninja)
