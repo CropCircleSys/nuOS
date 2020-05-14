@@ -105,15 +105,15 @@ ${s:+#n, }#o {
 	top: 5vh;
 	letter-spacing: -0.067em;
 	color: #0f0;
-}
-${s:+#n {
+${s:+\}
+#n {
 	left: 5vw;
 \}
 #n a:hover {
 	color: #ff0;
 \}
-}#o {
-	right: 5vw;
+#o {
+}	right: 5vw;
 }
 #a {
 	position: absolute;

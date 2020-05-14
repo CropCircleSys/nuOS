@@ -357,7 +357,7 @@ for Z in $infra_domain $client_zones; do
 	nu_http_host -C /var/jail/www -a -s${strict:+sss} -kkf -G -i -u ${ADMIN_USER:-root} -h $z
 done
 
-for Z in CCSys.com; do
+if [ cargobay.net = $infra_domain_lc ]; then for Z in CCSys.com; do
 	z=`echo $Z | tr [[:upper:]] [[:lower:]]`
 	sed -i '' -e "/\\<Content-Security-Policy\\>/s:object-src 'none':plugin-types application/pdf:" /var/jail/www/usr/local/etc/apache*/Includes/$z.conf
 	${ADMIN_USER:+env -i} chroot ${ADMIN_USER:+-u 1001 -g 1001} /var/jail/www /bin/sh <<EOF
@@ -422,10 +422,10 @@ EOF
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 <link href="index.css" rel="stylesheet" type="text/css" />
-<title>ccsys.com</title>
+<title>CCSys.com</title>
 </head>
 <body>
-<h1>ccsys.com</h1>
+<h1>CCSys.com</h1>
 <h2>Crop Circle Systems</h2>
 <h3><a href="resume.pdf">Chad Jacob Milios, CEO</a></h3>
 <p><address>
@@ -437,7 +437,7 @@ EOF
 </p>
 </body>
 EOF
-done
+done; fi
 
 case $infra_domain_lc in
 	cargobay.net) link=https://CCSys.com/;;
