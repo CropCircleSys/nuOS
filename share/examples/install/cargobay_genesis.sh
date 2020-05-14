@@ -53,14 +53,14 @@ case `hostname -d | tr [[:upper:]] [[:lower:]]` in
 		primary_ip=$jake_ip
 		secondary_ip=$francis_ip
 		
-		infra_domain=WonEye.Site
+		infra_domain=WonEye.site
 		corp_zones='UglyBagsOfMostlyWater.club'
 		org_zones='nuOS.xyz'
 		
 		sec_dept='Development & Production Quality Assurance'
 		net_dept='Architecture Quality Assurance'
 		
-		init_emails='willy@woneye.site giant@uglybagsofmostlywater.club bofh@nuOS.xyz'
+		init_emails='willy@woneye.site giant@uglybagsofmostlywater.club bofh@nuos.xyz'
 	;;
 	
 	entire.ninja)
@@ -300,6 +300,8 @@ for Z in $client_zones; do
 				department='Sugar Baby Dating Communication Service';;
 			dollhouse.cam)
 				department='Live Adult Entertainment';;
+			her.services)
+				department='Private Feminine Support & Comfort';;
 			wifeknows.best)
 				province='Florida'
 				locality='Venice'
