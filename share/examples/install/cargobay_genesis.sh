@@ -1,15 +1,3 @@
-mikey_ip=23.111.168.34
-mouth_ip=23.111.168.35
-data_ip=23.111.168.36
-chunk_ip=23.111.168.37
-brand_ip=23.111.168.38
-
-jake_ip=66.206.20.42
-francis_ip=66.206.20.43
-sloth_ip=66.206.20.44
-andy_ip=66.206.20.45
-stef_ip=66.206.20.46
-
 case `hostname -d | tr [[:upper:]] [[:lower:]]` in
 	
 	cargobay.net|ccsys.com|cropcircle.systems)
@@ -24,9 +12,6 @@ case `hostname -d | tr [[:upper:]] [[:lower:]]` in
 		
 		OWNER_ACCT=chuck
 		OWNER_NAME='Charles Jacob Milios'
-		
-		primary_ip=$mikey_ip
-		secondary_ip=$mouth_ip
 		
 		infra_domain=CargoBay.net
 		corp_zones='CCSys.com CropCircle.Systems'
@@ -50,9 +35,6 @@ case `hostname -d | tr [[:upper:]] [[:lower:]]` in
 		OWNER_ACCT=anne
 		OWNER_NAME='Angelina Fratelli'
 		
-		primary_ip=$jake_ip
-		secondary_ip=$francis_ip
-		
 		infra_domain=WonEye.site
 		corp_zones='UglyBagsOfMostlyWater.club'
 		org_zones='nuOS.xyz'
@@ -74,9 +56,6 @@ case `hostname -d | tr [[:upper:]] [[:lower:]]` in
 		OWNER_ACCT=naruto
 		OWNER_NAME='Naruto Uzumaki'
 		
-		primary_ip=$chunk_ip
-		secondary_ip=$brand_ip
-		
 		infra_domain=Entire.Ninja
 		
 		sec_dept='Advanced Network & System Operations'
@@ -97,9 +76,6 @@ case `hostname -d | tr [[:upper:]] [[:lower:]]` in
 		OWNER_ACCT=one
 		OWNER_NAME='Connor MacLeod'
 		
-		primary_ip=$andy_ip
-		secondary_ip=$stef_ip
-		
 		infra_domain=MacLeod.host
 		corp_zones='Goon.Store Goonies.Pro'
 		org_zones='Gangsta.Tech Thug.Digital Bully.Ninja'
@@ -117,6 +93,15 @@ esac
 
 client_zones="$corp_zones $org_zones $prod_zones"
 
+
+
+while IFS=: read n ip; do
+	setvar my_ip_$n $ip
+	echo my_ip_$n=$ip
+done <<EOF
+`ifconfig net0 | grep -E '^[[:blank:]]*inet' | xargs -L 1 | cut -w -f 2 | grep -n .`
+EOF
+
 echo infra_domain=$infra_domain
 echo client_zones=$client_zones
 env
@@ -132,11 +117,11 @@ nu_ns_cache -C /var/jail/resolv -s
 cp -av /var/jail/resolv/etc/resolvconf.conf /etc/resolvconf.conf
 
 nu_jail -j ns -S domain -x -q -i 127.1.0.2
-env ALIAS_IP=$primary_ip nu_jail -j a.ns -i 127.1.0.3 -AP -S domain -x -q
-env ALIAS_IP=$secondary_ip nu_jail -j b.ns -i 127.1.0.4 -AP -S domain -x -q
-nu_ns_server -C /var/jail/ns -d -k 4096 -z 2048 -i $primary_ip -i $secondary_ip -s a.ns.jail -s b.ns.jail
-nu_ns_server -C /var/jail/a.ns -i $primary_ip -i $secondary_ip -m ns.jail
-nu_ns_server -C /var/jail/b.ns -i $primary_ip -i $secondary_ip -m ns.jail
+env ALIAS_IP=$my_ip_1 nu_jail -j a.ns -i 127.1.0.3 -AP -S domain -x -q
+env ALIAS_IP=$my_ip_2 nu_jail -j b.ns -i 127.1.0.4 -AP -S domain -x -q
+nu_ns_server -C /var/jail/ns -d -k 4096 -z 2048 -i $my_ip_1 -i $my_ip_2 -s a.ns.jail -s b.ns.jail
+nu_ns_server -C /var/jail/a.ns -i $my_ip_1 -i $my_ip_2 -m ns.jail
+nu_ns_server -C /var/jail/b.ns -i $my_ip_1 -i $my_ip_2 -m ns.jail
 if [ -d /root/nuos_deliverance/ns ]; then
 	tar -cf - -C /root/nuos_deliverance/ns/knotdb keys | tar -xvf - -C /var/jail/ns/var/db/knot
 fi
