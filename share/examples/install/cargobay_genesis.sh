@@ -16,7 +16,7 @@ case `hostname -d | tr [[:upper:]] [[:lower:]]` in
 		infra_domain=CargoBay.net
 		corp_zones='CCSys.com CropCircle.Systems'
 		org_zones='nuOS.net nuOS.org nu.Cash nu.Chat nu.Click nu.Email nu.Gold nu.Live nu.Lol nu.Money nu.Parts nu.Place nu.School nu.Show nu.Software nu.Team nu.Zone'
-		prod_zones='UHax.TV Pawn.Today Freer.Trade Xng.Trade Xchng.trade Unblind.Date Blindish.Date BeMyLil.Baby DollHouse.Cam Her.Services Lady.Ninja Homies.Fund WifeKnows.Best DadsMore.Fun Daddy.Bar Dads.WTF Dad.University Man.Coach Faith.Agency'
+		prod_zones='UHax.TV Pawn.Today Freer.Trade Xng.Trade Xchng.trade Unblind.Date Blindish.Date BeMyLil.Baby DollHouse.Cam Her.Services Lady.Ninja Homies.Fund Together.Rehab WifeKnows.Best DadsMore.Fun Daddy.Bar Dads.WTF Dad.University Man.Coach Faith.Agency'
 		
 		sec_dept='System & Network Security'
 		net_dept='Network Infrastructure & Operations'
@@ -291,6 +291,8 @@ for Z in $client_zones; do
 				department='Women’s Empowerment';;
 			homies.fund)
 				department='Compassion and Philanthropy for Homeless';;
+			together.rehab)
+				department='Addiction Recovery Assistance';;
 			wifeknows.best)
 				province='Florida'
 				locality='Venice'
@@ -338,7 +340,7 @@ for Z in $infra_domain $client_zones; do
 		macleod.host|goon.store|gangsta.tech|thug.digital|bully.ninja|emptier.space|bravest.world|\
 		cargobay.net|ccsys.com|nuos.org|nuos.net|\
 		nu.cash|nu.chat|nu.email|nu.gold|nu.live|nu.lol|nu.money|nu.parts|nu.place|nu.school|nu.show|nu.software|nu.team|\
-		uhax.tv|pawn.today|freer.trade|xng.trade|xchng.trade|unblind.date|blindish.date|bemylil.baby|dollhouse.cam|her.services|lady.ninja|homies.fund|\
+		uhax.tv|pawn.today|freer.trade|xng.trade|xchng.trade|unblind.date|blindish.date|bemylil.baby|dollhouse.cam|her.services|lady.ninja|homies.fund|together.rehab|\
 		wifeknows.best|dadsmore.fun|daddy.bar|dads.wtf|dad.university|man.coach|faith.agency)
 			strict=y;;
 		*)
