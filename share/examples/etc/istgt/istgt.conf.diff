@@ -1,0 +1,34 @@
+23c23
+<   NodeBase "iqn.2007-09.jp.ne.peach.istgt"
+---
+>   NodeBase "iqn.%%IQN%%"
+89c89
+<   Portal DA1 192.168.2.36:3260
+---
+>   Portal DA1 0.0.0.0:3260
+107c107
+<   Netmask 192.168.2.0/24
+---
+>   Netmask ALL
+115c115
+<   TargetName disk1
+---
+>   TargetName tgt0
+120c120
+<   AuthMethod Auto
+---
+>   AuthMethod CHAP
+145c145
+<   LUN0 Storage /tank/iscsi/istgt-disk1 10GB
+---
+>   #LUN0 Storage /tank/iscsi/istgt-disk1 10GB
+149c149
+<   #LUN0 Storage /dev/zvol/tank/istgt-vol1 Auto
+---
+>   LUN0 Storage /dev/zvol/%%POOL%%/%%VOLUME%% Auto
+161,162c161,162
+<   #LUN0 Option RPM 1
+<   #LUN0 Option FormFactor 3
+---
+>   LUN0 Option RPM 1
+>   LUN0 Option FormFactor 3
