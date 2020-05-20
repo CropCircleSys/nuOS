@@ -1,1 +1,0 @@
-grep -qw 2020.03.24 Makefile
