@@ -18,12 +18,15 @@ NUOS_VER=0.0.11.3a0
 
 . "$(dirname "$(realpath "$0")")/../lib/nu_system.sh"
 
-while getopts ac:dDj:o:qsSuUv OPT; do case $OPT in
+while getopts aAc:dDfj:Ko:qsSuUv OPT; do case $OPT in
 	a) incr OPT_AUTO 1;;
-	d) OPT_DEPS=y;;
+	A) incr OPT_DEPRECATED_AUTO_PROCESS 1;;
 	c) PKG_COLLECTION=$OPTARG;;
+	d) OPT_DEPS=y;;
 	D) OPT_DEBUG=y;;
+	f) incr OPT_FREEBSD 1;;
 	j) JAIL_NAME=$OPTARG;;
+	K) OPT_KEEP_FAT_OBJ=y;;
 	o) OUTPUT_FILE=$OPTARG;;
 	q) OPT_QUICK=y;;
 	s) OPT_ONLY_SNAP=y;;
@@ -34,7 +37,7 @@ while getopts ac:dDj:o:qsSuUv OPT; do case $OPT in
 esac; done; shift $(($OPTIND-1))
 [ $# = 0 ]
 
-[ -n "${OPT_ONLY_SNAP-}" ] || [ -n "${OPT_AUTO-}" -a -z "${OUTPUT_FILE-}" ] || [ ! -e "$OUTPUT_FILE" -o ! -s "$OUTPUT_FILE" ]
+[ -n "${OPT_ONLY_SNAP-}" ] || [ -n "${OPT_DEPRECATED_AUTO_PROCESS-}" -a -z "${OUTPUT_FILE-}" ] || [ ! -e "$OUTPUT_FILE" -o ! -s "$OUTPUT_FILE" ]
 
 . "$(dirname "$(realpath "$0")")/../lib/nu_common.sh"
 . "$(dirname "$(realpath "$0")")/../lib/nu_collection.sh"
@@ -43,7 +46,7 @@ baseos_init
 nuos_init
 collection_vars_init -q
 
-if [ -n "${OPT_AUTO-}" ]; then
+if [ -n "${OPT_DEPRECATED_AUTO_PROCESS-}" ]; then
 	: ${JAIL_NAME:=lab}
 	require_tmp auto_output
 	OUTPUT_FILE="$auto_output"
@@ -247,7 +250,89 @@ retire_tmp obsolete_pkgs
 echo
 echo "Ports tree is now tagged $new_tag ($last_modified)."
 
-if [ -n "${OPT_AUTO-}" ]; then
+if canhas ${OPT_FREEBSD-}; then
+	make_vars_init
+	build_vars_init
+	require_base_src -n
+	before=`save_svn_info -r /usr/src`
+	if ! srsly ${OPT_NO_SNAP-}; then
+		zfs snapshot -r $POOL_BOOT_NAME/os/$BASEOS_TYPE/src/$BASEOS_VER@$snaptime $POOL_BOOT_NAME/os/$BASEOS_TYPE/src/obj/$TRGT_MACH/$BASEOS_VER@$snaptime
+		zfs set canmount=noauto $POOL_BOOT_NAME/os/$BASEOS_TYPE/src/$BASEOS_VER
+		zfs unmount $POOL_BOOT_NAME/os/$BASEOS_TYPE/src/$BASEOS_VER
+		zfs clone -o mountpoint=/usr/src $POOL_BOOT_NAME/os/$BASEOS_TYPE/src/$BASEOS_VER@$snaptime $POOL_BOOT_NAME/os/$BASEOS_TYPE/src/$BASEOS_VER.$snaptime
+	fi
+	svn update /usr/src
+	after=`save_svn_info -r /usr/src`
+	echo -n "FreeBSD source tree: $before"
+	if [ $before != $after ]; then
+		echo " -> $after"
+		zfs set canmount=noauto $POOL_BOOT_NAME/os/$BASEOS_TYPE/src/obj/$TRGT_MACH/$BASEOS_VER
+		zfs unmount $POOL_BOOT_NAME/os/$BASEOS_TYPE/src/obj/$TRGT_MACH/$BASEOS_VER
+		before_ver=$BASEOS_VER
+		baseos_init
+		if [ $before_ver = $BASEOS_VER ]; then
+			same_ver=y
+		fi
+		zfs rename $POOL_BOOT_NAME/os/$BASEOS_TYPE/src/$before_ver.$snaptime $POOL_BOOT_NAME/os/$BASEOS_TYPE/src/$BASEOS_VER${same_ver:+.$after}
+		zfs create -o mountpoint=/usr/obj $POOL_BOOT_NAME/os/$BASEOS_TYPE/src/obj/$TRGT_MACH/$BASEOS_VER${same_ver:+.$after}__tmp
+		if [ ${OPT_FREEBSD-} -ge 2 ]; then
+			require_base_src
+			if which rsync; then
+				require_tmp -d old_obj
+				mount -t zfs $POOL_BOOT_NAME/os/$BASEOS_TYPE/src/obj/$TRGT_MACH/$before_ver "$old_obj"
+				zfs clone $POOL_BOOT_NAME/os/$BASEOS_TYPE/src/obj/$TRGT_MACH/$before_ver@$snaptime $POOL_BOOT_NAME/os/$BASEOS_TYPE/src/obj/$TRGT_MACH/$BASEOS_VER${same_ver:+.$after}__wip
+				require_tmp -d new_obj
+				mount -t zfs $POOL_BOOT_NAME/os/$BASEOS_TYPE/src/obj/$TRGT_MACH/$BASEOS_VER${same_ver:+.$after}__wip "$new_obj"
+				require_tmp -d rsync_pipe
+				mkfifo -m 600 "$rsync_pipe/o"
+				
+				spill before_ver
+				spill snaptime
+				spill rsync_pipe
+				spill old_obj
+				spill new_obj
+				spill POOL_BOOT_NAME
+				spill BASEOS_TYPE
+				spill TRGT_MACH
+				spill BASEOS_VER
+				spill same_ver
+				spill after
+				spill OPT_FREEBSD
+				spill TRGT_KERN
+				
+				rsync -aHAXSIc --delete --only-write-batch="$rsync_pipe/o" /usr/obj/ "$old_obj/" &
+				rsync -aHAXSIc --delete -v --read-batch="$rsync_pipe/o" "$new_obj/"
+				wait
+				retire_tmp rsync_pipe
+				umount "$old_obj"
+				retire_tmp old_obj
+				umount "$new_obj"
+				retire_tmp new_obj
+				if canhas "${OPT_KEEP_FAT_OBJ-}"; then
+					zfs set canmount=noauto $POOL_BOOT_NAME/os/$BASEOS_TYPE/src/obj/$TRGT_MACH/$BASEOS_VER${same_ver:+.$after}__tmp
+					zfs unmount $POOL_BOOT_NAME/os/$BASEOS_TYPE/src/obj/$TRGT_MACH/$BASEOS_VER${same_ver:+.$after}__tmp
+					zfs rename $POOL_BOOT_NAME/os/$BASEOS_TYPE/src/obj/$TRGT_MACH/$BASEOS_VER${same_ver:+.$after}__tmp $POOL_BOOT_NAME/os/$BASEOS_TYPE/src/obj/$TRGT_MACH/$BASEOS_VER${same_ver:+.$after}__fat
+				else
+					zfs destroy $POOL_BOOT_NAME/os/$BASEOS_TYPE/src/obj/$TRGT_MACH/$BASEOS_VER${same_ver:+.$after}__tmp
+				fi
+				zfs rename $POOL_BOOT_NAME/os/$BASEOS_TYPE/src/obj/$TRGT_MACH/$BASEOS_VER${same_ver:+.$after}__wip $POOL_BOOT_NAME/os/$BASEOS_TYPE/src/obj/$TRGT_MACH/$BASEOS_VER${same_ver:+.$after}
+				zfs set mountpoint=/usr/obj $POOL_BOOT_NAME/os/$BASEOS_TYPE/src/obj/$TRGT_MACH/$BASEOS_VER${same_ver:+.$after}
+			fi
+			if [ ${OPT_FREEBSD-} -ge 3 ]; then
+				(cd /usr/src
+					make -D WITHOUT_KERNEL_SYMBOLS KERNCONF=$TRGT_KERN installkernel installworld
+				)
+			fi
+		fi
+	else
+		echo
+		zfs destroy $POOL_BOOT_NAME/os/$BASEOS_TYPE/src/$BASEOS_VER.$snaptime
+		zfs set canmount=on $POOL_BOOT_NAME/os/$BASEOS_TYPE/src/$BASEOS_VER
+		zfs mount $POOL_BOOT_NAME/os/$BASEOS_TYPE/src/$BASEOS_VER
+	fi
+fi
+
+if [ -n "${OPT_DEPRECATED_AUTO_PROCESS-}" ]; then
 	if [ -n "${changed-}" ]; then
 		echo
 		while read port pkg; do
@@ -264,14 +349,14 @@ if [ -n "${OPT_AUTO-}" ]; then
 				pkg -c "$CHROOTDIR" delete -fy $pkg || true
 			done
 		fi
-		if [ "$OPT_AUTO" -ge 2 ]; then
+		if [ "$OPT_DEPRECATED_AUTO_PROCESS" -ge 2 ]; then
 			echo
 			if [ -n "${post_delete_ports-}" ]; then
 				sister -C "$CHROOTDIR" nu_install_pkg -R $post_delete_ports
 			fi
 			require_tmp -c pkg_tree
 			sister -C "$CHROOTDIR" nu_pkg_tree -o dir /var/db/nuos/pkg -o txt "${pkg_tree#"$CHROOTDIR"}" $PKG_COLLECTION
-			if [ "$OPT_AUTO" -ge 3 ]; then
+			if [ "$OPT_DEPRECATED_AUTO_PROCESS" -ge 3 ]; then
 				sister -C "$CHROOTDIR" nu_install_pkg -R `grep / "$pkg_tree"`
 				retire_tmp pkg_tree
 				echo Done building new $PKG_COLLECTION packages.

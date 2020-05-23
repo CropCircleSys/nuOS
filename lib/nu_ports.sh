@@ -29,17 +29,9 @@ else
 fi
 
 
-save_svn_info () {
-	local code_dir="$1"
-	(cd /var/empty && env TZ=UTC svn`which svn > /dev/null 2>&1 || echo lite` info "$code_dir") >| "$code_dir/.svn/info.txt"
-}
-
 ports_tag () {
 	if [ -d /usr/ports/.svn ]; then
-		if ! [ /usr/ports/.svn/info.txt -nt /usr/ports/.svn/wc.db ]; then
-			save_svn_info /usr/ports
-		fi
-		echo r`grep ^Revision: /usr/ports/.svn/info.txt | cut -w -f 2`
+		save_svn_info -r /usr/ports
 	else
 		cut -d '|' -f 2 /var/db/portsnap/tag
 	fi

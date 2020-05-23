@@ -58,6 +58,10 @@ require_subversion () {
 }
 
 require_base_src () {
+	local opt_nomake=
+	if [ x${1-} = x-n ]; then
+		opt_nomake=y; shift
+	fi
 	if [ ! -f /usr/src/Makefile ]; then
 		require_subversion
 		
@@ -80,7 +84,7 @@ require_base_src () {
 	if [ ! -d /usr/obj/usr/src/bin ]; then
 		prepare_make_conf make_conf retire_make_conf_cmd
 		[ $TRGT_OPTZ = `cd /var/empty && make -V CPUTYPE` ]
-		(cd /usr/src && make -j $MAKE_JOBS "__MAKE_CONF=$make_conf" buildworld)
+		srsly $opt_nomake || (cd /usr/src && make -j $MAKE_JOBS "__MAKE_CONF=$make_conf" buildworld)
 		$retire_make_conf_cmd make_conf
 	fi
 	if [ $TRGT_KERN = NUOS ] && [ ! -e /usr/src/sys/$TRGT_ARCH/conf/NUOS -o /usr/src/sys/$TRGT_ARCH/conf/NUOS -ot "$(realpath "$(dirname "$(realpath "$0")")/../share/kern/NUOS")" ]; then
@@ -88,7 +92,7 @@ require_base_src () {
 	fi
 	if [ ! -d /usr/obj/usr/src/sys/$TRGT_KERN ]; then
 		prepare_make_conf make_conf retire_make_conf_cmd
-		(cd /usr/src && make -j $MAKE_JOBS "__MAKE_CONF=$make_conf" KERNCONF=$TRGT_KERN buildkernel)
+		srsly $opt_nomake || (cd /usr/src && make -j $MAKE_JOBS "__MAKE_CONF=$make_conf" KERNCONF=$TRGT_KERN buildkernel)
 		$retire_make_conf_cmd make_conf
 	fi
 }

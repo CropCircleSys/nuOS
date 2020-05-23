@@ -32,8 +32,8 @@ baseos_init () {
 		BASEOS_VER=`uname -r`
 	fi
 	if [ -q != "${1-}" ]; then
-		echo 'base opsys                        ' $BASEOS_TYPE
-		echo 'base opsys v#                     ' $BASEOS_VER
+		echo 'base opsys			' $BASEOS_TYPE
+		echo 'base opsys v#		     ' $BASEOS_VER
 	fi
 }
 
@@ -58,7 +58,7 @@ srsly () {
 	case "${1-}" in
 		y) return 0;;
 		'') return 1;;
-		*) echo CONFUSING BOOL: "$*"; exit 88;;
+		*) echo ERROR: confusing boolean "($*)"; exit 88;;
 	esac
 }
 
@@ -117,6 +117,31 @@ humanize () {
 	else
 		echo "$1 B"
 	fi
+}
+
+spill () {
+	local var=$1 val=
+	if eval [ -z \"\${$var-}\" -a -n \"\${$var-x}\" ]; then
+		return
+	fi
+	eval setvar val \"\$$var\"
+	echo -n "$var="
+	printf %s "$val" | case y in
+		`printf %s "$val" | grep -q \' && echo y`)
+				echo -n \"
+				sed -e 's/\\/\\\\/g;s/`/\\`/g;s/"/\\"/g;s/\$/\\&/g'
+				echo \"
+		;;
+		`printf %s "$val" | awk 'NR==2{print "$";exit}{print $0}' | grep -qE '[^[:alnum:]./_@%^+=:-]' && echo y`)
+				echo -n \'
+				cat
+				echo \'
+		;;
+		*)
+				cat
+				echo
+		;;
+	esac
 }
 
 mnt_dev () {
@@ -275,4 +300,20 @@ try () {
 
 next_ip () {
 	echo "${1%.*}.$((${1##*.}+1))"
+}
+
+save_svn_info () {
+	local code_dir= opt_rev= r=
+	if [ x-r = "x${1-}" ]; then
+		opt_rev=y; shift
+	fi
+	code_dir="${1:-`realpath .`}"
+	if ! [ "$code_dir/.svn/info.txt" -nt "$code_dir/.svn/wc.db" ]; then
+		(cd /var/empty && env TZ=UTC svn`which svn > /dev/null 2>&1 || echo lite` info "$code_dir") >| "$code_dir/.svn/info.txt"
+	fi
+	if srsly ${opt_rev-}; then
+		r=`grep ^Revision: "$code_dir/.svn/info.txt" | cut -w -f 2`
+		: ${r:=0}
+		echo r$r
+	fi
 }
