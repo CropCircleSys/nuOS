@@ -1,0 +1,10 @@
+#!ipxe
+
+set root-path iscsi:san.example.com::::iqn.1970-01.com.example.san:tgt0
+set keep-san 1
+set initiator-iqn iqn.1970-01.com.example:${mac:hexhyp}
+set username ace
+set password NewEnglandClamChowder
+dhcp || shell
+
+sanboot ${root-path} || shell

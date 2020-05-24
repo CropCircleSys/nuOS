@@ -1,0 +1,17 @@
+#!ipxe
+
+set ifname net0
+set root-path iscsi:47.201.126.81::::iqn.2020-04.site.woneye.willy:tgt0
+set keep-san 1
+set initiator-iqn iqn.1999-12.com.ccsys.mama:${mac:hexhyp}
+set username joe
+set password mamatitzbitz
+
+ifopen ${ifname}
+
+set ${ifname}/ip 23.111.168.34
+set ${ifname}/netmask 255.255.255.248
+set ${ifname}/gateway 23.111.168.33
+set dns 8.8.8.8
+
+sanboot ${root-path} || shell
