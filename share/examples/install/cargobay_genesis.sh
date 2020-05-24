@@ -16,7 +16,7 @@ case `hostname -d | tr [[:upper:]] [[:lower:]]` in
 		infra_domain=CargoBay.net
 		corp_zones='CCSys.com CropCircle.Systems'
 		org_zones='nuOS.net nuOS.org nu.Cash nu.Chat nu.Click nu.Email nu.Gold nu.Live nu.Lol nu.Money nu.Parts nu.Place nu.School nu.Show nu.Software nu.Team nu.Zone'
-		prod_zones='UHax.TV Pawn.Today Freer.Trade Xng.Trade Xchng.trade Unblind.Date Blindish.Date BeMyLil.Baby DollHouse.Cam Her.Services Lady.Ninja Homies.Fund Together.Rehab WifeKnows.Best DadsMore.Fun Daddy.Bar Dads.WTF Dad.University Man.Coach Faith.Agency'
+		prod_zones='UHax.TV Pawn.Today Freer.Trade Xng.Trade Xchng.trade Unblind.Date Blindish.Date BeMyLil.Baby DollHouse.Cam Goddess.One Goddess.Institute Her.Services Lady.Ninja Angel.Directory Cuddle.Expert Tickle.Ninja Dominatrix.House Dominatrix.Army Dominatrix.Fashion Fetish.Pink Brat.Chat Homies.Fund Together.Rehab WifeKnows.Best DadsMore.Fun Daddy.Bar Dads.WTF Dad.University Man.Coach Faith.Agency'
 		
 		sec_dept='System & Network Security'
 		net_dept='Network Infrastructure & Operations'
@@ -38,6 +38,7 @@ case `hostname -d | tr [[:upper:]] [[:lower:]]` in
 		infra_domain=WonEye.site
 		corp_zones='UglyBagsOfMostlyWater.club'
 		org_zones='nuOS.xyz'
+		prod_zones='Fattylicious.Club 8aG.Club'
 		
 		sec_dept='Development & Production Quality Assurance'
 		net_dept='Architecture Quality Assurance'
@@ -285,12 +286,30 @@ for Z in $client_zones; do
 				department='Sugar Baby Dating Communication Service';;
 			dollhouse.cam)
 				department='Live Adult Entertainment';;
+			goddess.one)
+				department='Goddess Worship Products & Entertainment';;
+			goddess.institute)
+				department='Goddess Worship & Devotion Portal';;
 			her.services)
 				department='Private Feminine Support & Comfort';;
 			lady.ninja)
-				department='Women’s Empowerment';;
+				department='Women’s Empowerment Initiative';;
+			angel.directory)
+				department='Inspiration & Encouragement Therapy';;
+			cuddle.expert)
+				department='Platonic Intimate Touch Therapy';;
+			tickle.ninja)
+				department='Gargalesis Sensation & Laughter Therapy';;
+			dominatrix.house|dominatrix.army)
+				department='Female Authority & Discipline Therapy';;
+			dominatrix.fashion)
+				department='Dungeon Style Clothing & Accessories';;
+			fetish.pink)
+				department='Peculiar & Taboo Fanatic Communication Service';;
+			brat.chat)
+				department='Audacious & Brazen Communication Service';;
 			homies.fund)
-				department='Compassion and Philanthropy for Homeless';;
+				department='Compassion & Philanthropy for Homeless';;
 			together.rehab)
 				department='Addiction Recovery Assistance';;
 			wifeknows.best)
@@ -309,6 +328,11 @@ for Z in $client_zones; do
 			faith.agency)
 				organization='Family Uplifting Inclusive Religious Society'
 				department='Promoting Faith, Spirituality and Family Unity';;
+			fattylicious.club|8ag.club|fattylicious.rest|8ag.rest)
+				province='Florida'
+				locality='Englewood'
+				organization='Alexander Marriott Memorial Society'
+				department='Fattylicious Memorial Tribute';;
 			*)
 				echo "ERROR: skipping ssl key generation and certificate registration for client zone $z" >&2
 				continue
@@ -333,14 +357,15 @@ for Z in $infra_domain $client_zones; do
 	case $z in
 		goonies.pro|\
 		nuos.xyz|\
+		entire.ninja|\
 		cropcircle.systems|nu.zone|nu.click)
 			strict=;;
 		woneye.site|uglybagsofmostlywater.club|\
-		entire.ninja|\
 		macleod.host|goon.store|gangsta.tech|thug.digital|bully.ninja|emptier.space|bravest.world|\
 		cargobay.net|ccsys.com|nuos.org|nuos.net|\
 		nu.cash|nu.chat|nu.email|nu.gold|nu.live|nu.lol|nu.money|nu.parts|nu.place|nu.school|nu.show|nu.software|nu.team|\
-		uhax.tv|pawn.today|freer.trade|xng.trade|xchng.trade|unblind.date|blindish.date|bemylil.baby|dollhouse.cam|her.services|lady.ninja|homies.fund|together.rehab|\
+		uhax.tv|pawn.today|freer.trade|xng.trade|xchng.trade|unblind.date|blindish.date|bemylil.baby|dollhouse.cam|goddess.one|goddess.institute|her.services|lady.ninja|angel.directory|cuddle.expert|tickle.ninja|dominatrix.house|dominatrix.army|dominatrix.fashion|fetish.pink|brat.chat|homies.fund|together.rehab|\
+		fattylicious.club|8ag.club|fattylicious.rest|8ag.rest|\
 		wifeknows.best|dadsmore.fun|daddy.bar|dads.wtf|dad.university|man.coach|faith.agency)
 			strict=y;;
 		*)
