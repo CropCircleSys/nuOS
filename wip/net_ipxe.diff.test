@@ -1,1 +1,0 @@
-! grep -q general:PCI_CMD Makefile
