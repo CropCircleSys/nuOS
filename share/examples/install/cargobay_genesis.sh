@@ -202,7 +202,7 @@ nu_user -C /var/jail/postoffice -h $infra_domain_lc -a -u $OWNER_ACCT -n "$OWNER
 for Z in $infra_domain $client_zones; do
 	z=`echo $Z | tr [[:upper:]] [[:lower:]]`
 	nu_smtp_host -C /var/jail/postmaster -h $z
-	for b in operator security hostmaster postmaster whois-data; do
+	for b in operator security hostmaster postmaster webmaster whois-data; do
 		nu_user_mail -C /var/jail/postmaster -h $infra_domain_lc -u $OWNER_ACCT -m $b@$z
 	done
 done
