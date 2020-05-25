@@ -85,6 +85,7 @@ collection_vars_init () {
 		devel/subversion
 		devel/git
 		lang/gawk
+		sysutils/coreutils
 		lang/expect
 	'
 	
