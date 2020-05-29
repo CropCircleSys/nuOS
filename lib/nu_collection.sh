@@ -84,7 +84,10 @@ collection_vars_init () {
 		lite
 		devel/subversion
 		devel/git
+		devel/mercurial
 		lang/gawk
+		textproc/gsed
+		devel/gmake
 		sysutils/coreutils
 		lang/expect
 	'
