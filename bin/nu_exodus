@@ -29,7 +29,7 @@ mkdir "$OUTPUT"
 maybe_yell
 
 roles="$@"
-: ${roles:="ca ns lb vpn po"}
+: ${roles:="ca ns lb vpn po www"}
 
 canhas "$roles"
 
@@ -96,6 +96,19 @@ for role in $roles; do
 				mkdir -p "$OUTPUT/po"
 				tar -cf - -C /var/jail/postoffice/var imap spool/imap | tar -xvf - -C "$OUTPUT/po"
 			else push err $role; fi
+		;;
+		www) # web server
+			for site in /var/jail/www/home/*/*.*/www /var/jail/www/root/*.*/www; do
+				hostdir=`dirname "$site"`
+				host=`basename "$hostdir"`
+				home=`dirname "$hostdir"`
+				[ -d "$hostdir" ] || continue
+				mkdir -p "$OUTPUT/www/$host"
+				(cd "$site" \
+					&& tar -cf - . | tar -xvf - -C "$OUTPUT/www/$host"
+				)
+			done
+			[ -d "$OUTPUT/www" ] || push err $role
 		;;
 		*) push err $role
 	esac
