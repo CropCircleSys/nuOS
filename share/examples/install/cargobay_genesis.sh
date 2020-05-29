@@ -93,6 +93,7 @@ case `hostname -d | tr [[:upper:]] [[:lower:]]` in
 esac
 
 client_zones="$corp_zones $org_zones $prod_zones"
+zones="$infra_domain $client_zones"
 
 
 
@@ -127,7 +128,7 @@ if [ -d /root/nuos_deliverance/ns ]; then
 	tar -cf - -C /root/nuos_deliverance/ns/knotdb keys | tar -xvf - -C /var/jail/ns/var/db/knot
 fi
 service jail start resolv ns a.ns b.ns
-for Z in $infra_domain $client_zones; do
+for Z in $zones; do
 	z=`echo $Z | tr [[:upper:]] [[:lower:]]`
 	for j in ns a.ns b.ns; do
 		nu_ns_host -j $j -h $z
@@ -136,7 +137,7 @@ for Z in $infra_domain $client_zones; do
 done
 
 echo
-for Z in $infra_domain $client_zones; do
+for Z in $zones; do
 	z=`echo $Z | tr [[:upper:]] [[:lower:]]`
 	nu_ns_host -j ns -h $z -k
 done
@@ -199,7 +200,7 @@ service jail restart postmaster postoffice
 
 nu_user -C /var/jail/postmaster -h $infra_domain_lc -a -d net -u $OWNER_ACCT -n "$OWNER_NAME" < /root/owner_pass
 nu_user -C /var/jail/postoffice -h $infra_domain_lc -a -u $OWNER_ACCT -n "$OWNER_NAME" < /root/owner_pass
-for Z in $infra_domain $client_zones; do
+for Z in $zones; do
 	z=`echo $Z | tr [[:upper:]] [[:lower:]]`
 	nu_smtp_host -C /var/jail/postmaster -h $z
 	for b in operator security hostmaster postmaster webmaster whois-data; do
@@ -351,7 +352,7 @@ done
 ADMIN_USER=`pw usershow -u 1001 | cut -d : -f 1`
 nu_jail -j www -i 127.1.0.7 -P -I http -I https -x ${ADMIN_USER:+-u $ADMIN_USER} -q
 nu_http -C /var/jail/www -s -IIII
-for Z in $infra_domain $client_zones; do
+for Z in $zones; do
 	z=`echo $Z | tr [[:upper:]] [[:lower:]]`
 	(cd /etc/ssl && tar -cf - certs/$z.ca.crt certs/$z.crt csrs.next/$z.csr csrs/$z.csr private/$z.key | tar -xvf - -C /var/jail/www/etc/ssl/)
 	case $z in
