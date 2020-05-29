@@ -236,6 +236,8 @@ fi
 [ -n "${OPT_NO_HTTP2-}" ] || h2=y
 [ -n "${OPT_NO_WEBSOCKET-}" ] || ws=y
 
+mkdir -p "${CHROOTDIR-}/usr/local/etc/$service/Includes/VirtualHost.custom"
+
 cat > "${CHROOTDIR-}/usr/local/etc/$service/Includes/$HOST_NAME.conf" <<EOF
 <VirtualHost ${OPT_SSL:+_default_:443}${no_ssl:+*:80}>
 	ServerName $HOST_NAME${OPT_SSL:+:443}
