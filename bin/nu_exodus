@@ -107,6 +107,7 @@ for role in $roles; do
 				(cd "$site" \
 					&& tar -cf - . | tar -xvf - -C "$OUTPUT/www/$host"
 				)
+				cp -v /var/jail/www/usr/local/etc/apache24/Includes/VirtualHost.custom/$host.conf "$OUTPUT/www/" || true
 			done
 			[ -d "$OUTPUT/www" ] || push err $role
 		;;
