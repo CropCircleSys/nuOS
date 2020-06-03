@@ -70,6 +70,7 @@ sed -ne '/^$/,${/^./,$p;}' "${alt_root-}/usr/local/etc/postfix/bounce.cf.default
 
 cat >> "${alt_root-}/usr/local/etc/postfix/main.cf" <<'EOF'
 
+recipient_delimiter = +
 bounce_queue_lifetime = 0
 bounce_size_limit = 80
 remote_header_rewrite_domain = domain.invalid
