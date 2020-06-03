@@ -84,9 +84,9 @@ cat >> "${CHROOTDIR-}/usr/local/etc/$service/extra/httpd-vhosts.conf" <<EOF
 EOF
 
 sed -i '' -Ee '
-	s/^[[:blank:]]*#[[:blank:]]*(LoadModule[[:>:]].*[[:<:]]mod_(http2|proxy|proxy_http|proxy_http2|proxy_wstunnel|proxy_balancer|rewrite|slotmem_shm|deflate).so)$/\1/
-	s/^[[:blank:]]*#[[:blank:]]*(Include[[:>:]].*[[:<:]]httpd-(mpm|vhosts|default).conf)$/\1/
-	s/^[[:blank:]]*#?[[:blank:]]*(ServerName)[[:blank:]]+[^[:blank:]]+[[:blank:]]*$/\1 localhost/
+	s/^([[:blank:]]*)# ?([[:blank:]]*)(LoadModule[[:>:]].*[[:<:]]mod_(http2|proxy|proxy_http|proxy_http2|proxy_wstunnel|proxy_balancer|rewrite|slotmem_shm|deflate|cgid?).so)$/\1\2\3/
+	s/^([[:blank:]]*)# ?([[:blank:]]*)(Include[[:>:]].*[[:<:]]httpd-(mpm|vhosts|default).conf)$/\1\2\3/
+	s/^([[:blank:]]*)#? ?([[:blank:]]*)(ServerName)[[:blank:]]+[^[:blank:]]+[[:blank:]]*$/\1\2\3 localhost/
 	/^[[:blank:]]*Include[[:blank:]]+.*\/Includes\/\*\.conf[[:>:]]/i\
 TraceEnable off\
 
