@@ -119,6 +119,12 @@ humanize () {
 	fi
 }
 
+error () {
+	local ex=$1; shift
+	printf '%s\n' "ERROR: $*" 2>&1
+	exit $1
+}
+
 spill () {
 	local var=$1 val=
 	if eval [ -z \"\${$var-}\" -a -n \"\${$var-x}\" ]; then

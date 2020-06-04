@@ -16,9 +16,10 @@ set -e; set -u; set -C
 
 NUOS_VER=0.0.11.3a0
 
-while getopts aC:fgGh:Hikp:su:vW OPT; do case $OPT in
+while getopts aC:efgGh:Hikp:su:vW OPT; do case $OPT in
 	a) OPT_APP_HARD=y;;
 	C) CHROOTDIR=$OPTARG;;
+	e) OPT_CGI_EXEC=y;;
 	f) OPT_HPKP_FORCE=y;;
 	g) OPT_GZIP=y;;
 	G) OPT_STATIC_GZIP=y;;
@@ -46,6 +47,10 @@ echo -n 'hardened app    -a OPT_APP_HARD    ' && [ -n "${OPT_APP_HARD-}" ] && ec
 echo -n 'dynamic comprsn -g OPT_GZIP        ' && [ -n "${OPT_GZIP-}" ] && echo set || echo null
 echo -n 'static comprsn  -G OPT_STATIC_GZIP ' && [ -n "${OPT_STATIC_GZIP-}" ] && echo set || echo null
 echo -n 'immutable dir   -i OPT_IMMUTABLE   ' && [ -n "${OPT_IMMUTABLE-}" ] && echo set || echo null
+echo -n 'cgi execution   -e OPT_CGI_EXEC   ' && [ -n "${OPT_CGI_EXEC-}" ] && echo set || echo null
+if [ -n "${OPT_CGI_EXEC-}" ]; then
+	echo 'cgi dir            CGI_DIR    ' "${CGI_DIR:=cgi-bin}"
+fi
 echo -n 'pubkey pinning  -k OPT_HPKP        ' && [ -n "${OPT_HPKP-}" ] && echo set || echo null
 if [ -n "${OPT_HPKP-}" ]; then
 	echo -n 'hpkp subdoms   -kk OPT_HPKPSUBDOM  ' && [ -n "${OPT_HPKPSUBDOM-}" ] && echo set || echo null
@@ -180,7 +185,7 @@ mkdir -p "${CHROOTDIR-}/var/log/httpd-vhost"
 
 user_home=`pw -V "${CHROOTDIR-}/etc" usershow $USER_NAME | cut -d : -f 9`
 
-${CHROOTDIR:+chroot "$CHROOTDIR"} su -m $USER_NAME -c "mkdir -p \"$user_home/$HOST_NAME/www/public${OPT_IMMUTABLE:+/$IMMUTABLE_DIR}\""
+${CHROOTDIR:+chroot "$CHROOTDIR"} su -m $USER_NAME -c "mkdir -p \"$user_home/$HOST_NAME/www/public${OPT_IMMUTABLE:+/$IMMUTABLE_DIR}\"${OPT_CGI_EXEC:+ \"$user_home/$HOST_NAME/www/$CGI_DIR\"}"
 
 if [ -n "${OPT_SSL-}" ]; then
 	if ! cp "${CHROOTDIR-}/etc/ssl/certs/$HOST_NAME.crt" "${CHROOTDIR-}/usr/local/etc/$service/ssl/"; then
@@ -274,6 +279,13 @@ ${h2:+	Protocols h2${no_ssl:+c} http/1.1
 		Options -Indexes
 		Header onsuccess set Cache-Control "max-age=31536000, immutable"
 	</Location>
+}${OPT_CGI_EXEC:+	ScriptAlias "/cgi-bin/" "$user_home/$HOST_NAME/www/$CGI_DIR/"
+	<Directory "$user_home/$HOST_NAME/www/$CGI_DIR">
+		AllowOverride None
+		Options ExecCGI
+		SetHandler cgi-script
+		Require all granted
+	</Directory>
 }${OPT_GZIP:+	AddOutputFilterByType DEFLATE text/html application/javascript text/css text/plain image/svg+xml application/xml font/ttf
 }${OPT_STATIC_GZIP:+	RewriteEngine On
 	RewriteCond "%{HTTP:Accept-encoding\}" "\bgzip\b"

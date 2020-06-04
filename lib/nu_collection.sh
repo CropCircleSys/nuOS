@@ -109,6 +109,7 @@ collection_vars_init () {
 		ftp/pure-ftpd
 		net/isc-dhcp44-server
 		net/istgt
+		net/mosquitto
 		mail/cyrus-imapd30
 		security/cyrus-sasl2-saslauthd
 		databases/postgresql12-server
@@ -150,8 +151,6 @@ collection_vars_init () {
 		miniserver
 		net-p2p/bitcoin-daemon
 		net-p2p/bitcoin-utils
-		net-p2p/namecoin-daemon
-		net-p2p/namecoin-utils
 		net-p2p/litecoin-daemon
 		net-p2p/litecoin-utils
 		net-p2p/monero-cli
@@ -188,7 +187,6 @@ collection_vars_init () {
 		x11/kde5
 		x11/sddm
 		net-p2p/bitcoin
-		net-p2p/namecoin
 		net-p2p/litecoin
 		net/x11vnc
 		net/tightvnc

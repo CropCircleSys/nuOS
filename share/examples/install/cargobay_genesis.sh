@@ -16,7 +16,7 @@ case `hostname -d | tr [[:upper:]] [[:lower:]]` in
 		infra_domain=CargoBay.net
 		corp_zones='CCSys.com CropCircle.Systems'
 		org_zones='nuOS.net nuOS.org nu.Cash nu.Chat nu.Click nu.Email nu.Gold nu.Live nu.Lol nu.Money nu.Parts nu.Place nu.School nu.Show nu.Software nu.Team nu.Zone'
-		prod_zones='UHax.TV Pawn.Today Freer.Trade Xng.Trade Xchng.trade Unblind.Date Blindish.Date BeMyLil.Baby DollHouse.Cam Goddess.One Goddess.Institute Her.Services Lady.Ninja Angel.Directory Cuddle.Expert Tickle.Ninja Dominatrix.House Dominatrix.Army Dominatrix.Fashion Fetish.Pink Brat.Chat Homies.Fund Together.Rehab WifeKnows.Best DadsMore.Fun Daddy.Bar Dads.WTF Dad.University Man.Coach Faith.Agency'
+		prod_zones='Candid.Press UHax.TV Pawn.Today Freer.Trade Xng.Trade Freshest.Garden EcoDome.Farm FeedOur.World Pure.Doctor Legit.Blue Crooked.Blue Oath.Report Justice.House Holla.Help Hero.Rent Unblind.Date Blindish.Date BeMyLil.Baby DollHouse.Cam Goddess.One Goddess.Institute Her.Services Lady.Ninja Angel.Directory Cuddle.Expert Tickle.Ninja Dominatrix.House Dominatrix.Army Dominatrix.Fashion Fetish.Pink Brat.Chat Homies.Fund Together.Rehab WifeKnows.Best DadsMore.Fun Daddy.Bar Dads.WTF Dad.University Man.Coach Faith.Agency'
 		
 		sec_dept='System & Network Security'
 		net_dept='Network Infrastructure & Operations'
@@ -36,7 +36,7 @@ case `hostname -d | tr [[:upper:]] [[:lower:]]` in
 		OWNER_NAME='Angelina Fratelli'
 		
 		infra_domain=WonEye.site
-		corp_zones='UglyBagsOfMostlyWater.club'
+		corp_zones='UglyBagsOfMostlyWater.Club'
 		org_zones='nuOS.xyz'
 		prod_zones='Fattylicious.Club 8aG.Club'
 		
@@ -248,9 +248,9 @@ for Z in $client_zones; do
 			nu.school)
 				department='Knowledge Library and Training Academy';;
 			nu.money)
-				department='Cryptographic Instrument Issuance & Offering Service';;
+				department='Cryptographic Instrument Issuance & Offering System';;
 			nu.gold)
-				department='Cryptographic Assets and Democratic Service';;
+				department='Cryptographic Assets and Democratic System';;
 			nu.cash)
 				department='Cryptographic Monetary Products';;
 			uglybagsofmostlywater.club)
@@ -271,6 +271,8 @@ for Z in $client_zones; do
 				department='Testbed System Host Service';;
 			bravest.world)
 				department='Testbed Application Service';;
+			candid.press)
+				department='Uncensored Journalism & Editorial Platform';;
 			uhax.tv)
 				department='Hacker News and Entertainment';;
 			pawn.today)
@@ -279,6 +281,24 @@ for Z in $client_zones; do
 				department='Community Goods & Services Market Portal';;
 			xng.trade|xchng.trade)
 				department='Cryptographic Instrument Market Portal';;
+			freshest.garden)
+				department='Sustainable Agriculture Equipment';;
+			ecodome.farm)
+				department='Sustainable Agriculture Construction';;
+			feedour.world)
+				department='Sustainable Agriculture Global Sociopolitical Initiative';;
+			pure.doctor)
+				department='Traditional, Natural & Holistic Medical Information Portal';;
+			legit.blue|crooked.blue)
+				department='Executive Power Review & Feedback Platform';;
+			oath.report)
+				department='Legislative & Judicial Authority Evaluation Platform';;
+			justice.house)
+				department='Judicial Analysis & Review Platform';;
+			holla.help)
+				department='Local Assistance Communication Platform';;
+			hero.rent)
+				department='Local Assistance Market Portal';;
 			blindish.date)
 				department='Casual Dating Communication Service';;
 			unblind.date)
@@ -329,7 +349,7 @@ for Z in $client_zones; do
 			faith.agency)
 				organization='Family Uplifting Inclusive Religious Society'
 				department='Promoting Faith, Spirituality and Family Unity';;
-			fattylicious.club|8ag.club|fattylicious.rest|8ag.rest)
+			fattylicious.club|8ag.club)
 				province='Florida'
 				locality='Englewood'
 				organization='Alexander Marriott Memorial Society'
@@ -360,20 +380,23 @@ for Z in $zones; do
 		nuos.xyz|\
 		entire.ninja|\
 		cropcircle.systems|nu.zone|nu.click)
-			strict=;;
+			http_host_extra_flags=-s;;
 		woneye.site|uglybagsofmostlywater.club|\
 		macleod.host|goon.store|gangsta.tech|thug.digital|bully.ninja|emptier.space|bravest.world|\
 		cargobay.net|ccsys.com|nuos.org|nuos.net|\
 		nu.cash|nu.chat|nu.email|nu.gold|nu.live|nu.lol|nu.money|nu.parts|nu.place|nu.school|nu.show|nu.software|nu.team|\
-		uhax.tv|pawn.today|freer.trade|xng.trade|xchng.trade|unblind.date|blindish.date|bemylil.baby|dollhouse.cam|goddess.one|goddess.institute|her.services|lady.ninja|angel.directory|cuddle.expert|tickle.ninja|dominatrix.house|dominatrix.army|dominatrix.fashion|fetish.pink|brat.chat|homies.fund|together.rehab|\
-		fattylicious.club|8ag.club|fattylicious.rest|8ag.rest|\
+		uhax.tv|pawn.today|freer.trade|xng.trade|xchng.trade|freshest.garden|ecodome.farm|feedour.world|unblind.date|blindish.date|bemylil.baby|dollhouse.cam|goddess.one|goddess.institute|her.services|lady.ninja|angel.directory|cuddle.expert|tickle.ninja|dominatrix.house|dominatrix.army|dominatrix.fashion|fetish.pink|brat.chat|homies.fund|together.rehab|\
+		candid.press|pure.doctor|legit.blue|crooked.blue|oath.report|justice.house|holla.help|hero.rent|\
+		8ag.club|\
 		wifeknows.best|dadsmore.fun|daddy.bar|dads.wtf|dad.university|man.coach|faith.agency)
-			strict=y;;
+			http_host_extra_flags=-ssss;;
+		fattylicious.club)
+			http_host_extra_flags=-ssssge;;
 		*)
 			echo "ERROR: skipping http service configuration for client zone $z" >&2
 			continue
 	esac
-	nu_http_host -C /var/jail/www -a -s${strict:+sss} -kkf -G -i -u ${ADMIN_USER:-root} -h $z
+	nu_http_host -C /var/jail/www -a -kkf -G -i $http_host_extra_flags -u ${ADMIN_USER:-root} -h $z
 done
 
 if [ cargobay.net = $infra_domain_lc ]; then for Z in CCSys.com; do
@@ -467,6 +490,18 @@ i=1; for Z in $org_zones; do
 	z=`echo $Z | tr [[:upper:]] [[:lower:]]`
 	${ADMIN_USER:+env -i} chroot ${ADMIN_USER:+-u 1001 -g 1001} /var/jail/www `which nu_http_host_snowtube` -h $Z -l $link -S "`echo $org_zones | xargs -n 1 | sed -E -e 's|^(.*)$|https://\1/|'`" -s $i -g >> /var/jail/www/usr/local/etc/apache24/Includes/VirtualHost.custom/$z.conf
 i=$(($i+1)); done
+
+admin_home=${ADMIN_USER:+home/$ADMIN_USER}
+: ${admin_home:=root}
+for Z in $prod_zones; do
+	z=`echo $Z | tr [[:upper:]] [[:lower:]]`
+	if [ -d /root/nuos_deliverance/www/$z ]; then
+		tar -cf - -C /root/nuos_deliverance/www/$z . | tar -xvf - -C /var/jail/www/$admin_home/$z/www
+	fi
+	if [ -f /root/nuos_deliverance/www/$z.conf ]; then
+		cp /root/nuos_deliverance/www/$z.conf /var/jail/www/usr/local/etc/apache24/Includes/VirtualHost.custom/$z.conf
+	fi
+done
 
 service jail start www
 

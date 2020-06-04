@@ -256,79 +256,117 @@ if canhas ${OPT_FREEBSD-}; then
 	require_base_src -n
 	before=`save_svn_info -r /usr/src`
 	if ! srsly ${OPT_NO_SNAP-}; then
-		zfs snapshot -r $POOL_BOOT_NAME/os/$BASEOS_TYPE/src/$BASEOS_VER@$snaptime $POOL_BOOT_NAME/os/$BASEOS_TYPE/src/obj/$TRGT_MACH/$BASEOS_VER@$snaptime
-		zfs set canmount=noauto $POOL_BOOT_NAME/os/$BASEOS_TYPE/src/$BASEOS_VER
-		zfs unmount $POOL_BOOT_NAME/os/$BASEOS_TYPE/src/$BASEOS_VER
-		zfs clone -o mountpoint=/usr/src $POOL_BOOT_NAME/os/$BASEOS_TYPE/src/$BASEOS_VER@$snaptime $POOL_BOOT_NAME/os/$BASEOS_TYPE/src/$BASEOS_VER.$snaptime
+		before_src_ds=`mount -p | awk '$2 == "/usr/src" {print $1}' | tail -n 1`
+		before_obj_ds=`mount -p | awk '$2 == "/usr/obj" {print $1}' | tail -n 1`
+		zfs snapshot -r $before_src_ds@$snaptime $before_obj_ds@$snaptime
+		zfs set canmount=noauto $before_src_ds
+		zfs unmount $before_src_ds
+		zfs clone -o mountpoint=/usr/src $before_src_ds@$snaptime ${before_src_ds%.r*}.$snaptime
 	fi
 	svn update /usr/src
 	after=`save_svn_info -r /usr/src`
 	echo -n "FreeBSD source tree: $before"
 	if [ $before != $after ]; then
 		echo " -> $after"
-		zfs set canmount=noauto $POOL_BOOT_NAME/os/$BASEOS_TYPE/src/obj/$TRGT_MACH/$BASEOS_VER
-		zfs unmount $POOL_BOOT_NAME/os/$BASEOS_TYPE/src/obj/$TRGT_MACH/$BASEOS_VER
-		before_ver=$BASEOS_VER
-		baseos_init
-		if [ $before_ver = $BASEOS_VER ]; then
-			same_ver=y
-		fi
-		zfs rename $POOL_BOOT_NAME/os/$BASEOS_TYPE/src/$before_ver.$snaptime $POOL_BOOT_NAME/os/$BASEOS_TYPE/src/$BASEOS_VER${same_ver:+.$after}
-		zfs create -o mountpoint=/usr/obj $POOL_BOOT_NAME/os/$BASEOS_TYPE/src/obj/$TRGT_MACH/$BASEOS_VER${same_ver:+.$after}__tmp
-		if [ ${OPT_FREEBSD-} -ge 2 ]; then
-			require_base_src
-			if which rsync; then
-				require_tmp -d old_obj
-				mount -t zfs $POOL_BOOT_NAME/os/$BASEOS_TYPE/src/obj/$TRGT_MACH/$before_ver "$old_obj"
-				zfs clone $POOL_BOOT_NAME/os/$BASEOS_TYPE/src/obj/$TRGT_MACH/$before_ver@$snaptime $POOL_BOOT_NAME/os/$BASEOS_TYPE/src/obj/$TRGT_MACH/$BASEOS_VER${same_ver:+.$after}__wip
-				require_tmp -d new_obj
-				mount -t zfs $POOL_BOOT_NAME/os/$BASEOS_TYPE/src/obj/$TRGT_MACH/$BASEOS_VER${same_ver:+.$after}__wip "$new_obj"
-				require_tmp -d rsync_pipe
-				mkfifo -m 600 "$rsync_pipe/o"
+		if [ -n "`svn diff --summarize -r $before:$after /usr/src | head -c 16`" ]; then
+			if ! srsly ${OPT_NO_SNAP-}; then
+				zfs set canmount=noauto $before_obj_ds
+				zfs unmount $before_obj_ds
+			fi
+			before_ver=$BASEOS_VER
+			baseos_init
+			if [ $before_ver = $BASEOS_VER ]; then
+				same_ver=y
+			fi
+			if ! srsly ${OPT_NO_SNAP-}; then
+				zfs rename ${before_src_ds%.r*}.$snaptime $POOL_BOOT_NAME/os/$BASEOS_TYPE/src/$BASEOS_VER${same_ver:+.$after}
+				zfs create -o mountpoint=/usr/obj ${before_obj_ds%.r*}${same_ver:+.$after}__tmp
+			fi
+			if [ ${OPT_FREEBSD-} -ge 2 ]; then
+				require_base_src
+				if ! srsly ${OPT_NO_SNAP-} && which rsync; then
+					require_tmp -d old_obj
+					mount -t zfs $before_obj_ds "$old_obj"
+					zfs clone $before_obj_ds@$snaptime ${before_obj_ds%.r*}${same_ver:+.$after}__wip
+					require_tmp -d new_obj
+					mount -t zfs ${before_obj_ds%.r*}${same_ver:+.$after}__wip "$new_obj"
+					require_tmp -d rsync_pipe
+					mkfifo -m 600 "$rsync_pipe/o"
 				
-				spill before_ver
-				spill snaptime
-				spill rsync_pipe
-				spill old_obj
-				spill new_obj
-				spill POOL_BOOT_NAME
-				spill BASEOS_TYPE
-				spill TRGT_MACH
-				spill BASEOS_VER
-				spill same_ver
-				spill after
-				spill OPT_FREEBSD
-				spill TRGT_KERN
+					spill before_ver
+					spill snaptime
+					spill rsync_pipe
+					spill old_obj
+					spill new_obj
+					spill POOL_BOOT_NAME
+					spill BASEOS_TYPE
+					spill TRGT_MACH
+					spill BASEOS_VER
+					spill same_ver
+					spill after
+					spill OPT_FREEBSD
+					spill TRGT_KERN
 				
-				rsync -aHAXSIc --delete --only-write-batch="$rsync_pipe/o" /usr/obj/ "$old_obj/" &
-				rsync -aHAXSIc --delete -v --read-batch="$rsync_pipe/o" "$new_obj/"
-				wait
-				retire_tmp rsync_pipe
-				umount "$old_obj"
-				retire_tmp old_obj
-				umount "$new_obj"
-				retire_tmp new_obj
-				if canhas "${OPT_KEEP_FAT_OBJ-}"; then
-					zfs set canmount=noauto $POOL_BOOT_NAME/os/$BASEOS_TYPE/src/obj/$TRGT_MACH/$BASEOS_VER${same_ver:+.$after}__tmp
-					zfs unmount $POOL_BOOT_NAME/os/$BASEOS_TYPE/src/obj/$TRGT_MACH/$BASEOS_VER${same_ver:+.$after}__tmp
-					zfs rename $POOL_BOOT_NAME/os/$BASEOS_TYPE/src/obj/$TRGT_MACH/$BASEOS_VER${same_ver:+.$after}__tmp $POOL_BOOT_NAME/os/$BASEOS_TYPE/src/obj/$TRGT_MACH/$BASEOS_VER${same_ver:+.$after}__fat
-				else
-					zfs destroy $POOL_BOOT_NAME/os/$BASEOS_TYPE/src/obj/$TRGT_MACH/$BASEOS_VER${same_ver:+.$after}__tmp
+					rsync -aHAXSIc --delete --only-write-batch="$rsync_pipe/o" /usr/obj/ "$old_obj/" &
+					rsync -aHAXSIc --delete -v --read-batch="$rsync_pipe/o" "$new_obj/"
+					wait
+					retire_tmp rsync_pipe
+					umount "$old_obj"
+					retire_tmp old_obj
+					umount "$new_obj"
+					retire_tmp new_obj
+					if canhas "${OPT_KEEP_FAT_OBJ-}"; then
+						zfs set canmount=noauto $POOL_BOOT_NAME/os/$BASEOS_TYPE/src/obj/$TRGT_MACH/$BASEOS_VER${same_ver:+.$after}__tmp
+						zfs unmount $POOL_BOOT_NAME/os/$BASEOS_TYPE/src/obj/$TRGT_MACH/$BASEOS_VER${same_ver:+.$after}__tmp
+						zfs rename $POOL_BOOT_NAME/os/$BASEOS_TYPE/src/obj/$TRGT_MACH/$BASEOS_VER${same_ver:+.$after}__tmp $POOL_BOOT_NAME/os/$BASEOS_TYPE/src/obj/$TRGT_MACH/$BASEOS_VER${same_ver:+.$after}__fat
+					else
+						zfs destroy $POOL_BOOT_NAME/os/$BASEOS_TYPE/src/obj/$TRGT_MACH/$BASEOS_VER${same_ver:+.$after}__tmp
+					fi
+					zfs rename $POOL_BOOT_NAME/os/$BASEOS_TYPE/src/obj/$TRGT_MACH/$BASEOS_VER${same_ver:+.$after}__wip $POOL_BOOT_NAME/os/$BASEOS_TYPE/src/obj/$TRGT_MACH/$BASEOS_VER${same_ver:+.$after}
+					zfs set mountpoint=/usr/obj $POOL_BOOT_NAME/os/$BASEOS_TYPE/src/obj/$TRGT_MACH/$BASEOS_VER${same_ver:+.$after}
 				fi
-				zfs rename $POOL_BOOT_NAME/os/$BASEOS_TYPE/src/obj/$TRGT_MACH/$BASEOS_VER${same_ver:+.$after}__wip $POOL_BOOT_NAME/os/$BASEOS_TYPE/src/obj/$TRGT_MACH/$BASEOS_VER${same_ver:+.$after}
-				zfs set mountpoint=/usr/obj $POOL_BOOT_NAME/os/$BASEOS_TYPE/src/obj/$TRGT_MACH/$BASEOS_VER${same_ver:+.$after}
+				if [ ${OPT_FREEBSD-} -ge 3 ]; then
+					(cd /usr/src
+						make -D WITHOUT_KERNEL_SYMBOLS KERNCONF=$TRGT_KERN installkernel installworld
+					)
+				fi
 			fi
-			if [ ${OPT_FREEBSD-} -ge 3 ]; then
-				(cd /usr/src
-					make -D WITHOUT_KERNEL_SYMBOLS KERNCONF=$TRGT_KERN installkernel installworld
-				)
-			fi
+		elif ! srsly ${OPT_NO_SNAP-}; then
+			zfs rename ${before_src_ds%.r*}.$snaptime $POOL_BOOT_NAME/os/$BASEOS_TYPE/src/$BASEOS_VER.$after
+			zfs rename $before_obj_ds $POOL_BOOT_NAME/os/$BASEOS_TYPE/src/obj/$TRGT_MACH/$BASEOS_VER.$after
 		fi
 	else
 		echo
-		zfs destroy $POOL_BOOT_NAME/os/$BASEOS_TYPE/src/$BASEOS_VER.$snaptime
-		zfs set canmount=on $POOL_BOOT_NAME/os/$BASEOS_TYPE/src/$BASEOS_VER
-		zfs mount $POOL_BOOT_NAME/os/$BASEOS_TYPE/src/$BASEOS_VER
+		if ! srsly ${OPT_NO_SNAP-}; then
+			zfs destroy ${before_src_ds%.r*}.$snaptime
+			zfs set canmount=on $before_src_ds
+			zfs mount $before_src_ds
+		fi
+	fi
+fi
+
+if canhas ${OPT_AUTO-} && [ -L /var/db/nuos/pkg ]; then
+	sister nu_pkg_tree -o dir /var/db/nuos/pkg $PKG_COLLECTION
+	sister nu_pkg_chk_tree || error 62 'Loop found in package directives'
+	
+	require_tmp want
+	(ls -d /var/db/nuos/pkg/*_*/dependencies | sed -e 's/dependencies$/name/' | xargs cat; for p in `pkg info -qox ^bootstrap-`; do (cd /usr/ports/$p; make -V PKGNAME); done) | sort -u > "$want"
+	require_tmp have
+	pkg info -q | sort > "$have"
+	require_tmp kill
+	diff have want | grep '^<' | cut -wf2 > "$kill"
+	require_tmp make
+	diff have want | grep '^>' | cut -wf2 > "$make"
+	
+	if [ ${OPT_AUTO-} -ge 2 ]; then
+		pkg delete -fy `cat "$kill"`
+		while read -r pkg; do
+			rm -v /usr/ports/packages/All/$pkg.txz
+			rm -v /usr/ports/packages/Index.nuOS/$BASEOS_TYPE-${BASEOS_VER%%-*}-$TRGT_MACH/$pkg.r*.*.txz
+		done < "$kill"
+		if [ ${OPT_AUTO-} -ge 3 ]; then
+			sister nu_pkg_build_cluster -w 3
+		fi
 	fi
 fi
 

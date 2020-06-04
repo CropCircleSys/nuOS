@@ -1,7 +1,7 @@
 #!ipxe
 
 set ifname net0
-set root-path iscsi:47.201.126.81::::iqn.2020-04.site.woneye.willy:tgt0
+set root-path iscsi:66.206.20.42::::iqn.2020-04.site.woneye.willy:tgt0
 set keep-san 1
 set initiator-iqn iqn.1999-10.com.ccsys.mama:${mac:hexhyp}
 set username joe
