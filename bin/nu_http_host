@@ -16,7 +16,7 @@ set -e; set -u; set -C
 
 NUOS_VER=0.0.11.3a0
 
-while getopts aC:efgGh:Hikp:su:vW OPT; do case $OPT in
+while getopts aC:efgGh:Hikp:r:su:vW OPT; do case $OPT in
 	a) OPT_APP_HARD=y;;
 	C) CHROOTDIR=$OPTARG;;
 	e) OPT_CGI_EXEC=y;;
@@ -29,6 +29,7 @@ while getopts aC:efgGh:Hikp:su:vW OPT; do case $OPT in
 	k) [ -n "${OPT_HPKP-}" ] && OPT_HPKPSUBDOM=y || OPT_HPKP=y;;
 	K) HPKP_BACKUP=$OPTARG;;
 	p) PROXY_TO=$OPTARG;;
+	r) REDIRECT_TO=$OPTARG;;
 	s) [ -n "${OPT_SSL-}" ] && { [ -n "${OPT_HSTS-}" ] && { [ -n "${OPT_HSTSSUBDOM-}" ] && OPT_HSTSPRELOAD=y || OPT_HSTSSUBDOM=y; } || OPT_HSTS=y; } || OPT_SSL=y;;
 	u) USER_NAME=$OPTARG;;
 	v) OPT_VERBOSE=y;;
@@ -240,11 +241,12 @@ fi
 
 [ -n "${OPT_NO_HTTP2-}" ] || h2=y
 [ -n "${OPT_NO_WEBSOCKET-}" ] || ws=y
+[ -n "${REDIRECT_TO-}" ] || self=y
 
 mkdir -p "${CHROOTDIR-}/usr/local/etc/$service/Includes/VirtualHost.custom"
 
 cat > "${CHROOTDIR-}/usr/local/etc/$service/Includes/$HOST_NAME.conf" <<EOF
-<VirtualHost ${OPT_SSL:+_default_:443}${no_ssl:+*:80}>
+${self:+<VirtualHost ${OPT_SSL:+_default_:443}${no_ssl:+*:80}>
 	ServerName $HOST_NAME${OPT_SSL:+:443}
 	ServerAdmin webmaster@$HOST_NAME
 	DocumentRoot "$user_home/$HOST_NAME/www/public"
@@ -302,12 +304,13 @@ ${h2:+	Protocols h2${no_ssl:+c} http/1.1
 		Header append Content-Encoding gzip
 		Header append Vary Accept-Encoding
 	</If>
-	IncludeOptional etc/$service/Includes/VirtualHost.custom/$HOST_NAME.conf
+}	IncludeOptional etc/$service/Includes/VirtualHost.custom/$HOST_NAME.conf
 	IncludeOptional etc/$service/Includes/VirtualHost.custom/$HOST_NAME/*.conf
-}</VirtualHost>
-${OPT_SSL:+<VirtualHost _default_:443>
-	ServerName www.$HOST_NAME:443
-	SSLEngine On
+</VirtualHost>
+}${OPT_SSL:+<VirtualHost _default_:443>
+	ServerName ${self:+www.}$HOST_NAME:443
+${REDIRECT_TO:+	ServerAlias www.$HOST_NAME
+}	SSLEngine On
 	SSLCertificateFile "/usr/local/etc/$service/ssl/$HOST_NAME.crt"
 	SSLCertificateKeyFile "/usr/local/etc/$service/ssl/private/$HOST_NAME.key"
 ${self_signed:+	SSLUseStapling off
@@ -317,7 +320,7 @@ ${OPT_HSTS:+	Header always set Strict-Transport-Security "max-age=$HSTS_DURATION
 }	${loose_app_security:+#}Header always set Content-Security-Policy "frame-ancestors 'none'"
 	${loose_app_security:+#}Header always set X-Frame-Options DENY
 ${h2:+	Protocols h2 http/1.1
-}	Redirect permanent / https://$HOST_NAME/
+}	Redirect permanent / ${REDIRECT_TO:+${REDIRECT_TO%/}/}${self:+https://$HOST_NAME/}
 </VirtualHost>
 }<VirtualHost *:80>
 	ServerName ${no_ssl:+www.}$HOST_NAME
@@ -325,13 +328,13 @@ ${OPT_SSL:+	ServerAlias www.$HOST_NAME
 }	${loose_app_security:+#}Header always set Content-Security-Policy "frame-ancestors 'none'"
 	${loose_app_security:+#}Header always set X-Frame-Options DENY
 ${h2:+	Protocols h2c http/1.1
-}	Redirect permanent / http${OPT_SSL:+s}://$HOST_NAME/
-</VirtualHost>
+}	Redirect permanent / ${REDIRECT_TO:+${REDIRECT_TO%/}/}${self:+http${OPT_SSL:+s}://$HOST_NAME/}
+</VirtualHost>${self:+
 <Directory "$user_home/$HOST_NAME/www/public">
 	Options Indexes FollowSymLinks
 	AllowOverride None
 	Require all granted
-</Directory>
+</Directory>}
 EOF
 
 echo "Configured $HOST_NAME for ${OPT_HSTS:+strict }http${OPT_SSL:+s} service."

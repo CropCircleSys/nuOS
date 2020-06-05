@@ -80,7 +80,7 @@ case `hostname -d | tr [[:upper:]] [[:lower:]]` in
 		infra_domain=MacLeod.host
 		corp_zones='Goon.Store Goonies.Pro'
 		org_zones='Gangsta.Tech Thug.Digital Bully.Ninja'
-		prod_zones='Emptier.Space Bravest.World'
+		prod_zones='Emptier.Space Bravest.World McLeod.host'
 		
 		sec_dept='Infrastructure & Operations Quality Assurance'
 		net_dept='System Engineering Quality Assurance'
@@ -385,11 +385,14 @@ for Z in $zones; do
 		macleod.host|goon.store|gangsta.tech|thug.digital|bully.ninja|emptier.space|bravest.world|\
 		cargobay.net|ccsys.com|nuos.org|nuos.net|\
 		nu.cash|nu.chat|nu.email|nu.gold|nu.live|nu.lol|nu.money|nu.parts|nu.place|nu.school|nu.show|nu.software|nu.team|\
-		uhax.tv|pawn.today|freer.trade|xng.trade|xchng.trade|freshest.garden|ecodome.farm|feedour.world|unblind.date|blindish.date|bemylil.baby|dollhouse.cam|goddess.one|goddess.institute|her.services|lady.ninja|angel.directory|cuddle.expert|tickle.ninja|dominatrix.house|dominatrix.army|dominatrix.fashion|fetish.pink|brat.chat|homies.fund|together.rehab|\
+		uhax.tv|pawn.today|freer.trade|xng.trade|freshest.garden|ecodome.farm|feedour.world|unblind.date|blindish.date|bemylil.baby|dollhouse.cam|goddess.one|goddess.institute|her.services|lady.ninja|angel.directory|cuddle.expert|tickle.ninja|dominatrix.house|dominatrix.army|dominatrix.fashion|fetish.pink|brat.chat|homies.fund|together.rehab|\
 		candid.press|pure.doctor|legit.blue|crooked.blue|oath.report|justice.house|holla.help|hero.rent|\
-		8ag.club|\
 		wifeknows.best|dadsmore.fun|daddy.bar|dads.wtf|dad.university|man.coach|faith.agency)
 			http_host_extra_flags=-ssss;;
+		mcleod.host)
+			http_host_extra_flags='-ssss -r https://macleod.host/';;
+		8ag.club)
+			http_host_extra_flags='-ssss -r https://fattylicious.club/';;
 		fattylicious.club)
 			http_host_extra_flags=-ssssge;;
 		*)
@@ -499,7 +502,7 @@ for Z in $prod_zones; do
 		tar -cf - -C /root/nuos_deliverance/www/$z . | tar -xvf - -C /var/jail/www/$admin_home/$z/www
 	fi
 	if [ -f /root/nuos_deliverance/www/$z.conf ]; then
-		cp /root/nuos_deliverance/www/$z.conf /var/jail/www/usr/local/etc/apache24/Includes/VirtualHost.custom/$z.conf
+		cp -v /root/nuos_deliverance/www/$z.conf /var/jail/www/usr/local/etc/apache24/Includes/VirtualHost.custom/
 	fi
 done
 
