@@ -1,1 +1,0 @@
-grep -qw 0.19.0.1 Makefile
