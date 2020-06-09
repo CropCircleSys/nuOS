@@ -350,13 +350,13 @@ if canhas ${OPT_AUTO-} && [ -L /var/db/nuos/pkg ]; then
 	sister nu_pkg_chk_tree || error 62 'Loop found in package directives'
 	
 	require_tmp want
-	(ls -d /var/db/nuos/pkg/*_*/dependencies | sed -e 's/dependencies$/name/' | xargs cat; for p in `pkg info -qox ^bootstrap-`; do (cd /usr/ports/$p; make -V PKGNAME); done) | sort -u > "$want"
+	(ls -d /var/db/nuos/pkg/*_*/dependencies | sed -e 's/dependencies$/name/' | xargs cat; for p in `pkg info -qox ^bootstrap-`; do (cd /usr/ports/$p; make -V PKGNAME); done) | sort -u >| "$want"
 	require_tmp have
-	pkg info -q | sort > "$have"
+	pkg info -q | sort >| "$have"
 	require_tmp kill
-	diff have want | grep '^<' | cut -wf2 > "$kill"
+	diff have want | grep '^<' | cut -wf2 >| "$kill"
 	require_tmp make
-	diff have want | grep '^>' | cut -wf2 > "$make"
+	diff have want | grep '^>' | cut -wf2 >| "$make"
 	
 	if [ ${OPT_AUTO-} -ge 2 ]; then
 		pkg delete -fy `cat "$kill"`
