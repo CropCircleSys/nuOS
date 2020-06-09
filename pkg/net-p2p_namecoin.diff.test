@@ -1,1 +1,1 @@
-grep -q '\$FreeBSD: head/net-p2p/namecoin/Makefile 537830 2020-06-03 18:32:05Z sunpoet \$' Makefile
+grep -q '(namecoin-namecoin-core-nc0\.19\.0\.1_GH0\.tar\.gz)' distinfo && grep -q '\$FreeBSD: head/net-p2p/namecoin/Makefile 537830 2020-06-03 18:32:05Z sunpoet \$' Makefile
