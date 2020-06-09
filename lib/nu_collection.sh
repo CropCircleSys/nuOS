@@ -153,6 +153,8 @@ collection_vars_init () {
 		net-p2p/bitcoin-utils
 		net-p2p/litecoin-daemon
 		net-p2p/litecoin-utils
+		net-p2p/namecoin-daemon
+		net-p2p/namecoin-utils
 		net-p2p/monero-cli
 	'
 	
@@ -188,6 +190,7 @@ collection_vars_init () {
 		x11/sddm
 		net-p2p/bitcoin
 		net-p2p/litecoin
+		net-p2p/namecoin
 		net/x11vnc
 		net/tightvnc
 		www/firefox
