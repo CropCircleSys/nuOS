@@ -277,19 +277,22 @@ if canhas ${OPT_FREEBSD-}; then
 			baseos_init
 			if [ $before_ver = $BASEOS_VER ]; then
 				same_ver=y
+				after_obj_ds=${before_obj_ds%.r*}${same_ver:+.$after}
+			else
+				after_obj_ds=${before_obj_ds%/*}/$BASEOS_VER
 			fi
 			if ! srsly ${OPT_NO_SNAP-}; then
 				zfs rename ${before_src_ds%.r*}.$snaptime $POOL_BOOT_NAME/os/$BASEOS_TYPE/src/$BASEOS_VER${same_ver:+.$after}
-				zfs create -o mountpoint=/usr/obj ${before_obj_ds%.r*}${same_ver:+.$after}__tmp
+				zfs create -o mountpoint=/usr/obj ${after_obj_ds}__tmp
 			fi
 			if [ ${OPT_FREEBSD-} -ge 2 ]; then
 				require_base_src
 				if ! srsly ${OPT_NO_SNAP-} && which rsync; then
 					require_tmp -d old_obj
 					mount -t zfs $before_obj_ds "$old_obj"
-					zfs clone $before_obj_ds@$snaptime ${before_obj_ds%.r*}${same_ver:+.$after}__wip
+					zfs clone $before_obj_ds@$snaptime ${after_obj_ds}__wip
 					require_tmp -d new_obj
-					mount -t zfs ${before_obj_ds%.r*}${same_ver:+.$after}__wip "$new_obj"
+					mount -t zfs ${after_obj_ds}__wip "$new_obj"
 					require_tmp -d rsync_pipe
 					mkfifo -m 600 "$rsync_pipe/o"
 				
@@ -316,14 +319,14 @@ if canhas ${OPT_FREEBSD-}; then
 					umount "$new_obj"
 					retire_tmp new_obj
 					if canhas "${OPT_KEEP_FAT_OBJ-}"; then
-						zfs set canmount=noauto $POOL_BOOT_NAME/os/$BASEOS_TYPE/src/obj/$TRGT_MACH/$BASEOS_VER${same_ver:+.$after}__tmp
-						zfs unmount $POOL_BOOT_NAME/os/$BASEOS_TYPE/src/obj/$TRGT_MACH/$BASEOS_VER${same_ver:+.$after}__tmp
-						zfs rename $POOL_BOOT_NAME/os/$BASEOS_TYPE/src/obj/$TRGT_MACH/$BASEOS_VER${same_ver:+.$after}__tmp $POOL_BOOT_NAME/os/$BASEOS_TYPE/src/obj/$TRGT_MACH/$BASEOS_VER${same_ver:+.$after}__fat
+						zfs set canmount=noauto ${after_obj_ds}__tmp
+						zfs unmount ${after_obj_ds}__tmp
+						zfs rename ${after_obj_ds}__tmp ${after_obj_ds}__fat
 					else
-						zfs destroy $POOL_BOOT_NAME/os/$BASEOS_TYPE/src/obj/$TRGT_MACH/$BASEOS_VER${same_ver:+.$after}__tmp
+						zfs destroy ${after_obj_ds}__tmp
 					fi
-					zfs rename $POOL_BOOT_NAME/os/$BASEOS_TYPE/src/obj/$TRGT_MACH/$BASEOS_VER${same_ver:+.$after}__wip $POOL_BOOT_NAME/os/$BASEOS_TYPE/src/obj/$TRGT_MACH/$BASEOS_VER${same_ver:+.$after}
-					zfs set mountpoint=/usr/obj $POOL_BOOT_NAME/os/$BASEOS_TYPE/src/obj/$TRGT_MACH/$BASEOS_VER${same_ver:+.$after}
+					zfs rename ${after_obj_ds}__wip $after_obj_ds
+					zfs set mountpoint=/usr/obj $after_obj_ds
 				fi
 				if [ ${OPT_FREEBSD-} -ge 3 ]; then
 					(cd /usr/src
@@ -354,9 +357,9 @@ if canhas ${OPT_AUTO-} && [ -L /var/db/nuos/pkg ]; then
 	require_tmp have
 	pkg info -q | sort >| "$have"
 	require_tmp kill
-	diff have want | grep '^<' | cut -wf2 >| "$kill"
+	diff "$have" "$want" | grep '^<' | cut -wf2 >| "$kill"
 	require_tmp make
-	diff have want | grep '^>' | cut -wf2 >| "$make"
+	diff "$have" "$want" | grep '^>' | cut -wf2 >| "$make"
 	
 	if [ ${OPT_AUTO-} -ge 2 ]; then
 		pkg delete -fy `cat "$kill"`
