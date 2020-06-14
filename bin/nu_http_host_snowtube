@@ -216,9 +216,9 @@ gzip -k9 $HTTP_ROOT/index.html
 
 if srsly "${OPT_GENERATE_CONF-}"; then
 	cat <<EOF
-<Location "/">
+<LocationMatch "^/+$">
 	Header add Link "</${gen_hash:+$IMMUTABLE_DIR/}$css>; rel=preload; as=style"
 	Header add Link "</${gen_hash:+$IMMUTABLE_DIR/}$js>; rel=preload; as=script"
-</Location>
+</LocationMatch>
 EOF
 fi
