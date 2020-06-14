@@ -16,7 +16,7 @@ set -e; set -u; set -C
 
 NUOS_VER=0.0.11.3a0
 
-while getopts aC:efgGh:Hikp:r:su:vW OPT; do case $OPT in
+while getopts aC:efgGh:Hikp:Pr:su:vW OPT; do case $OPT in
 	a) OPT_APP_HARD=y;;
 	C) CHROOTDIR=$OPTARG;;
 	e) OPT_CGI_EXEC=y;;
@@ -29,6 +29,7 @@ while getopts aC:efgGh:Hikp:r:su:vW OPT; do case $OPT in
 	k) [ -n "${OPT_HPKP-}" ] && OPT_HPKPSUBDOM=y || OPT_HPKP=y;;
 	K) HPKP_BACKUP=$OPTARG;;
 	p) PROXY_TO=$OPTARG;;
+	P) OPT_PRETTY_HTML=y;;
 	r) REDIRECT_TO=$OPTARG;;
 	s) [ -n "${OPT_SSL-}" ] && { [ -n "${OPT_HSTS-}" ] && { [ -n "${OPT_HSTSSUBDOM-}" ] && OPT_HSTSPRELOAD=y || OPT_HSTSSUBDOM=y; } || OPT_HSTS=y; } || OPT_SSL=y;;
 	u) USER_NAME=$OPTARG;;
@@ -242,6 +243,7 @@ fi
 [ -n "${OPT_NO_HTTP2-}" ] || h2=y
 [ -n "${OPT_NO_WEBSOCKET-}" ] || ws=y
 [ -n "${REDIRECT_TO-}" ] || self=y
+[ -z "${OPT_PRETTY_HTML-}" -a -z "${OPT_STATIC_GZIP-}" ] || rw=y
 
 mkdir -p "${CHROOTDIR-}/usr/local/etc/$service/Includes/VirtualHost.custom"
 
@@ -289,22 +291,29 @@ ${h2:+	Protocols h2${no_ssl:+c} http/1.1
 		Require all granted
 	</Directory>
 }${OPT_GZIP:+	AddOutputFilterByType DEFLATE text/html application/javascript text/css text/plain image/svg+xml application/xml font/ttf
-}${OPT_STATIC_GZIP:+	RewriteEngine On
-	RewriteCond "%{HTTP:Accept-encoding\}" "\bgzip\b"
+}${rw:+	RewriteEngine On
+${OPT_PRETTY_HTML:+${OPT_STATIC_GZIP:+	RewriteCond "%{HTTP:Accept-encoding\}" "\bgzip\b"
+	RewriteCond "%{LA-U:REQUEST_FILENAME\}\.html\.gz" -l [ornext]
+	RewriteCond "%{LA-U:REQUEST_FILENAME\}\.html\.gz" -f
+	RewriteRule !"\.html\$" "%{CONTEXT_DOCUMENT_ROOT\}/%{REQUEST_URI\}.html.gz" [nosubreq,env=static-gzip:1,skip=2]
+}	RewriteCond "%{LA-U:REQUEST_FILENAME\}\.html" -l [ornext]
+	RewriteCond "%{LA-U:REQUEST_FILENAME\}\.html" -f
+	RewriteRule !"\.html\$" "%{CONTEXT_DOCUMENT_ROOT\}/%{REQUEST_URI\}.html" [nosubreq,skip=1]
+}${OPT_STATIC_GZIP:+	RewriteCond "%{HTTP:Accept-encoding\}" "\bgzip\b"
 	RewriteCond "%{LA-U:REQUEST_FILENAME\}\.gz" -s
 	RewriteRule "^/(.*)\.(html?|js|css|te?xt|svg|x[ms]l|ttf)\$" "%{CONTEXT_DOCUMENT_ROOT\}/\$1.\$2.gz" [nocase,env=static-gzip:1]
 	<If "%{ENV:static-gzip\} -eq 1">
-		RewriteRule "\.(?i:html?)\.gz\$" "-" [type=text/html,env=no-gzip:1]
-		RewriteRule "\.(?i:js)\.gz\$" "-" [type=application/javascript,env=no-gzip:1]
-		RewriteRule "\.(?i:css)\.gz\$" "-" [type=text/css,env=no-gzip:1]
-		RewriteRule "\.(?i:te?xt)\.gz\$" "-" [type=text/plain,env=no-gzip:1]
-		RewriteRule "\.(?i:svg)\.gz\$" "-" [type=image/svg+xml,env=no-gzip:1]
-		RewriteRule "\.(?i:x[ms]l)\.gz\$" "-" [type=application/xml,env=no-gzip:1]
-		RewriteRule "\.(?i:ttf)\.gz\$" "-" [type=font/ttf,env=no-gzip:1]
+		RewriteRule "\.(?i:js)\.gz\$" "-" [type=application/javascript,env=no-gzip:1,skip=6]
+		RewriteRule "\.(?i:css)\.gz\$" "-" [type=text/css,env=no-gzip:1,skip=5]
+		RewriteRule "\.(?i:te?xt)\.gz\$" "-" [type=text/plain,env=no-gzip:1,skip=4]
+		RewriteRule "\.(?i:svg)\.gz\$" "-" [type=image/svg+xml,env=no-gzip:1,skip=3]
+		RewriteRule "\.(?i:x[ms]l)\.gz\$" "-" [type=application/xml,env=no-gzip:1,skip=2]
+		RewriteRule "\.(?i:ttf)\.gz\$" "-" [type=font/ttf,env=no-gzip:1,skip=1]
+		RewriteRule "^" "-" [type=text/html,env=no-gzip:1]
 		Header append Content-Encoding gzip
 		Header append Vary Accept-Encoding
 	</If>
-}	IncludeOptional etc/$service/Includes/VirtualHost.custom/$HOST_NAME.conf
+}}	IncludeOptional etc/$service/Includes/VirtualHost.custom/$HOST_NAME.conf
 	IncludeOptional etc/$service/Includes/VirtualHost.custom/$HOST_NAME/*.conf
 </VirtualHost>
 }${OPT_SSL:+<VirtualHost _default_:443>
