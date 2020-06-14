@@ -133,6 +133,7 @@ collection_vars_init () {
 		net/kamailio
 		sysutils/ipfs-go
 		security/tor
+		net-im/py-matrix-synapse
 	'
 	
 	COLL_mediaserver='
