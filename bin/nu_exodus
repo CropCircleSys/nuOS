@@ -104,6 +104,7 @@ for role in $roles; do
 				home=`dirname "$hostdir"`
 				[ -d "$hostdir" ] || continue
 				mkdir -p "$OUTPUT/www/$host"
+				awk "\$2 ~ \"^$site(\$|/)\"" /etc/fstab.www >> "$OUTPUT/www/$host.fstab"
 				(cd "$site" \
 					&& tar -cf - . | tar -xvf - -C "$OUTPUT/www/$host"
 				)

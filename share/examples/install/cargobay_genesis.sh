@@ -15,7 +15,7 @@ case `hostname -d | tr [[:upper:]] [[:lower:]]` in
 		
 		infra_domain=CargoBay.net
 		corp_zones='CCSys.com CropCircle.Systems'
-		org_zones='nuOS.net nuOS.org nu.Cash nu.Chat nu.Click nu.Email nu.Gold nu.Live nu.Lol nu.Money nu.Parts nu.Place nu.School nu.Show nu.Software nu.Team nu.Zone'
+		org_zones='nuOS.net nuOS.org nu.Cash nu.Chat nu.Click nu.Email nu.Gold nu.Live nu.LOL nu.Money nu.Parts nu.Place nu.School nu.Show nu.Software nu.Team nu.Zone'
 		prod_zones='Candid.Press UHax.TV Pawn.Today Freer.Trade Xng.Trade HyperNatural.Art ExoCosmic.Art Freshest.Garden EcoDome.Farm FeedOur.World Pure.Doctor Legit.Blue Crooked.Blue Oath.Report Justice.House Brave.Help Holla.Help Hero.Rent Unblind.Date Blindish.Date BeMyLil.Baby DollHouse.Cam Goddess.One Goddess.Institute Her.Services Lady.Ninja Angel.Directory Cuddle.Expert Tickle.Ninja Dominatrix.House Dominatrix.Army Dominatrix.Fashion Fetish.Pink Brat.Chat Homies.Fund Together.Rehab WifeKnows.Best DadsMore.Fun Daddy.Bar Dads.WTF Dad.University Man.Coach Faith.Agency'
 		
 		sec_dept='System & Network Security'
@@ -384,7 +384,7 @@ done
 
 ADMIN_USER=`pw usershow -u 1001 | cut -d : -f 1`
 if [ ! -d /var/jail/www ]; then
-	nu_jail -j www -i 127.1.0.7 -P -I http -I https -x ${ADMIN_USER:+-u $ADMIN_USER} -q
+	nu_jail -j www -i 127.1.0.7 -m -P -I http -I https -x ${ADMIN_USER:+-u $ADMIN_USER} -q
 	nu_http -C /var/jail/www -s -IIII
 fi
 for Z in $zones; do
@@ -414,7 +414,7 @@ for Z in $zones; do
 			echo "ERROR: skipping http service configuration for client zone $z" >&2
 			continue
 	esac
-	[ -f /var/jail/www/usr/local/etc/apache*/Includes/$z.conf ] || nu_http_host -C /var/jail/www -a -kkf -G -i $http_host_extra_flags -u ${ADMIN_USER:-root} -h $z
+	[ -f /var/jail/www/usr/local/etc/apache*/Includes/$z.conf ] || nu_http_host -C /var/jail/www -a -kkf -G -P -i $http_host_extra_flags -u ${ADMIN_USER:-root} -h $z
 done
 
 if [ cargobay.net = $infra_domain_lc ]; then for Z in CCSys.com; do
@@ -501,7 +501,7 @@ EOF
 done; fi
 
 case $infra_domain_lc in
-	cargobay.net) link=https://CCSys.com/;;
+	cargobay.net) link=lobby/;;
 	woneye.site) link=https://UglyBagsOfMostlyWater.club/;;
 	macleod.host) link=home/;;
 esac
@@ -524,6 +524,16 @@ for Z in $prod_zones; do
 	fi
 done
 
+for Z in $zones; do
+	z=`echo $Z | tr [[:upper:]] [[:lower:]]`
+	if [ -f /root/nuos_deliverance/www/$z.fstab ]; then
+		awk "\$2 !~ \"^/var/jail/www/home/[^/]*/$z/www(\$|/)\"" /etc/fstab.www > /etc/fstab.www.$$
+		cat /root/nuos_deliverance/www/$z.fstab >> /etc/fstab.www.$$
+		mv /etc/fstab.www.$$ /etc/fstab.www
+	fi
+done
+
+mount -F /etc/fstab.www -a
 service jail restart www
 
 
