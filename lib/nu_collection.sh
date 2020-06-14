@@ -137,6 +137,7 @@ collection_vars_init () {
 	
 	COLL_mediaserver='
 		miniserver
+		www/httrack
 		net/netatalk3
 		net/samba411
 		multimedia/ffmpeg
