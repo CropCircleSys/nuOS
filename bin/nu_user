@@ -16,7 +16,7 @@ set -e; set -u; set -C
 
 NUOS_VER=0.0.11.3a0
 
-while getopts aC:d:D:eh:im:Mn:p:Psu:v OPT; do case $OPT in
+while getopts aC:d:D:eh:im:Mn:p:Psu:U:v OPT; do case $OPT in
 	a) OPT_SASL=y;;
 	C) CHROOTDIR=$OPTARG;;
 	d) DELIVER_MAIL=$OPTARG; case $DELIVER_MAIL in
@@ -32,6 +32,7 @@ while getopts aC:d:D:eh:im:Mn:p:Psu:v OPT; do case $OPT in
 	P) OPT_NO_PASSWD=y;;
 	s) OPT_SAMBA=y;;
 	u) USER_NAME=$OPTARG;;
+	U) ACCT_UID=$OPTARG;;
 	v) OPT_VERBOSE=y;;
 esac; done; shift $(($OPTIND-1))
 [ $# = 0 ]
@@ -115,9 +116,9 @@ else
 	echo "No immediate parent dataset, not creating user home dataset."
 fi
 
-${CHROOTDIR:+chroot "$CHROOTDIR"} pw groupadd -n "$USER_NAME" ${GROUP_FLAGS-}
+${CHROOTDIR:+chroot "$CHROOTDIR"} pw groupadd -n "$USER_NAME" ${ACCT_UID:+-g $ACCT_UID} ${GROUP_FLAGS-}
 if [ -z "${OPT_NO_PASSWD-}" ]; then
-	${CHROOTDIR:+chroot "$CHROOTDIR"} pw useradd -m -n $USER_NAME -g $USER_NAME -c "$USER_FULL_NAME" ${USER_FLAGS-} -h 0 <<EOF
+	${CHROOTDIR:+chroot "$CHROOTDIR"} pw useradd -m -n $USER_NAME ${ACCT_UID:+-u $ACCT_UID} -g $USER_NAME -c "$USER_FULL_NAME" ${USER_FLAGS-} -h 0 <<EOF
 $password
 EOF
 	if [ -n "${OPT_SAMBA-}" ]; then
@@ -138,7 +139,7 @@ $password
 EOF
 	fi
 else
-	${CHROOTDIR:+chroot "$CHROOTDIR"} pw useradd -m -n $USER_NAME -g $USER_NAME -c "$USER_FULL_NAME" ${USER_FLAGS-}
+	${CHROOTDIR:+chroot "$CHROOTDIR"} pw useradd -m -n $USER_NAME ${ACCT_UID:+-u $ACCT_UID} -g $USER_NAME -c "$USER_FULL_NAME" ${USER_FLAGS-}
 fi
 
 if [ -n "${OPT_ELI-}" ] && zfs list $POOL_NAME-pvt > /dev/null 2>&1; then
