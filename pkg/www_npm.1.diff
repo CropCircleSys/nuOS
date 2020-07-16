@@ -1,0 +1,12 @@
+--- ../npm.orig/Makefile	2020-04-27 04:47:03.333754000 +0000
++++ ./Makefile	2020-07-16 14:58:46.495594000 +0000
+@@ -2,8 +2,7 @@
+ # $FreeBSD: head/www/npm/Makefile 533054 2020-04-26 11:59:37Z sunpoet $
+ 
+ PORTNAME=	npm
+-PORTVERSION=	6.12.1
+-PORTREVISION=	1
++PORTVERSION=	6.14.6
+ CATEGORIES=	www
+ MASTER_SITES=	LOCAL/sunpoet
+ 

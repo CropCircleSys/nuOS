@@ -24,6 +24,19 @@ case $NAME in
 	*) die
 esac
 
+mv "$TRGT/etc/newsyslog.conf" "$TRGT/etc/newsyslog.conf.sample"
+awk '
+	($1 ~ "^/") {
+		n=NF
+		if ($n ~ "^[0-9]+$" || $n ~ "^SIG") n--
+		if ($n ~ "^/") n--
+		$(n-3) *= 2
+		if ($(n-2) ~ "^[0-9]+$") $(n-2) *= 100
+	}
+	{ print $0 }
+	' "$TRGT/etc/newsyslog.conf.sample" > "$TRGT/etc/newsyslog.conf"
+
+
 if canhas ${primary_if-}; then
 	set_primary_phys_netif $primary_if "$TRGT"
 fi

@@ -33,7 +33,7 @@ build_vars_init () {
 	echo 'target kern        TRGT_KERN      ' ${TRGT_KERN:=NUOS}
 	echo 'target optimize    TRGT_OPTZ      ' $TRGT_OPTZ
 	echo 'subversion server  SVN_SERVER     ' ${SVN_SERVER=svn.FreeBSD.org}
-	echo 'subversion path    SVN_PATH       ' ${SVN_PATH:=base/releng/11.3}
+	echo 'subversion path    SVN_PATH       ' ${SVN_PATH:=base/releng/11.4}
 }
 
 install_vars_init () {
@@ -67,7 +67,8 @@ require_base_src () {
 		
 		local svn_errors=0
 		svn checkout https://$SVN_SERVER/$SVN_PATH /usr/src || svn_errors=1
-
+		save_svn_info /usr/src
+		
 		local max_svn_errors=5
 		while [ $svn_errors -gt 0 -a -z "${svn_success-}" -a $svn_errors -lt $max_svn_errors ]; do
 			local svn_retry_pause=15

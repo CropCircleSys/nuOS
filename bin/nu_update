@@ -254,7 +254,7 @@ if canhas ${OPT_FREEBSD-}; then
 	make_vars_init
 	build_vars_init
 	require_base_src -n
-	before=`save_svn_info -r /usr/src`
+	before_rev=`save_svn_info -r /usr/src`
 	if ! srsly ${OPT_NO_SNAP-}; then
 		before_src_ds=`mount -p | awk '$2 == "/usr/src" {print $1}' | tail -n 1`
 		before_obj_ds=`mount -p | awk '$2 == "/usr/obj" {print $1}' | tail -n 1`
@@ -263,26 +263,32 @@ if canhas ${OPT_FREEBSD-}; then
 		zfs unmount $before_src_ds
 		zfs clone -o mountpoint=/usr/src $before_src_ds@$snaptime ${before_src_ds%.r*}.$snaptime
 	fi
-	svn update /usr/src
-	after=`save_svn_info -r /usr/src`
-	echo -n "FreeBSD source tree: $before"
-	if [ $before != $after ]; then
-		echo " -> $after"
-		if [ -n "`svn diff --summarize -r $before:$after /usr/src | head -c 16`" ]; then
+	want_src=`echo "https://$SVN_SERVER/$SVN_PATH" | tr [[:upper:]] [[:lower:]]`
+	have_src=`grep ^URL: /usr/src/.svn/info.txt | cut -w -f 2 | tr [[:upper:]] [[:lower:]]`
+	if [ "${want_src%/}" = "${have_src%/}" ]; then
+		svn update /usr/src
+	else
+		svn switch "https://$SVN_SERVER/$SVN_PATH" /usr/src
+	fi
+	after_rev=`save_svn_info -r /usr/src`
+	before_ver=$BASEOS_VER
+	baseos_init
+	echo -n "FreeBSD source tree: $before_ver.$before_rev"
+	if [ $before_rev != $after_rev -o $before_ver != $BASEOS_VER ]; then
+		echo " -> $BASEOS_VER.$after_rev"
+		if [ $before_ver != $BASEOS_VER ] || [ -n "`svn diff --summarize -r $before_rev:$after_rev /usr/src | head -c 16`" ]; then
 			if ! srsly ${OPT_NO_SNAP-}; then
 				zfs set canmount=noauto $before_obj_ds
 				zfs unmount $before_obj_ds
 			fi
-			before_ver=$BASEOS_VER
-			baseos_init
 			if [ $before_ver = $BASEOS_VER ]; then
 				same_ver=y
-				after_obj_ds=${before_obj_ds%.r*}${same_ver:+.$after}
+				after_obj_ds=${before_obj_ds%.r*}${same_ver:+.$after_rev}
 			else
 				after_obj_ds=${before_obj_ds%/*}/$BASEOS_VER
 			fi
 			if ! srsly ${OPT_NO_SNAP-}; then
-				zfs rename ${before_src_ds%.r*}.$snaptime $POOL_BOOT_NAME/os/$BASEOS_TYPE/src/$BASEOS_VER${same_ver:+.$after}
+				zfs rename ${before_src_ds%.r*}.$snaptime $POOL_BOOT_NAME/os/$BASEOS_TYPE/src/$BASEOS_VER${same_ver:+.$after_rev}
 				zfs create -o mountpoint=/usr/obj ${after_obj_ds}__tmp
 			fi
 			if [ ${OPT_FREEBSD-} -ge 2 ]; then
@@ -306,7 +312,7 @@ if canhas ${OPT_FREEBSD-}; then
 					spill TRGT_MACH
 					spill BASEOS_VER
 					spill same_ver
-					spill after
+					spill after_rev
 					spill OPT_FREEBSD
 					spill TRGT_KERN
 				
@@ -335,8 +341,8 @@ if canhas ${OPT_FREEBSD-}; then
 				fi
 			fi
 		elif ! srsly ${OPT_NO_SNAP-}; then
-			zfs rename ${before_src_ds%.r*}.$snaptime $POOL_BOOT_NAME/os/$BASEOS_TYPE/src/$BASEOS_VER.$after
-			zfs rename $before_obj_ds $POOL_BOOT_NAME/os/$BASEOS_TYPE/src/obj/$TRGT_MACH/$BASEOS_VER.$after
+			zfs rename ${before_src_ds%.r*}.$snaptime $POOL_BOOT_NAME/os/$BASEOS_TYPE/src/$BASEOS_VER.$after_rev
+			zfs rename $before_obj_ds $POOL_BOOT_NAME/os/$BASEOS_TYPE/src/obj/$TRGT_MACH/$BASEOS_VER.$after_rev
 		fi
 	else
 		echo
@@ -364,11 +370,13 @@ if canhas ${OPT_AUTO-} && [ -L /var/db/nuos/pkg ]; then
 	if [ ${OPT_AUTO-} -ge 2 ]; then
 		pkg delete -fy `cat "$kill"`
 		while read -r pkg; do
-			rm -v /usr/ports/packages/All/$pkg.txz
-			rm -v /usr/ports/packages/Index.nuOS/$BASEOS_TYPE-${BASEOS_VER%%-*}-$TRGT_MACH/$pkg.r*.*.txz
+			rm -v /usr/ports/packages/All/$pkg.txz || true
+			rm -v /usr/ports/packages/Index.nuOS/$BASEOS_TYPE-${BASEOS_VER%%-*}-$TRGT_MACH/$pkg.r*.*.txz || true
 		done < "$kill"
 		if [ ${OPT_AUTO-} -ge 3 ]; then
-			sister nu_pkg_build_cluster -w 3
+			[ ${OPT_AUTO-} -le 3 ] || all=y
+			[ ${OPT_AUTO-} -le 4 ] || every=y
+			sister nu_pkg_build_cluster ${all:+-a} ${every:+-a} -w 3
 		fi
 	fi
 fi

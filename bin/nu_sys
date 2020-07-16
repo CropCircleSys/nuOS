@@ -127,14 +127,16 @@ do
 done
 sister nu_jail ${OPT_VERBOSE:+-v} -C $pool_mnt -p $POOL_NAME -t clone -w -j $bl_jail_name -o $BASEOS_TYPE/$BASEOS_VER/$TRGT_MACH -s pkg_ready -i 127.1.255.254 -x -q
 
-nl_rev=0
-while
-	nl_jail_name=nuos-lab$nl_rev
-	zfs list $POOL_NAME/jail/$nl_jail_name.$NEW_HOST
-do
-	nl_rev=$(($nl_rev + 1))
-done
-sister nu_jail ${OPT_VERBOSE:+-v} -C $pool_mnt -p $POOL_NAME -t clone -w -j $nl_jail_name -s pkg -i 127.1.255.253 -x -q
+if [ "$PKG_COLLECTION" != pkg -a "$PKG_COLLECTION" != blank ] && zfs list $POOL_NAME/os/$HOSTOS_TYPE/$HOSTOS_VER/$HOSTOS_MACH@pkg; then
+	nl_rev=0
+	while
+		nl_jail_name=nuos-lab$nl_rev
+		zfs list $POOL_NAME/jail/$nl_jail_name.$NEW_HOST
+	do
+		nl_rev=$(($nl_rev + 1))
+	done
+	sister nu_jail ${OPT_VERBOSE:+-v} -C $pool_mnt -p $POOL_NAME -t clone -w -j $nl_jail_name -s pkg -i 127.1.255.253 -x -q
+fi
 
 l_rev=0
 while
@@ -143,7 +145,7 @@ while
 do
 	l_rev=$(($l_rev + 1))
 done
-sister nu_jail ${OPT_VERBOSE:+-v} -C $pool_mnt -p $POOL_NAME -t clone -w -j $l_jail_name -i 127.1.255.252 -x -q
+sister nu_jail ${OPT_VERBOSE:+-v} -C $pool_mnt -p $POOL_NAME -t clone -w -j $l_jail_name -s $PKG_COLLECTION -i 127.1.255.252 -x -q
 
 [ -n "$alt_mnt" ] || eval `stat -f "mode=%OMp%03OLp uid=%Du gid=%Dg flags=%Of" $pool_mnt/var/db/entropy`
 chflags schg $pool_mnt/var/db/entropy
