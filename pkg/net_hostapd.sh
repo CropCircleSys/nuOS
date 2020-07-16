@@ -1,9 +1,9 @@
 #!/usr/bin/false
 set -e; set -u; set -C
 
-# nuOS 0.0.11.3a0 - pkg/net_hostapd.sh
+# nuOS 0.0.11.4a0 - pkg/net_hostapd.sh
 #
-# Copyright (c) 2008-2019 Chad Jacob Milios and Crop Circle Systems.
+# Copyright (c) 2008-2020 Chad Jacob Milios and Crop Circle Systems.
 # All rights reserved.
 #
 # This Source Code Form is subject to the terms of the Simplified BSD License.
@@ -14,7 +14,7 @@ set -e; set -u; set -C
 # Official updates and community support available at https://nuos.org .
 # Professional services available at https://ccsys.com .
 
-[ $NUOS_VER = 0.0.11.3a0 ]
+[ $NUOS_VER = 0.0.11.4a0 ]
 
 case $pkg_step in
 	post-build|post-install)

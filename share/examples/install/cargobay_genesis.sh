@@ -192,7 +192,7 @@ fi
 
 if [ ! -d /var/jail/postoffice ]; then
 	nu_jail -j postoffice -i 127.1.0.6 -m -P -I imap -I imaps -I pop3 -I pop3s -I sieve -x -q
-	(cd /etc/ssl && tar -cf - certs/$infra_domain_lc.ca.crt certs/$infra_domain_lc.crt csrs.next/cargobay.net.csr csrs/$infra_domain_lc.csr private/$infra_domain_lc.key | tar -xvf - -C /var/jail/postoffice/etc/ssl/)
+	(cd /etc/ssl && tar -cf - certs/$infra_domain_lc.ca.crt certs/$infra_domain_lc.crt csrs.next/$infra_domain_lc.csr csrs/$infra_domain_lc.csr private/$infra_domain_lc.key | tar -xvf - -C /var/jail/postoffice/etc/ssl/)
 	service jail start postoffice
 	nu_imap -j postoffice -s -e -h $infra_domain_lc
 	while read -r proto procs; do
