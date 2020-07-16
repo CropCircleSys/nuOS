@@ -57,16 +57,19 @@ maybe_yell
 
 
 feport=`ctladm portlist -q -f camsim | cut -w -f 1 | tail -n 1`
+[ -n "$feport" ]
 echo NOTICE: using CAM subsystem front end port $feport
 sbdev=`camcontrol devlist -b | awk '$3 ~ /^camsim[[:digit:]]/ {print $1}' | tail -n 1`
+[ -n "$sbdev" ]
 echo NOTICE: using CAM simulated SCSI bus device $sbdev
 
-zfs create -o compression=off -o volmode=dev -V $ZVOL_SIZE -b 4K -s $POOL_NAME/$OUTPUT_POOL_NAME
+zfs create -p -o mountpoint=none -o canmount=off $POOL_NAME/img
+zfs create -o compression=off -o volmode=dev -V $ZVOL_SIZE -b 4K -s $POOL_NAME/img/$OUTPUT_POOL_NAME
 
 if ! zpool list $WORK_POOL_NAME; then
-	zfs create -o compression=off -o volmode=dev -V $ZVOL_SIZE -b 4K -s $POOL_NAME/$WORK_POOL_NAME
-	ctladm create -b block -o pblocksize=4096 -o ublocksize=4096 -o file=/dev/zvol/$POOL_NAME/$WORK_POOL_NAME
-	work_zvol_escd=`echo $POOL_NAME/$WORK_POOL_NAME | sed -e 's/\\./\\\\./g;s|/|\\\\/|g'`
+	zfs create -o compression=off -o volmode=dev -V $ZVOL_SIZE -b 4K -s $POOL_NAME/img/$WORK_POOL_NAME
+	ctladm create -b block -o pblocksize=4096 -o ublocksize=4096 -o file=/dev/zvol/$POOL_NAME/img/$WORK_POOL_NAME
+	work_zvol_escd=`echo $POOL_NAME/img/$WORK_POOL_NAME | sed -e 's/\\./\\\\./g;s|/|\\\\/|g'`
 	work_ctlun=$(ctladm devlist -b block -v | tail -n +2 | awk '/^ +[[:digit:]]+ block /{x = $1} /^ +file=\/dev\/zvol\/'"$work_zvol_escd"'$/{r = x} END{print r}')
 	echo NOTICE: using CAM target LUN $work_ctlun
 	ctladm reqsense $work_ctlun
@@ -84,8 +87,8 @@ if ! zfs list $WORK_POOL_NAME/os/nuOS; then
 	sister nu_build -p $WORK_POOL_NAME -c $PKG_COLLECTION -q
 fi
 
-ctladm create -b block -o pblocksize=4096 -o ublocksize=4096 -o file=/dev/zvol/$POOL_NAME/$OUTPUT_POOL_NAME
-output_zvol_escd=`echo $POOL_NAME/$OUTPUT_POOL_NAME | sed -e 's/\\./\\\\./g;s|/|\\\\/|g'`
+ctladm create -b block -o pblocksize=4096 -o ublocksize=4096 -o file=/dev/zvol/$POOL_NAME/img/$OUTPUT_POOL_NAME
+output_zvol_escd=`echo $POOL_NAME/img/$OUTPUT_POOL_NAME | sed -e 's/\\./\\\\./g;s|/|\\\\/|g'`
 output_ctlun=$(ctladm devlist -b block -v | tail -n +2 | awk '/^ +[[:digit:]]+ block /{x = $1} /^ +file=\/dev\/zvol\/'"$output_zvol_escd"'$/{r = x} END{print r}')
 echo NOTICE: using CAM target LUN $output_ctlun
 ctladm reqsense $output_ctlun
@@ -110,6 +113,6 @@ sister nu_sys -s $SWAP_SIZE -p $OUTPUT_POOL_NAME -u '' -b '' -h $NEW_HOST -c $PK
 [ ${KEEP_ONLINE-0} -ge 1 ] || ctladm port -p $feport -o on
 [ ${KEEP_ONLINE-0} -ge 1 ] || ctladm remove -b block -l $output_ctlun
 
-[ ${KEEP_ONLINE-0} -ge 1 ] || zfs snapshot $POOL_NAME/$OUTPUT_POOL_NAME@birth
+[ ${KEEP_ONLINE-0} -ge 1 ] || zfs snapshot $POOL_NAME/img/$OUTPUT_POOL_NAME@birth
 
-echo "Created a work image at $POOL_NAME/$WORK_POOL_NAME and a release image at $POOL_NAME/$OUTPUT_POOL_NAME."
+echo "Created a work image at $POOL_NAME/img/$WORK_POOL_NAME and a release image at $POOL_NAME/img/$OUTPUT_POOL_NAME."

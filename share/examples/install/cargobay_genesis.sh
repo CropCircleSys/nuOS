@@ -16,7 +16,7 @@ case `hostname -d | tr [[:upper:]] [[:lower:]]` in
 		infra_domain=CargoBay.net
 		corp_zones='CCSys.com CropCircle.Systems'
 		org_zones='nuOS.net nuOS.org nu.Cash nu.Chat nu.Click nu.Email nu.Gold nu.Live nu.LOL nu.Money nu.Parts nu.Place nu.School nu.Show nu.Software nu.Team nu.Zone'
-		prod_zones='Candid.Press UHax.TV Pawn.Today Freer.Trade Xng.Trade HyperNatural.Art ExoCosmic.Art Freshest.Garden EcoDome.Farm FeedOur.World Pure.Doctor Legit.Blue Crooked.Blue Oath.Report Justice.House Brave.Help Holla.Help Hero.Rent Unblind.Date Blindish.Date BeMyLil.Baby DollHouse.Cam Goddess.One Goddess.Institute Her.Services Lady.Ninja Angel.Directory Cuddle.Expert Tickle.Ninja Dominatrix.House Dominatrix.Army Dominatrix.Fashion Fetish.Pink Brat.Chat Homies.Fund Together.Rehab WifeKnows.Best DadsMore.Fun Daddy.Bar Dads.WTF Dad.University Man.Coach Faith.Agency'
+		prod_zones='Candid.Press UHax.TV Pawn.Today Freer.Trade Xng.Trade HyperNatural.Art ExoCosmic.Art Freshest.Garden EcoDome.Farm FeedOur.World Pure.Doctor NoLifeGuardOnDuty.FYI Legit.Blue Crooked.Blue Oath.Report Justice.House Civix.Tech Brave.Help Holla.Help Hero.Rent Unblind.Date Blindish.Date BeMyLil.Baby DollHouse.Cam Goddess.One Goddess.Institute Her.Services Lady.Ninja Angel.Directory Cuddle.Expert Tickle.Ninja Dominatrix.House Dominatrix.Army Dominatrix.Fashion Fetish.Pink Brat.Chat Homies.Fund Together.Rehab WifeKnows.Best DadsMore.Fun Daddy.Bar Dads.WTF Dad.University Man.Coach Faith.Agency'
 		
 		sec_dept='System & Network Security'
 		net_dept='Network Infrastructure & Operations'
@@ -192,7 +192,7 @@ fi
 
 if [ ! -d /var/jail/postoffice ]; then
 	nu_jail -j postoffice -i 127.1.0.6 -m -P -I imap -I imaps -I pop3 -I pop3s -I sieve -x -q
-	(cd /etc/ssl && tar -cf - certs/$infra_domain_lc.ca.crt certs/$infra_domain_lc.crt csrs.next/cargobay.net.csr csrs/$infra_domain_lc.csr private/$infra_domain_lc.key | tar -xvf - -C /var/jail/postoffice/etc/ssl/)
+	(cd /etc/ssl && tar -cf - certs/$infra_domain_lc.ca.crt certs/$infra_domain_lc.crt csrs.next/$infra_domain_lc.csr csrs/$infra_domain_lc.csr private/$infra_domain_lc.key | tar -xvf - -C /var/jail/postoffice/etc/ssl/)
 	service jail start postoffice
 	nu_imap -j postoffice -s -e -h $infra_domain_lc
 	while read -r proto procs; do
@@ -302,12 +302,16 @@ for Z in $client_zones; do
 				department='Sustainable Agriculture Global Sociopolitical Initiative';;
 			pure.doctor)
 				department='Traditional, Natural & Holistic Medical Information Portal';;
+			nolifeguardonduty.fyi)
+				department='Community Mental Health Assistance Portal';;
 			legit.blue|crooked.blue)
 				department='Executive Power Review & Feedback Platform';;
 			oath.report)
 				department='Legislative & Judicial Authority Evaluation Platform';;
 			justice.house)
 				department='Judicial Analysis & Review Platform';;
+			civix.tech)
+				department='Electronic Direct Democracy for Federated Republics';;
 			brave.help|holla.help)
 				department='Local Assistance Communication Platform';;
 			hero.rent)

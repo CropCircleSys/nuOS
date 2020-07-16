@@ -18,7 +18,7 @@ NUOS_VER=0.0.11.3a0
 
 . "$(dirname "$(realpath "$0")")/../lib/nu_system.sh"
 
-while getopts Bc:FMNp:qv OPT; do case $OPT in
+while getopts Bc:FMNp:qSv OPT; do case $OPT in
 	B) OPT_NOBRAND=y;;
 	c) PKG_COLLECTION=$OPTARG;;
 	F) OPT_SKIP_FBSD=y;;
@@ -26,6 +26,7 @@ while getopts Bc:FMNp:qv OPT; do case $OPT in
 	N) OPT_SKIP_NUOS=y;;
 	p) POOL_NAME=$OPTARG;;
 	q) OPT_QUICK=y;;
+	S) OPT_SKIP_FACTORY=y;;
 	v) OPT_VERBOSE=y;;
 esac; done; shift $(($OPTIND-1))
 [ $# = 0 ]
@@ -83,7 +84,8 @@ else
 	
 	if [ -n "${OPT_NOMAKE-}" ]; then
 		mkdir $pool_mnt/boot $pool_mnt/boot/zfs $pool_mnt/etc/ssh
-		touch $pool_mnt/etc/motd $pool_mnt/etc/login.conf.db
+		head -n 1 /etc/motd > $pool_mnt/etc/motd
+		touch $pool_mnt/etc/login.conf.db
 	else
 		(cd /usr/src && make -D WITHOUT_KERNEL_SYMBOLS DESTDIR=$pool_mnt KERNCONF=$TRGT_KERN installkernel installworld distribution)
 	fi
@@ -512,60 +514,62 @@ EOF
 	
 fi
 
-zfs create -o mountpoint=none -o canmount=off -o primarycache=metadata $POOL_NAME/swap || zfs set mountpoint=none canmount=off primarycache=metadata $POOL_NAME/swap
+if ! srsly ${OPT_SKIP_FACTORY-}; then
+	zfs create -o mountpoint=none -o canmount=off -o primarycache=metadata $POOL_NAME/swap || zfs set mountpoint=none canmount=off primarycache=metadata $POOL_NAME/swap
 
-sys_ds=$POOL_NAME/sys
-factories_ds=$sys_ds/factory
-nuos_factory_ds=$sys_ds/factory/nuOS-$NUOS_VER-$TRGT_MACH
+	sys_ds=$POOL_NAME/sys
+	factories_ds=$sys_ds/factory
+	nuos_factory_ds=$sys_ds/factory/nuOS-$NUOS_VER-$TRGT_MACH
 
-zfs create -p -o mountpoint=none -o canmount=off $sys_ds
-zfs create -p -o mountpoint=none -o canmount=off $factories_ds
-zfs create -p -o mountpoint=none -o canmount=off $nuos_factory_ds
+	zfs create -p -o mountpoint=none -o canmount=off $sys_ds
+	zfs create -p -o mountpoint=none -o canmount=off $factories_ds
+	zfs create -p -o mountpoint=none -o canmount=off $nuos_factory_ds
 
-factory_rev=0
-while
-	new_factory_ds=$nuos_factory_ds/v$factory_rev
-	zfs list $new_factory_ds
-do
-	factory_rev=$(($factory_rev + 1))
-done
+	factory_rev=0
+	while
+		new_factory_ds=$nuos_factory_ds/v$factory_rev
+		zfs list $new_factory_ds
+	do
+		factory_rev=$(($factory_rev + 1))
+	done
 
-cloner $nuos_sysroot_ds@$PKG_COLLECTION $new_factory_ds
+	cloner $nuos_sysroot_ds@$PKG_COLLECTION $new_factory_ds
 
-mkdir $pool_mnt/boot/etc
-mv -n $pool_mnt/etc/login.conf.db $pool_mnt/boot/etc/
-ln -s ../boot/etc/login.conf.db $pool_mnt/etc/login.conf.db
-zfs unmount $new_factory_ds/etc
-ln -s ../boot/etc/login.conf.db $pool_mnt/etc/login.conf.db
-if [ -n "$alt_mnt" ]; then
-	mount -t zfs $new_factory_ds/etc "$alt_mnt/etc"
-else
-	zfs mount $new_factory_ds/etc
-fi
+	mkdir $pool_mnt/boot/etc
+	mv -n $pool_mnt/etc/login.conf.db $pool_mnt/boot/etc/
+	ln -s ../boot/etc/login.conf.db $pool_mnt/etc/login.conf.db
+	zfs unmount $new_factory_ds/etc
+	ln -s ../boot/etc/login.conf.db $pool_mnt/etc/login.conf.db
+	if [ -n "$alt_mnt" ]; then
+		mount -t zfs $new_factory_ds/etc "$alt_mnt/etc"
+	else
+		zfs mount $new_factory_ds/etc
+	fi
 
-zfs snapshot -r $new_factory_ds@prototype
+	zfs snapshot -r $new_factory_ds@prototype
 
-cat >> $pool_mnt/etc/nuos/conf <<EOF
+	cat >> $pool_mnt/etc/nuos/conf <<EOF
 POOL_BOOT_NAME=$POOL_NAME
 EOF
 
-if [ -n "$alt_mnt" ]; then
-	zpool_cache=/boot/zfs/zpool.cache
-else
-	zpool_cache="`zpool get -H -o value cachefile $POOL_NAME`"
-	if [ "$zpool_cache" = none ]; then
-		zpool_cache=
-		require_tmp zpool_cache
-		zpool set "cachefile=$zpool_cache" $POOL_NAME
+	if [ -n "$alt_mnt" ]; then
+		zpool_cache=/boot/zfs/zpool.cache
+	else
+		zpool_cache="`zpool get -H -o value cachefile $POOL_NAME`"
+		if [ "$zpool_cache" = none -o "x$zpool_cache" = x- ]; then
+			unset zpool_cache
+			require_tmp zpool_cache
+			zpool set "cachefile=$zpool_cache" $POOL_NAME
+		fi
 	fi
+
+	cp $zpool_cache $pool_mnt/boot/zfs/zpool.cache
+
+	zfs snapshot -r $new_factory_ds@pool_registered
+	zfs set org.nuos:active_revision=v$factory_rev $nuos_factory_ds
+
+	dismounter $new_factory_ds
 fi
-
-[ -n "$zpool_cache" -a x- != "x$zpool_cache" ] && cp $zpool_cache $pool_mnt/boot/zfs/zpool.cache
-
-zfs snapshot -r $new_factory_ds@pool_registered
-zfs set org.nuos:active_revision=v$factory_rev $nuos_factory_ds
-
-dismounter $new_factory_ds
 
 
 echo "Build of nuOS-$NUOS_VER based on $BASEOS_TYPE-$BASEOS_VER is complete${OPT_NOMAKE:+ (simulated)}, saved to pool $POOL_NAME."

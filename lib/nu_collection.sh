@@ -73,6 +73,7 @@ collection_vars_init () {
 		archivers/p7zip
 		archivers/p7zip-codec-rar
 		sysutils/pciutils
+		sysutils/dmidecode
 		sysutils/smartmontools
 		net/rsync
 		security/sudo
@@ -90,10 +91,19 @@ collection_vars_init () {
 		devel/gmake
 		sysutils/coreutils
 		lang/expect
+		math/convertall
+	'
+	
+	COLL_user='
+		lite
+		finance/ledger
+		irc/irssi
+		net-im/tut
 	'
 	
 	COLL_miniserver='
 		developer
+		user
 		net-mgmt/lldpd
 		mail/postfix
 		mail/opendkim
@@ -110,11 +120,11 @@ collection_vars_init () {
 		net/isc-dhcp44-server
 		net/istgt
 		net/mosquitto
-		mail/cyrus-imapd30
+		mail/cyrus-imapd32
 		security/cyrus-sasl2-saslauthd
 		databases/postgresql12-server
 		databases/mysql57-server
-		databases/mongodb40
+		databases/mongodb42
 		databases/redis
 		lang/mono-basic
 		lang/go
@@ -129,7 +139,6 @@ collection_vars_init () {
 		net/rabbitmq
 		lang/erlang-runtime22
 		lang/elixir
-		irc/irssi
 		net/kamailio
 		sysutils/ipfs-go
 		security/tor
@@ -144,6 +153,7 @@ collection_vars_init () {
 		multimedia/ffmpeg
 		multimedia/Bento4
 		www/youtube_dl
+		www/annie
 		net-p2p/rtorrent
 		net-p2p/createtorrent
 		net-p2p/torrentcheck
@@ -186,6 +196,8 @@ collection_vars_init () {
 		graphics/gimp
 		graphics/krita
 		graphics/inkscape
+		audio/audacity
+		audio/muse-sequencer
 		print/scribus-devel
 		x11/xorg
 		x11/kde5
@@ -199,8 +211,38 @@ collection_vars_init () {
 		java/icedtea-web
 		mail/thunderbird
 		multimedia/vlc
+		multimedia/obs-studio
+		multimedia/obs-ndi
+		multimedia/obs-websocket
+		multimedia/obs-scrab
+		multimedia/wlrobs
+		multimedia/obs-v4l2sink
+		multimedia/obs-transition-matrix
+		multimedia/obs-streamfx
+		multimedia/obs-qtwebkit
+		multimedia/shotcut
 		net-im/jitsi
 		graphics/blender
 		games/sdlpop
+	'
+	
+	COLL_nice='
+		server
+		lang/v
+		security/palisade
+		math/fplll
+		math/maxima
+	'
+	
+	COLL_nasty='
+		nice
+		desktop
+		finance/gnucash
+		finance/kmymoney
+		finance/jgnash
+		math/sage
+		audio/protracker
+		audio/fasttracker2
+		audio/mixxx
 	'
 }

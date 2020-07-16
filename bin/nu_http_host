@@ -49,9 +49,9 @@ echo -n 'hardened app    -a OPT_APP_HARD    ' && [ -n "${OPT_APP_HARD-}" ] && ec
 echo -n 'dynamic comprsn -g OPT_GZIP        ' && [ -n "${OPT_GZIP-}" ] && echo set || echo null
 echo -n 'static comprsn  -G OPT_STATIC_GZIP ' && [ -n "${OPT_STATIC_GZIP-}" ] && echo set || echo null
 echo -n 'immutable dir   -i OPT_IMMUTABLE   ' && [ -n "${OPT_IMMUTABLE-}" ] && echo set || echo null
-echo -n 'cgi execution   -e OPT_CGI_EXEC   ' && [ -n "${OPT_CGI_EXEC-}" ] && echo set || echo null
+echo -n 'cgi execution   -e OPT_CGI_EXEC    ' && [ -n "${OPT_CGI_EXEC-}" ] && echo set || echo null
 if [ -n "${OPT_CGI_EXEC-}" ]; then
-	echo 'cgi dir            CGI_DIR    ' "${CGI_DIR:=cgi-bin}"
+	echo 'cgi dir            CGI_DIR        ' "${CGI_DIR:=cgi-bin}"
 fi
 echo -n 'pubkey pinning  -k OPT_HPKP        ' && [ -n "${OPT_HPKP-}" ] && echo set || echo null
 if [ -n "${OPT_HPKP-}" ]; then

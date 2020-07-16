@@ -16,7 +16,10 @@ set -e; set -u; set -C
 
 NUOS_VER=0.0.11.3a0
 
-while getopts C:d:vw: OPT; do case $OPT in
+. "$(dirname "$(realpath "$0")")/../lib/nu_system.sh"
+
+while getopts aC:d:vw: OPT; do case $OPT in
+	a) incr REBUILD_ALL 1;;
 	C) CHROOTDIR=$OPTARG;;
 	d) PKG_DBDIR=$OPTARG;;
 	v) OPT_VERBOSE=y;;
@@ -25,11 +28,13 @@ esac; done; shift $(($OPTIND-1))
 [ $# = 0 ]
 
 [ -z "${CHROOTDIR-}" ] || exit 43 # CHROOTDIR is unsupported, though we want to some day
-. "$(dirname "$(realpath "$0")")/../lib/nu_system.sh"
 . "$(dirname "$(realpath "$0")")/../lib/nu_common.sh"
 . "$(dirname "$(realpath "$0")")/../lib/nu_make.sh"
 . "$(dirname "$(realpath "$0")")/../lib/nu_ports.sh"
 
+baseos_init
+nuos_init
+make_vars_init
 maybe_yell
 require_ports_tree
 
@@ -67,6 +72,10 @@ getwork () {
 	setvar $_retvar $_port
 }
 
+BOOT_BASEOS_TYPE=`uname -s`
+BOOT_BASEOS_VER=`uname -r`
+os_compat=$BOOT_BASEOS_TYPE-${BOOT_BASEOS_VER%%-*}
+
 while getwork port; do
 	port_=`echo $port | tr / _`
 	worker=
@@ -76,6 +85,16 @@ while getwork port; do
 	done
 	mv "$data_graph/$port_" "$worker/"
 	(
+		if canhas ${REBUILD_ALL-}; then
+			name=`cat ${CHROOTDIR-}$PKG_DBDIR/$port_/name`
+			if [ ${REBUILD_ALL-} -ge 2 ] || \
+				[ ! -L /usr/ports/packages/All/$name.txz ] || \
+				! readlink /usr/ports/packages/All/$name.txz | grep -q ^../Index.nuOS/$os_compat-$TRGT_MACH/
+			then
+				lockf -k "${CHROOTDIR-}/var/run/nu_install_pkg.pkgdb.lock" pkg delete -fy $name || true
+				rm -v /usr/ports/packages/All/$name.txz || true
+			fi
+		fi
 		sister nu_install_pkg -R $port > "$worker/$port_/out" 2>&1 &
 		workpid=$!
 		echo $workpid > "$worker/$port_/pid"

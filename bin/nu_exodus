@@ -105,9 +105,24 @@ for role in $roles; do
 				[ -d "$hostdir" ] || continue
 				mkdir -p "$OUTPUT/www/$host"
 				awk "\$2 ~ \"^$site(\$|/)\"" /etc/fstab.www >> "$OUTPUT/www/$host.fstab"
-				(cd "$site" \
-					&& tar -cf - . | tar -xvf - -C "$OUTPUT/www/$host"
-				)
+				if ! [ -s "$OUTPUT/www/$host.fstab" ]; then
+					rm "$OUTPUT/www/$host.fstab"
+					tar -cf - -C "$site" .
+				elif [ -z "$(awk "\$2 == \"$site\"" "$OUTPUT/www/$host.fstab")" ]; then
+					(set -f; cd "$site" \
+						&& tar -cf - \
+							`awk "
+								(substr(\\\$2, 0, ${#site}+1) == \"$site/\") {
+									print substr(\\\$2, ${#site}+2)
+								}
+							" "$OUTPUT/www/$host.fstab" \
+								| sed -E -e '
+									s|^(.*)$|\
+								--exclude ./\1/?*|'
+							` \
+							.
+					)
+				fi | tar -xvf - -C "$OUTPUT/www/$host"
 				cp -v /var/jail/www/usr/local/etc/apache24/Includes/VirtualHost.custom/$host.conf "$OUTPUT/www/" || true
 			done
 			[ -d "$OUTPUT/www" ] || push err $role

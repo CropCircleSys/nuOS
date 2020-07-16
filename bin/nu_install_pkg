@@ -64,7 +64,9 @@ if [ -z "${OPT_ARG_SUBPROCESS-}" -a -n "${CHROOTDIR-}" ]; then
 	fi
 fi
 
-os_compat=$BASEOS_TYPE-${BASEOS_VER%%-*}
+BOOT_BASEOS_TYPE=`uname -s`
+BOOT_BASEOS_VER=`uname -r`
+os_compat=$BOOT_BASEOS_TYPE-${BOOT_BASEOS_VER%%-*}
 
 for port in $*; do
 	port_=`echo $port | tr / _`
@@ -124,7 +126,7 @@ for port in $*; do
 			if tag=`pkg_db_tag` && [ $tag = `ports_tag` ] && [ ! -L $pkg_file ]; then
 				mkdir -p "/usr/ports/packages/Index.nuOS/$os_compat-$TRGT_MACH"
 				idx=`nuos_sha_fngr "$make_conf" "$env" "$makeargs" /var/db/nuos/pkg/$port_/settings /var/db/nuos/pkg/$port_/dependencies/all`
-				mv -n -v $pkg_file "/usr/ports/packages/Index.nuOS/$os_compat-$TRGT_MACH/$pkg.$tag.$idx.txz"
+				mv -v $pkg_file "/usr/ports/packages/Index.nuOS/$os_compat-$TRGT_MACH/$pkg.$tag.$idx.txz"
 				ln -s "../Index.nuOS/$os_compat-$TRGT_MACH/$pkg.$tag.$idx.txz" $pkg_file
 			fi
 		fi
