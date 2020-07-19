@@ -39,7 +39,7 @@ echo
 
 maybe_yell
 
-: ${SHORT_VER:=10} # currently supporting PostgreSQL 10.1
+: ${SHORT_VER:=12} # currently supporting PostgreSQL 12.3
 
 pghome=`${CHROOTDIR:+chroot "$CHROOTDIR"} pw usershow postgres | cut -d : -f 9`
 [ -e "${CHROOTDIR-}$pghome" ]
