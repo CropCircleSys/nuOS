@@ -126,12 +126,21 @@ error () {
 }
 
 spill () {
+	case "${1-}" in
+		-p)
+			shift
+			local pvar=$1
+			shift
+		;;
+		'') return 1;;
+		*) local pvar=$1;;
+	esac
 	local var=$1 val=
 	if eval [ -z \"\${$var-}\" -a -n \"\${$var-x}\" ]; then
 		return
 	fi
 	eval setvar val \"\$$var\"
-	echo -n "$var="
+	echo -n "$pvar="
 	printf %s "$val" | case y in
 		`printf %s "$val" | grep -q \' && echo y`)
 				echo -n \"
