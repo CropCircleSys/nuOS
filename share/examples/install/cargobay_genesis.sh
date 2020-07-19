@@ -36,14 +36,14 @@ case `hostname -d | tr [[:upper:]] [[:lower:]]` in
 		OWNER_NAME='Angelina Fratelli'
 		
 		infra_domain=WonEye.site
-		corp_zones='UglyBagsOfMostlyWater.Club'
+		corp_zones='MeatPopsicle.VIP UglyBagsOfMostlyWater.Club'
 		org_zones='nuOS.xyz'
 		prod_zones='Fattylicious.Club 8aG.Club'
 		
 		sec_dept='Development & Production Quality Assurance'
 		net_dept='Architecture Quality Assurance'
 		
-		init_emails='willy@woneye.site giant@uglybagsofmostlywater.club bofh@nuos.xyz'
+		init_emails='willy@woneye.site korben@meatpopsicle.vip giant@uglybagsofmostlywater.club bofh@nuos.xyz'
 	;;
 	
 	entire.ninja)
@@ -157,7 +157,7 @@ wait $p
 
 for s in lb vpn ca; do
 	if [ -d /root/nuos_deliverance/$s ]; then
-		tar -cf - -C /root/nuos_deliverance/$s/ssl . | tar -xvf - -C /etc/ssl
+		tar -cf - -C /root/nuos_deliverance/$s/ssl . | tar --keep-newer-files -xvf - -C /etc/ssl
 	fi
 done
 
@@ -264,8 +264,10 @@ for Z in $client_zones; do
 				department='Cryptographic Assets and Democratic System';;
 			nu.cash)
 				department='Cryptographic Monetary Products';;
+			meatpopsicle.vip)
+				department='Urban Taxi Service and Gourmet Croquettes';;
 			uglybagsofmostlywater.club)
-				department='Cordial Community Contributor Coterie Clan';;
+				department='Cordial Community Contributor Coterie';;
 			nuos.xyz)
 				department='Advanced Software Research & Development';;
 			gangsta.tech)
@@ -400,12 +402,12 @@ for Z in $zones; do
 		entire.ninja|\
 		cropcircle.systems|nu.zone|nu.click)
 			http_host_extra_flags=-s;;
-		woneye.site|uglybagsofmostlywater.club|\
+		woneye.site|meatpopsicle.vip|uglybagsofmostlywater.club|\
 		macleod.host|goon.store|gangsta.tech|thug.digital|bully.ninja|emptier.space|bravest.world|\
 		cargobay.net|ccsys.com|nuos.org|nuos.net|\
 		nu.cash|nu.chat|nu.email|nu.gold|nu.live|nu.lol|nu.money|nu.parts|nu.place|nu.school|nu.show|nu.software|nu.team|\
 		uhax.tv|pawn.today|freer.trade|xng.trade|hypernatural.art|exocosmic.art|freshest.garden|ecodome.farm|feedour.world|unblind.date|blindish.date|bemylil.baby|dollhouse.cam|goddess.one|goddess.institute|her.services|lady.ninja|angel.directory|cuddle.expert|tickle.ninja|dominatrix.house|dominatrix.army|dominatrix.fashion|fetish.pink|brat.chat|homies.fund|together.rehab|\
-		candid.press|pure.doctor|legit.blue|crooked.blue|oath.report|justice.house|brave.help|holla.help|hero.rent|\
+		candid.press|pure.doctor|nolifeguardonduty.fyi|legit.blue|crooked.blue|oath.report|justice.house|civix.tech|brave.help|hero.rent|\
 		wifeknows.best|dadsmore.fun|daddy.bar|dads.wtf|dad.university|man.coach|faith.agency)
 			http_host_extra_flags=-ssss;;
 		mcleod.host)
