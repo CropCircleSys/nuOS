@@ -184,9 +184,9 @@ if [ -n "${OPT_LETS_ENCRYPT-}" ]; then
 	for a in $SSL_HOST $SAN_LIST; do
 		dom_args="${dom_args:+$dom_args }-d $a"
 	done
-	sister ${NAMESERVER_JAILNAME:+-j $NAMESERVER_JAILNAME} nu_ns_host ${CHROOTDIR:+-C "$CHROOTDIR"} ${OPT_VERBOSE:+-v} ${KNOT_ALTERNATE:+-A $KNOT_ALTERNATE} -h $SSL_HOST -c letsencrypt.org
-	sleep 3
 	parent_zone=$(ns_master_zone ${NAMESERVER_JAILNAME:+-j $NAMESERVER_JAILNAME} ${CHROOTDIR:+-c} ${KNOT_ALTERNATE:+-A $KNOT_ALTERNATE} $SSL_HOST)
+	sister ${NAMESERVER_JAILNAME:+-j $NAMESERVER_JAILNAME} nu_ns_host ${CHROOTDIR:+-C "$CHROOTDIR"} ${OPT_VERBOSE:+-v} ${KNOT_ALTERNATE:+-A $KNOT_ALTERNATE} -h $parent_zone -c letsencrypt.org
+	sleep 3
 	require_tmp acme_output
 	acme.sh --signcsr --csr /etc/ssl/csrs/$SSL_HOST.csr --dns $dom_args --yes-I-know-dns-manual-mode-enough-go-ahead-please ${OPT_FORCE:+--force} >| "$acme_output" 2>&1 || true
 	require_tmp acme_challenge
@@ -203,7 +203,7 @@ if [ -n "${OPT_LETS_ENCRYPT-}" ]; then
 	done
 	sleep 120
 	acme.sh --renew $dom_args --yes-I-know-dns-manual-mode-enough-go-ahead-please ${OPT_FORCE:+--force} 2>&1 || true
-	sister ${NAMESERVER_JAILNAME:+-j $NAMESERVER_JAILNAME} nu_ns_host ${CHROOTDIR:+-C "$CHROOTDIR"} ${OPT_VERBOSE:+-v} ${KNOT_ALTERNATE:+-A $KNOT_ALTERNATE} -h $SSL_HOST -c -d
+	sister ${NAMESERVER_JAILNAME:+-j $NAMESERVER_JAILNAME} nu_ns_host ${CHROOTDIR:+-C "$CHROOTDIR"} ${OPT_VERBOSE:+-v} ${KNOT_ALTERNATE:+-A $KNOT_ALTERNATE} -h $parent_zone -c -d
 	CERT_FILE=$HOME/.acme.sh/$SSL_HOST/$SSL_HOST.cer
 	AUTH_FILE=$HOME/.acme.sh/$SSL_HOST/ca.cer
 	if [ ! -e "$CERT_FILE" -o "${CHROOTDIR-}/etc/ssl/certs/$SSL_HOST.crt" -nt "$CERT_FILE" ]; then
