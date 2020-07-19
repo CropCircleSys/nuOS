@@ -109,7 +109,7 @@ cat >> $pool_mnt/etc/rc.conf.local <<EOF
 hostname="$NEW_HOST"
 EOF
 
-sed -i '' -e "s/\.my\.domain\$/.${NEW_HOST#*.} $NEW_HOST ${NEW_HOST%%.*}/" $pool_mnt/etc/hosts
+sed -i '' -e "s/\.my\.domain\$/.${NEW_HOST#*.} $NEW_HOST ${NEW_HOST%%.*}/;s/\<warden.myname.my.domain\>/warden.$NEW_HOST/" $pool_mnt/etc/hosts
 
 cat >> $pool_mnt/etc/nuos/backup <<EOF
 sys/$NEW_HOST/(org.nuos:active_revision)/etc

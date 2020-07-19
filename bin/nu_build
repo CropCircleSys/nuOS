@@ -193,6 +193,10 @@ openssh_rsa_keygen_flags="-b 4096"
 openssh_ecdsa_keygen_flags="-b 521"
 EOF
 	
+	cat >> $pool_mnt/etc/hosts <<EOF
+127.1.0.0		warden.myname.my.domain warden.jail warden
+EOF
+	
 	mkdir -p $pool_mnt/etc/rc.conf.d.off
 	
 	cat > $pool_mnt/etc/rc.conf.d.off/ntpd <<'EOF'
