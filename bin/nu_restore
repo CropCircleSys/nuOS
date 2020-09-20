@@ -94,10 +94,16 @@ trap 'clean_exit 2> /dev/null' HUP INT QUIT TERM EXIT
 ) &
 
 require_tmp err_report
+# read -r -t 1 magic version
+# [ nu_backup.zstream_bundle = "$magic" ]
+# [ v0 = "$version" ]
 while {
 	(
 		require_tmp err_out
 		{
+# 			read -r -t 1 magic version
+# 			[ nu_backup.zstream = "$magic" ]
+# 			[ v0 = "$version" ]
 			zfs receive -s -d -u -v $TARGET_DS > "$pipes/recv_out" 2>| "$err_out" &
 		} < /dev/stdin
 		zfs_pid=$!

@@ -37,13 +37,13 @@ case `hostname -d | tr [[:upper:]] [[:lower:]]` in
 		
 		infra_domain=WonEye.site
 		corp_zones='MeatPopsicle.VIP UglyBagsOfMostlyWater.Club'
-		org_zones='nuOS.xyz'
+		org_zones='nuOS.xyz nunu.foundation'
 		prod_zones='Fattylicious.Club 8aG.Club'
 		
 		sec_dept='Development & Production Quality Assurance'
 		net_dept='Architecture Quality Assurance'
 		
-		init_emails='willy@woneye.site korben@meatpopsicle.vip giant@uglybagsofmostlywater.club bofh@nuos.xyz'
+		init_emails='willy@woneye.site korben@meatpopsicle.vip giant@uglybagsofmostlywater.club bofh@nuos.xyz raven@nunu.foundation'
 	;;
 	
 	entire.ninja)
@@ -233,7 +233,7 @@ for Z in $client_zones; do
 			nuos.org)
 				department='Next Underground Operating System';;
 			nuos.net)
-				department='National Union Organizational Society';;
+				department='National Union Organizing Society';;
 			nu.zone)
 				department='Identity & Authority Registration';;
 			nu.software)
@@ -259,17 +259,19 @@ for Z in $client_zones; do
 			nu.school)
 				department='Knowledge Library and Training Academy';;
 			nu.money)
-				department='Cryptographic Instrument Issuance & Offering System';;
+				department='Cryptographic Equity Issuance & Offering System';;
 			nu.gold)
-				department='Cryptographic Assets and Democratic System';;
+				department='Cryptographic Assets of Merit and Democratic Information System';;
 			nu.cash)
-				department='Cryptographic Monetary Products';;
+				department='Cryptographic Debt Instruments and Monetary Products';;
 			meatpopsicle.vip)
 				department='Urban Taxi Service and Gourmet Croquettes';;
 			uglybagsofmostlywater.club)
 				department='Cordial Community Contributor Coterie';;
 			nuos.xyz)
 				department='Advanced Software Research & Development';;
+			nunu.foundation)
+				department='Fellowship Outreach & Coordination';;
 			gangsta.tech)
 				department='Advanced Software Architecture';;
 			bully.ninja)
@@ -339,7 +341,7 @@ for Z in $client_zones; do
 			cuddle.expert)
 				department='Platonic Intimate Touch Therapy';;
 			tickle.ninja)
-				department='Gargalesis Sensation & Laughter Therapy';;
+				department='Tactile Sensation & Laughter Therapy';;
 			dominatrix.house|dominatrix.army)
 				department='Female Authority & Discipline Therapy';;
 			dominatrix.fashion)
@@ -395,10 +397,10 @@ if [ ! -d /var/jail/www ]; then
 fi
 for Z in $zones; do
 	z=`echo $Z | tr [[:upper:]] [[:lower:]]`
-	[ -f /var/jail/www/etc/ssl/certs/$z.crt ] || (cd /etc/ssl && tar -cf - certs/$z.ca.crt certs/$z.crt csrs.next/$z.csr csrs/$z.csr private/$z.key | tar -xvf - -C /var/jail/www/etc/ssl/)
+	[ -f /var/jail/www/etc/ssl/certs/$z.crt -a ! /etc/ssl/certs/$z.crt -nt /var/jail/www/etc/ssl/certs/$z.crt ] || (cd /etc/ssl && tar -cf - certs/$z.ca.crt certs/$z.crt csrs.next/$z.csr csrs/$z.csr private/$z.key | tar -xvf - -C /var/jail/www/etc/ssl/)
 	case $z in
 		goonies.pro|\
-		nuos.xyz|\
+		nuos.xyz|nunu.foundation|\
 		entire.ninja|\
 		cropcircle.systems|nu.zone|nu.click)
 			http_host_extra_flags=-s;;
@@ -497,7 +499,7 @@ EOF
 <h3><a href="resume.pdf">Chad Jacob Milios, CEO</a></h3>
 <p><address>
 	1256 Glendora Rd.<br/>
-	Kissimmee, FL 34759
+	Kissimmee, Florida 34759
 </address></p>
 <p>
 	<a href="tel:+16143973917">(614) 397-3917</a><br/>

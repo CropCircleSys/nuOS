@@ -1,0 +1,47 @@
+#!/bin/sh
+set -e; set -u; set -C
+
+# nuOS 0.0.11.4a0 - bin/nu_backup
+#
+# Copyright (c) 2008-2020 Chad Jacob Milios and Crop Circle Systems.
+# All rights reserved.
+#
+# This Source Code Form is subject to the terms of the Simplified BSD License.
+# If a copy of the Simplified BSD License was not distributed alongside this file, you can
+# obtain one at https://www.freebsd.org/copyright/freebsd-license.html . This software
+# project is not affiliated with the FreeBSD Project.
+#
+# Official updates and community support available at https://nuos.org .
+# Professional services available at https://ccsys.com .
+
+NUOS_VER=0.0.11.4a0
+
+. "$(dirname "$(realpath "$0")")/../lib/nu_system.sh"
+
+require_tmp interested
+if [ $# -eq 0 ]; then
+	ls -d /var/db/nuos/pkg/*_*/dependencies | sed -e 's|^/var/db/nuos/pkg/||;s|/dependencies$||;s|_|/|'
+else
+	echo $@ | xargs -n 1
+fi >> "$interested"
+
+echo 'const nodeData = ['
+for p in `cat "$interested"`; do p_=`echo $p | tr / _`
+	echo "	{'name': '$p'," \
+		"'radius': Math.sqrt(`{ wc -l /var/db/nuos/pkg/$p_/dependencies/all 2> /dev/null || echo 0; } | xargs | cut -w -f 1`)," \
+		"'color': '`echo $p | sha256 -q | cut -c 1-6`'},"
+done
+echo '];'
+echo 'const linkData = ['
+for s in `cat "$interested"`; do s_=`echo $s | tr / _`
+	[ -f /var/db/nuos/pkg/$s_/dependencies/all ] || continue
+	sets_intrsctn x "$interested" /var/db/nuos/pkg/$s_/dependencies/all
+	for t in `grep -vw ports-mgmt/pkg $x`; do
+		echo "	{'source': '$s'," \
+			"'target': '$t'},"
+	done
+	retire_tmp x
+done
+echo '];'
+
+retire_tmp interested

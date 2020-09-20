@@ -145,6 +145,13 @@ if [ -z "${OPT_ONLY_SNAP-}" ]; then
 		else
 			all_origins | all_descendant_snaps | all_prior_snaps | elim_dup_snaps
 		fi
-	done < "$output_list" | xargs -L 1 ${OPT_BACKUP_NULL:+echo} zfs send -L -e -c -p ${FROM_SNAP:+-R -I @$FROM_SNAP}
+	done < "$output_list" | while read -r args; do
+# 		if ! srsly ${header_printed-}; then
+# 			echo nu_backup.zstream_bundle${OPT_BACKUP_NULL:+_report} v0
+# 			header_printed=y
+# 		fi
+# 		srsly ${OPT_BACKUP_NULL-} || echo nu_backup.zstream v0
+		${OPT_BACKUP_NULL:+echo} zfs send -L -e -c -p ${FROM_SNAP:+-R -I @$FROM_SNAP} $args
+	done
 fi
 retire_tmp output_list
