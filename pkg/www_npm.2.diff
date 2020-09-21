@@ -1,9 +1,9 @@
---- ../npm.orig/distinfo	2020-09-21 18:46:38.176804000 +0000
-+++ ./distinfo	2020-09-21 18:41:55.305719000 +0000
+--- ../npm.orig/distinfo	2020-09-21 22:21:00.695945000 +0000
++++ ./distinfo	2020-09-21 22:22:49.196041000 +0000
 @@ -1,3 +1,3 @@
 -TIMESTAMP = 1572448153
 -SHA256 (npm-6.12.1.tar.xz) = 1e7b08a90383895776afe402c2041f134520308aa885add97baf0cd473975ef8
 -SIZE (npm-6.12.1.tar.xz) = 3415212
-+TIMESTAMP = 1600713715
-+SHA256 (npm-6.14.8.tar.xz) = fc9d08fd68ae2abb6f3212fe158593bafc3a77d96269284a13c99d2383195fdd
-+SIZE (npm-6.14.8.tar.xz) = 3558064
++TIMESTAMP = 1600606967
++SHA256 (npm-6.14.8.tar.xz) = 1c9beab15ef7c031b4d9d2261cbe7ab8af63bc1fee0a79623c9759072dbeea6b
++SIZE (npm-6.14.8.tar.xz) = 3369236
