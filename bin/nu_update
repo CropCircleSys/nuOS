@@ -356,7 +356,7 @@ fi
 
 if canhas ${OPT_AUTO-} && [ -L /var/db/nuos/pkg ]; then
 	sister nu_pkg_tree -o dir /var/db/nuos/pkg $PKG_COLLECTION
-	#sister nu_pkg_chk_tree || error 62 'Loop found in package directives'
+	sister nu_pkg_chk_tree || error 62 'Loop found in package directives'
 	
 	require_tmp want
 	(ls -d /var/db/nuos/pkg/*_*/dependencies | sed -e 's/dependencies$/name/' | xargs cat; for p in `pkg info -qox ^bootstrap-`; do (cd /usr/ports/$p; make -V PKGNAME); done) | sort -u >| "$want"

@@ -44,4 +44,19 @@ for s in `cat "$interested"`; do s_=`echo $s | tr / _`
 done
 echo '];'
 
+echo 'const options = {'
+for p in `cat "$interested"`; do p_=`echo $p | tr / _`
+	[ -f /var/db/nuos/pkg/$p_/options ] || continue
+	echo "  '$p': \"$(sed -e '1d;$d;s/^ *//;s/$/\\n/' /var/db/nuos/pkg/$p_/options | tr -d '\n' )\","
+done
+echo '};'
+
+echo 'const settings = {'
+for p in `cat "$interested"`; do p_=`echo $p | tr / _`
+	[ -f /var/db/nuos/pkg/$p_/settings ] || continue
+	echo "  '$p': \"$(sed -e 's/$/\\n/' /var/db/nuos/pkg/$p_/settings | tr -d '\n' )\","
+#	echo "  '$p': {$(sed -e "s/^/'/;s/=/': '/;s/\$/',\ /" /var/db/nuos/pkg/$p_/settings | tr -d '\n' )},"
+done
+echo '};'
+
 retire_tmp interested

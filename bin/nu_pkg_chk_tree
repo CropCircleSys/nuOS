@@ -18,6 +18,7 @@ NUOS_VER=0.0.11.4a0
 
 while getopts d:vw: OPT; do case $OPT in
 	d) PKG_DBDIR=$OPTARG;;
+	P) OPT_EXCLUDE_PKG_MGMT=y;;
 	v) OPT_VERBOSE=y;;
 esac; done; shift $(($OPTIND-1))
 [ $# = 0 ]
@@ -28,62 +29,26 @@ esac; done; shift $(($OPTIND-1))
 maybe_yell
 
 : ${PKG_DBDIR:=/var/db/nuos/pkg}
+: ${PKG_MGR=ports-mgmt/pkg}
 
-require_tmp -d data_graph
+require_tmp graph
+ls "$PKG_DBDIR" | grep _ | while read -r source_; do
+	source=`echo $source_ | sed -e s:_:/:`
+	cat "$PKG_DBDIR/$source_/dependencies/all" 2>/dev/null | if srsly ${OPT_EXCLUDE_PKG_MGMT-}; then
+		grep -v "^${PKG_MGR}\$"
+	else
+		cat
+	fi | sed -e "s:^:$source :"
+done >| "$graph"
 
-(
-	cd "${CHROOTDIR-}$PKG_DBDIR"
-	tar -cf - *_*/dependencies *_*/slaves | tar -xf - -C "$data_graph"
-	cd "$data_graph"
-	for p in *; do 
-		if [ -e $p/slaves -a ! -e $p/dependencies ]; then
-			mkdir $p/dependencies
-			#echo $p
-			#cat $p/slaves
-			cp $p/slaves $p/dependencies/all
-		fi
-	done
-)
+require_tmp cycle
+tsort "$graph" 2>&1 > /dev/null | cut -w -f2 | grep -v '^cycle$' | sort -u >| "$cycle"
+retire_tmp graph
 
-dfs () {
-	echo ${2-} > "$gray/$1"
-	for n in `cat "$data_graph/$1/dependencies/all" 2>/dev/null | tr / _`; do
-		if [ -f "$black/$n" ]; then
-			continue
-		fi
-		if [ -f "$gray/$n" ]; then
-			echo ${n%%_*}/${n#*_}
-			cyc_len=1
-			culprit=$n
-			return 0
-		elif dfs $n $1; then
-			if [ -z "${found-}" -o $cyc_len = 2 ]; then
-				if [ $1 = $culprit ]; then
-					found=y
-				fi
-				if [ $cyc_len = 2 -o $1 != $culprit ]; then
-					echo ${1%%_*}/${1#*_}
-				fi
-				incr cyc_len
-			fi
-			return 0
-		fi
-	done
-	rm "$gray/$1"
-	touch "$black/$1"
-	return 1
-}
+if [ 0 -ne `wc -c "$cycle" | xargs | cut -w -f 1` ]; then
+	ex=1
+	cat "$cycle"
+fi
+retire_tmp cycle
 
-require_tmp -d gray
-require_tmp -d black
-cd "$data_graph"
-for white in `ls -d *_*/dependencies | sed -e 's:/dependencies$::'`; do
-	if dfs $white; then
-		ex=1
-		break
-	fi
-done
-retire_tmp gray
-retire_tmp black
-retire_tmp data_graph
 exit ${ex-0}

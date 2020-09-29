@@ -122,9 +122,9 @@ collection_vars_init () {
 		net/mosquitto
 		mail/cyrus-imapd32
 		security/cyrus-sasl2-saslauthd
-		databases/postgresql12-server
+		databases/postgresql13-server
 		databases/mysql57-server
-		databases/mongodb42
+		databases/mongodb44
 		databases/redis
 		lang/mono-basic
 		lang/go
@@ -149,7 +149,7 @@ collection_vars_init () {
 		miniserver
 		www/httrack
 		net/netatalk3
-		net/samba411
+		net/samba413
 		multimedia/ffmpeg
 		multimedia/Bento4
 		www/youtube_dl

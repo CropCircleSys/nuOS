@@ -122,7 +122,7 @@ humanize () {
 error () {
 	local ex=$1; shift
 	printf '%s\n' "ERROR: $*" 2>&1
-	exit $1
+	exit $ex
 }
 
 spill () {
