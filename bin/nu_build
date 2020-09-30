@@ -175,7 +175,7 @@ EOF
 	
 	cat >> $pool_mnt/etc/rc.conf <<'EOF'
 #linux_enable="YES"
-kld_list="aesni ipfw sem accf_data accf_dns accf_http cc_cdg"
+kld_list="aesni geom_eli ipfw sem accf_data accf_dns accf_http cc_cdg"
 entropy_file="/var/db/entropy/seed"
 keyrate="fast"
 firewall_enable="YES"
