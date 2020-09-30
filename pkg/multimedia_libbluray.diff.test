@@ -1,0 +1,1 @@
+grep -q '(libbluray-1\.1\.1\.tar\.bz2)' distinfo && grep -q '\$FreeBSD: head/multimedia/libbluray/Makefile 532112 2020-04-19 14:07:30Z riggs \$' Makefile

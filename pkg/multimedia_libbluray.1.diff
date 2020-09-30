@@ -1,0 +1,12 @@
+--- ../libbluray.orig/Makefile	2020-04-27 04:47:02.948285000 +0000
++++ ./Makefile	2020-09-30 11:14:08.131804000 +0000
+@@ -2,8 +2,7 @@
+ # $FreeBSD: head/multimedia/libbluray/Makefile 532112 2020-04-19 14:07:30Z riggs $
+ 
+ PORTNAME=	libbluray
+-DISTVERSION=	1.1.1
+-PORTREVISION=	2
++DISTVERSION=	1.2.0
+ PORTEPOCH=	1
+ CATEGORIES=	multimedia
+ MASTER_SITES=	ftp://ftp.videolan.org/pub/videolan/${PORTNAME}/${PORTVERSION}/ \

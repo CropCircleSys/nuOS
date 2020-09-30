@@ -1,0 +1,13 @@
+--- ../libbluray.orig/pkg-plist	2020-04-16 11:59:29.136576000 +0000
++++ ./pkg-plist	2020-09-30 11:17:03.215163000 +0000
+@@ -10,7 +10,7 @@
+ include/libbluray/player_settings.h
+ lib/libbluray.so
+ lib/libbluray.so.2
+-lib/libbluray.so.2.1.1
++lib/libbluray.so.2.2.0
+ libdata/pkgconfig/libbluray.pc
+-%%JAVA%%%%JAVASHAREDIR%%/libbluray-j2se-1.1.1.jar
+-%%JAVA%%%%JAVASHAREDIR%%/libbluray-awt-j2se-1.1.1.jar
++%%JAVA%%%%JAVASHAREDIR%%/libbluray-awt-j2se-1.2.0.jar
++%%JAVA%%%%JAVASHAREDIR%%/libbluray-j2se-1.2.0.jar
