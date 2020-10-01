@@ -1,0 +1,129 @@
+--- ../ImageMagick6.orig/pkg-plist	2020-04-16 12:00:27.549516000 +0000
++++ ./pkg-plist	2020-10-01 21:18:10.165762000 +0000
+@@ -1,19 +1,35 @@
+-bin/Magick++-config
+-bin/Magick-config
+-bin/MagickCore-config
+-bin/MagickWand-config
+-bin/Wand-config
+-bin/animate
+-bin/compare
+-bin/composite
+-bin/conjure
+-bin/convert
+-bin/display
+-bin/identify
+-bin/import
+-bin/mogrify
+-bin/montage
+-bin/stream
++%%NO_FRIENDLY%%bin/Magick++-config
++%%NO_FRIENDLY%%bin/Magick-config
++%%NO_FRIENDLY%%bin/MagickCore-config
++%%NO_FRIENDLY%%bin/MagickWand-config
++%%NO_FRIENDLY%%bin/Wand-config
++%%NO_FRIENDLY%%bin/animate
++%%NO_FRIENDLY%%bin/compare
++%%NO_FRIENDLY%%bin/composite
++%%NO_FRIENDLY%%bin/conjure
++%%NO_FRIENDLY%%bin/convert
++%%NO_FRIENDLY%%bin/display
++%%NO_FRIENDLY%%bin/identify
++%%NO_FRIENDLY%%bin/import
++%%NO_FRIENDLY%%bin/mogrify
++%%NO_FRIENDLY%%bin/montage
++%%NO_FRIENDLY%%bin/stream
++%%FRIENDLY%%bin/Magick++-config6
++%%FRIENDLY%%bin/Magick-config6
++%%FRIENDLY%%bin/MagickCore-config6
++%%FRIENDLY%%bin/MagickWand-config6
++%%FRIENDLY%%bin/Wand-config6
++%%FRIENDLY%%bin/animate6
++%%FRIENDLY%%bin/compare6
++%%FRIENDLY%%bin/composite6
++%%FRIENDLY%%bin/conjure6
++%%FRIENDLY%%bin/convert6
++%%FRIENDLY%%bin/display6
++%%FRIENDLY%%bin/identify6
++%%FRIENDLY%%bin/import6
++%%FRIENDLY%%bin/mogrify6
++%%FRIENDLY%%bin/montage6
++%%FRIENDLY%%bin/stream6
+ @sample etc/ImageMagick-6/coder.xml.sample
+ @sample etc/ImageMagick-6/colors.xml.sample
+ @sample etc/ImageMagick-6/delegates.xml.sample
+@@ -438,34 +454,51 @@
+ %%WITH_PERL%%%%PERL5_MAN3%%/Image::Magick.3.gz
+ %%WITH_PERL%%%%PERL5_MAN3%%/Image::Magick::%%QBIT%%%%HDRI%%.3.gz
+ libdata/pkgconfig/ImageMagick++-6.pc
+-libdata/pkgconfig/ImageMagick++.pc
++%%NO_FRIENDLY%%libdata/pkgconfig/ImageMagick++.pc
+ libdata/pkgconfig/ImageMagick-6.pc
+-libdata/pkgconfig/ImageMagick.pc
++%%NO_FRIENDLY%%libdata/pkgconfig/ImageMagick.pc
+ libdata/pkgconfig/Magick++-6.pc
+-libdata/pkgconfig/Magick++.pc
++%%NO_FRIENDLY%%libdata/pkgconfig/Magick++.pc
+ libdata/pkgconfig/MagickCore-6.pc
+-libdata/pkgconfig/MagickCore.pc
++%%NO_FRIENDLY%%libdata/pkgconfig/MagickCore.pc
+ libdata/pkgconfig/MagickWand-6.pc
+-libdata/pkgconfig/MagickWand.pc
++%%NO_FRIENDLY%%libdata/pkgconfig/MagickWand.pc
+ libdata/pkgconfig/Wand-6.pc
+-libdata/pkgconfig/Wand.pc
+-man/man1/ImageMagick.1.gz
+-man/man1/Magick++-config.1.gz
+-man/man1/Magick-config.1.gz
+-man/man1/MagickCore-config.1.gz
+-man/man1/MagickWand-config.1.gz
+-man/man1/Wand-config.1.gz
+-man/man1/animate.1.gz
+-man/man1/compare.1.gz
+-man/man1/composite.1.gz
+-man/man1/conjure.1.gz
+-man/man1/convert.1.gz
+-man/man1/display.1.gz
+-man/man1/identify.1.gz
+-man/man1/import.1.gz
+-man/man1/mogrify.1.gz
+-man/man1/montage.1.gz
+-man/man1/stream.1.gz
++%%FRIENDLY%%man/man1/ImageMagick6.1.gz
++%%FRIENDLY%%man/man1/Magick++-config6.1.gz
++%%FRIENDLY%%man/man1/Magick-config6.1.gz 
++%%FRIENDLY%%man/man1/MagickCore-config6.1.gz
++%%FRIENDLY%%man/man1/MagickWand-config6.1.gz
++%%FRIENDLY%%man/man1/Wand-config6.1.gz 
++%%FRIENDLY%%man/man1/animate6.1.gz   
++%%FRIENDLY%%man/man1/compare6.1.gz   
++%%FRIENDLY%%man/man1/composite6.1.gz 
++%%FRIENDLY%%man/man1/conjure6.1.gz
++%%FRIENDLY%%man/man1/convert6.1.gz  
++%%FRIENDLY%%man/man1/display6.1.gz   
++%%FRIENDLY%%man/man1/identify6.1.gz  
++%%FRIENDLY%%man/man1/import6.1.gz   
++%%FRIENDLY%%man/man1/mogrify6.1.gz
++%%FRIENDLY%%man/man1/montage6.1.gz
++%%FRIENDLY%%man/man1/stream6.1.gz
++%%NO_FRIENDLY%%libdata/pkgconfig/Wand.pc
++%%NO_FRIENDLY%%man/man1/ImageMagick.1.gz
++%%NO_FRIENDLY%%man/man1/Magick++-config.1.gz
++%%NO_FRIENDLY%%man/man1/Magick-config.1.gz 
++%%NO_FRIENDLY%%man/man1/MagickCore-config.1.gz
++%%NO_FRIENDLY%%man/man1/MagickWand-config.1.gz
++%%NO_FRIENDLY%%man/man1/Wand-config.1.gz 
++%%NO_FRIENDLY%%man/man1/animate.1.gz   
++%%NO_FRIENDLY%%man/man1/compare.1.gz   
++%%NO_FRIENDLY%%man/man1/composite.1.gz 
++%%NO_FRIENDLY%%man/man1/conjure.1.gz
++%%NO_FRIENDLY%%man/man1/convert.1.gz  
++%%NO_FRIENDLY%%man/man1/display.1.gz   
++%%NO_FRIENDLY%%man/man1/identify.1.gz  
++%%NO_FRIENDLY%%man/man1/import.1.gz   
++%%NO_FRIENDLY%%man/man1/mogrify.1.gz
++%%NO_FRIENDLY%%man/man1/montage.1.gz
++%%NO_FRIENDLY%%man/man1/stream.1.gz
+ %%DATADIR%%-6/english.xml
+ %%DATADIR%%-6/francais.xml
+ %%DATADIR%%-6/locale.xml

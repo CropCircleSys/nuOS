@@ -179,15 +179,15 @@ collection_vars_init () {
 		commonserver
 		graphics/optipng
 		graphics/gifsicle
-		lang/phantomjs
 		emulators/virtualbox-ose
 		sysutils/vmdktool
 		graphics/povray-meta
 		graphics/graphviz
 		x11-fonts/webfonts
-		mail/roundcube-sieverules
+		mail/roundcube
+		net-im/jitsi-videobridge
+		www/jitsi-meet
 		print/gutenprint
-		print/fontforge
 	'
 	
 	COLL_desktop='
@@ -199,6 +199,7 @@ collection_vars_init () {
 		audio/audacity
 		audio/muse-sequencer
 		print/scribus-devel
+		print/fontforge
 		x11/xorg
 		x11/kde5
 		x11/sddm
@@ -221,7 +222,6 @@ collection_vars_init () {
 		multimedia/obs-streamfx
 		multimedia/obs-qtwebkit
 		multimedia/shotcut
-		net-im/jitsi
 		graphics/blender
 		games/sdlpop
 	'

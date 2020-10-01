@@ -1,0 +1,52 @@
+--- ../ImageMagick6.orig/Makefile	2020-10-01 22:30:04.949702000 +0000
++++ ./Makefile	2020-10-01 22:42:18.681369000 +0000
+@@ -40,7 +40,7 @@
+ 
+ PORTSCOUT?=	limit:^6\.9\.
+ 
+-CONFLICTS_INSTALL=	ImageMagick7 ImageMagick7-nox11 # bin/Magick++-config
++FRIENDLY_OFF_CONFLICTS_INSTALL=	ImageMagick7 ImageMagick7-nox11 # bin/Magick++-config
+ 
+ # This port uses .la files, keep libtool:keepla! (magick/module.c)
+ USES=		compiler:c++11-lang cpe gettext-runtime gmake gnome libtool:keepla \
+@@ -61,17 +61,25 @@
+ 		type-dejavu.xml type-ghostscript.xml type-urw-base35.xml \
+ 		type-windows.xml type.xml
+ 
++BIN_FILES=	Magick++-config Magick-config MagickCore-config MagickWand-config \
++		Wand-config animate compare composite conjure convert display \
++		identify import mogrify montage stream
++
+ PLIST_SUB=	PORTVERSION=${PORTVERSION:R}
+ 
+ OPTIONS_SUB=	yes
+ OPTIONS_DEFINE=	BZIP2 DOCS DJVU FFTW FONTCONFIG FPX FREETYPE \
+ 		GRAPHVIZ GSLIB HEIF JPEG2000 JBIG JPEG LCMS2 LZMA LQR MODULES \
+ 		OPENEXR OPENMP PANGO PDF PERL PNG RAQM SVG TESTS TIFF WEBP WMF \
+-		THREADS X11 16BIT_PIXEL HDRI RAW
++		THREADS X11 16BIT_PIXEL HDRI RAW FRIENDLY
+ OPTIONS_DEFAULT=	16BIT_PIXEL BZIP2 FFTW FONTCONFIG FREETYPE \
+ 		JPEG2000 JBIG JPEG LCMS2 LZMA LQR MODULES PDF PERL PNG RAQM SVG \
+ 		TIFF WEBP WMF THREADS X11 RAW
+ 
++FRIENDLY_PREVENTS=	PERL
++FRIENDLY_PREVENTS_MSG=	PERL support can only be enabled for the un-FRIENDLY ImageMagick
++
++FRIENDLY_DESC=		Install binaries with version suffix
+ DJVU_DESC=		DJVU format support (needs THREADS)
+ GSLIB_DESC=		libgs (Postscript SHLIB) support
+ TESTS_DESC=		Run bundled self-tests after build
+@@ -354,6 +362,13 @@
+ 		${STAGEDIR}${PREFIX}/etc/ImageMagick-6/${i}.sample
+ .endfor
+ 
++post-install-FRIENDLY-on:
++	@${MV} ${STAGEDIR}${PREFIX}/man/man1/ImageMagick.1 ${STAGEDIR}${PREFIX}/man/man1/ImageMagick6.1
++.for i in ${BIN_FILES}
++	@${MV} ${STAGEDIR}${PREFIX}/man/man1/${i}.1 ${STAGEDIR}${PREFIX}/man/man1/${i}6.1
++	@${MV} ${STAGEDIR}${PREFIX}/bin/${i} ${STAGEDIR}${PREFIX}/bin/${i}6
++.endfor
++
+ post-install-TESTS-on: test
+ 
+ do-test:
