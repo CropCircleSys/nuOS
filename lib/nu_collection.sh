@@ -137,7 +137,7 @@ collection_vars_init () {
 		net/haproxy
 		net-im/ejabberd
 		net/rabbitmq
-		lang/erlang-runtime22
+		lang/erlang-runtime23
 		lang/elixir
 		net/kamailio
 		sysutils/ipfs-go

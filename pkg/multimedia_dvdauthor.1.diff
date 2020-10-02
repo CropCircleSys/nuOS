@@ -9,12 +9,11 @@
  CATEGORIES=	multimedia
  MASTER_SITES=	SF/${PORTNAME}
  
-@@ -39,6 +39,8 @@
+@@ -39,6 +39,7 @@
  PAL_DESC=	Default video format PAL
  
  IMAGEMAGICK_LIB_DEPENDS=	libMagick++-6.so:graphics/ImageMagick6
-+IMAGEMAGICK_CFLAGS=		-I/usr/local/include/ImageMagick-6 -fopenmp -DMAGICKCORE_HDRI_ENABLE=1 \
-+				-DMAGICKCORE_QUANTUM_DEPTH=16 -L/usr/local/lib -lMagickWand-6 -lMagickCore-6
++IMAGEMAGICK_CFLAGS!=		pkg-config --cflags --libs MagickWand-6
  
  NTSC_CONFIGURE_ON=	--enable-default-video-format=NTSC
  PAL_CONFIGURE_ON=	--enable-default-video-format=PAL
