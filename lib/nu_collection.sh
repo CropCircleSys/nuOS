@@ -198,6 +198,7 @@ collection_vars_init () {
 		graphics/inkscape
 		audio/audacity
 		audio/muse-sequencer
+		audio/zrythm
 		print/scribus-devel
 		print/fontforge
 		x11/xorg
