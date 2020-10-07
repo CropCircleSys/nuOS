@@ -197,8 +197,6 @@ collection_vars_init () {
 		graphics/krita
 		graphics/inkscape
 		audio/audacity
-		audio/muse-sequencer
-		audio/zrythm
 		print/scribus-devel
 		print/fontforge
 		x11/xorg
@@ -233,6 +231,8 @@ collection_vars_init () {
 		security/palisade
 		math/fplll
 		math/maxima
+		audio/zrythm
+		audio/muse-sequencer
 	'
 	
 	COLL_nasty='
