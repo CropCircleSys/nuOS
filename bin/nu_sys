@@ -127,7 +127,9 @@ do
 done
 sister nu_jail ${OPT_VERBOSE:+-v} -C $pool_mnt -p $POOL_NAME -t clone -w -j $bl_jail_name -o $BASEOS_TYPE/$BASEOS_VER/$TRGT_MACH -s pkg_ready -i 127.1.255.254 -x -q
 
-if [ "$PKG_COLLECTION" != pkg -a "$PKG_COLLECTION" != blank ] && zfs list $POOL_NAME/os/$HOSTOS_TYPE/$HOSTOS_VER/$HOSTOS_MACH@pkg; then
+nuos_rev=`zfs get -H -o value org.nuos:active_revision $POOL_NAME/os/$HOSTOS_TYPE/$HOSTOS_VER/$HOSTOS_MACH || true`
+[ "x$nuos_rev" != x- ] || nuos_rev=
+if [ "$PKG_COLLECTION" != pkg -a "$PKG_COLLECTION" != blank ] && zfs list $POOL_NAME/os/$HOSTOS_TYPE/$HOSTOS_VER/$HOSTOS_MACH/$nuos_rev@pkg; then
 	nl_rev=0
 	while
 		nl_jail_name=nuos-lab$nl_rev
