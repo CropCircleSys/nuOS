@@ -1,1 +1,1 @@
-sister enable_svc ${POOL_MNT:+-C $POOL_MNT} dbus hald sddm
+sister enable_svc -C "$TRGT" dbus hald sddm
