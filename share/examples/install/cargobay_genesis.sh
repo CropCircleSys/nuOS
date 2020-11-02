@@ -16,7 +16,7 @@ case `hostname -d | tr [[:upper:]] [[:lower:]]` in
 		infra_domain=CargoBay.net
 		corp_zones='CCSys.com CropCircle.Systems'
 		org_zones='nuOS.net nuOS.org nu.Cash nu.Chat nu.Click nu.Email nu.Gold nu.Live nu.LOL nu.Money nu.Parts nu.Place nu.School nu.Show nu.Software nu.Team nu.Zone'
-		prod_zones='Candid.Press UHax.TV Pawn.Today Freer.Trade Xng.Trade HyperNatural.Art ExoCosmic.Art Freshest.Garden EcoDome.Farm FeedOur.World Pure.Doctor NoLifeGuardOnDuty.FYI Legit.Blue Crooked.Blue Oath.Report Justice.House Civix.Tech Brave.Help Hero.Rent Unblind.Date Blindish.Date BeMyLil.Baby DollHouse.Cam Goddess.One Goddess.Institute Her.Services Lady.Ninja Angel.Directory Cuddle.Expert Tickle.Ninja Dominatrix.House Dominatrix.Army Dominatrix.Fashion Fetish.Pink Brat.Chat Homies.Fund Together.Rehab WifeKnows.Best DadsMore.Fun Daddy.Bar Dads.WTF Dad.University Man.Coach Faith.Agency'
+		prod_zones='Candid.Press Leak.Report UHax.TV Pawn.Today Freer.Trade Xng.Trade HyperNatural.Art ExoCosmic.Art Freshest.Garden EcoDome.Farm FeedOur.World Pure.Doctor NoLifeGuardOnDuty.FYI Legit.Blue Crooked.Blue Oath.Report Justice.House Civix.Tech Brave.Help Hero.Rent Unblind.Date Blindish.Date BeMyLil.Baby DollHouse.Cam Goddess.One Goddess.Institute Her.Services Lady.Ninja Angel.Directory Cuddle.Expert Tickle.Ninja Dominatrix.House Dominatrix.Army Dominatrix.Fashion Fetish.Pink Brat.Chat Homies.Fund Together.Rehab WifeKnows.Best DadsMore.Fun Daddy.Bar Dads.WTF Dad.University Man.Coach Faith.Agency'
 		
 		sec_dept='System & Network Security'
 		net_dept='Network Infrastructure & Operations'
@@ -38,7 +38,7 @@ case `hostname -d | tr [[:upper:]] [[:lower:]]` in
 		infra_domain=WonEye.site
 		corp_zones='MeatPopsicle.VIP UglyBagsOfMostlyWater.Club'
 		org_zones='nuOS.xyz nunu.foundation'
-		prod_zones='Fattylicious.Club 8aG.Club'
+		prod_zones='Bedlam.City Bumpkin.Town Deplorable.Town Deplorable.One Fattylicious.Club 8aG.Club'
 		
 		sec_dept='Development & Production Quality Assurance'
 		net_dept='Architecture Quality Assurance'
@@ -264,6 +264,10 @@ for Z in $client_zones; do
 				department='Cryptographic Assets of Merit and Democratic Information System';;
 			nu.cash)
 				department='Cryptographic Debt Instruments and Monetary Products';;
+			bedlam.city)
+				department='Urban Culture Chronology';;
+			bumpkin.town)
+				department='Rural & Suburban Culture Bulletin';;
 			meatpopsicle.vip)
 				department='Urban Taxi Service and Gourmet Croquettes';;
 			uglybagsofmostlywater.club)
@@ -288,6 +292,8 @@ for Z in $client_zones; do
 				department='Testbed Application Service';;
 			candid.press)
 				department='Uncensored Journalism & Editorial Platform';;
+			leak.report)
+				department='Uncensored Exposé Platform';;
 			uhax.tv)
 				department='Hacker News and Entertainment';;
 			pawn.today)
@@ -320,6 +326,10 @@ for Z in $client_zones; do
 				department='Local Assistance Communication Platform';;
 			hero.rent)
 				department='Local Assistance Market Portal';;
+			deplorable.town)
+				department='Working Class Patriot Society';;
+			deplorable.one)
+				department='Working Class Patriot Individuality Association';;
 			blindish.date)
 				department='Casual Dating Communication Service';;
 			unblind.date)
@@ -404,12 +414,13 @@ for Z in $zones; do
 		entire.ninja|\
 		cropcircle.systems|nu.zone|nu.click)
 			http_host_extra_flags=-s;;
-		woneye.site|meatpopsicle.vip|uglybagsofmostlywater.club|\
+		woneye.site|bedlam.city|bumpkin.town|meatpopsicle.vip|uglybagsofmostlywater.club|\
 		macleod.host|goon.store|gangsta.tech|thug.digital|bully.ninja|emptier.space|bravest.world|\
 		cargobay.net|ccsys.com|nuos.org|nuos.net|\
 		nu.cash|nu.chat|nu.email|nu.gold|nu.live|nu.lol|nu.money|nu.parts|nu.place|nu.school|nu.show|nu.software|nu.team|\
 		uhax.tv|pawn.today|freer.trade|xng.trade|hypernatural.art|exocosmic.art|freshest.garden|ecodome.farm|feedour.world|unblind.date|blindish.date|bemylil.baby|dollhouse.cam|goddess.one|goddess.institute|her.services|lady.ninja|angel.directory|cuddle.expert|tickle.ninja|dominatrix.house|dominatrix.army|dominatrix.fashion|fetish.pink|brat.chat|homies.fund|together.rehab|\
-		candid.press|pure.doctor|nolifeguardonduty.fyi|legit.blue|crooked.blue|oath.report|justice.house|civix.tech|brave.help|hero.rent|\
+		candid.press|leak.report|pure.doctor|nolifeguardonduty.fyi|legit.blue|crooked.blue|oath.report|justice.house|civix.tech|brave.help|hero.rent|\
+		deplorable.town|deplorable.one|\
 		wifeknows.best|dadsmore.fun|daddy.bar|dads.wtf|dad.university|man.coach|faith.agency)
 			http_host_extra_flags=-ssss;;
 		mcleod.host)
