@@ -96,6 +96,7 @@ EOF
 	
 	unbound)
 		
+		[ -f "${CHROOTDIR-}/usr/local/etc/unbound/unbound.conf" ] || cp "${CHROOTDIR-}/usr/local/etc/unbound/unbound.conf.sample" "${CHROOTDIR-}/usr/local/etc/unbound/unbound.conf"
 		diff -q "${CHROOTDIR-}/usr/local/etc/unbound/unbound.conf.sample" "${CHROOTDIR-}/usr/local/etc/unbound/unbound.conf" && [ ! -s "${CHROOTDIR-}/etc/resolvconf.conf" ]
 		[ -z "${OPT_NOVERIFY-}" -o -n "${OPT_FORCE-}" ]
 		
