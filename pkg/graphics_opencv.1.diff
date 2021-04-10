@@ -1,0 +1,18 @@
+--- ../opencv.orig/files/patch-cmake_OpenCVFindIPP.cmake	1970-01-01 00:00:00.000000000 +0000
++++ ./files/patch-cmake_OpenCVFindIPP.cmake	2021-04-10 23:13:16.018784000 +0000
+@@ -0,0 +1,15 @@
++--- cmake/OpenCVFindIPP.cmake.orig	2020-12-21 20:01:38.000000000 +0000
+++++ cmake/OpenCVFindIPP.cmake	2021-04-10 19:02:20.433566000 +0000
++@@ -242,6 +242,12 @@
++   endif()
++   include("${OpenCV_SOURCE_DIR}/3rdparty/ippicv/ippicv.cmake")
++   download_ippicv(ICV_PACKAGE_ROOT)
+++  foreach(cjm_f IN ITEMS core own)
+++    file(READ "${ICV_PACKAGE_ROOT}/iw/src/iw_${cjm_f}.c" cjm_data)
+++    string(REPLACE "malloc.h" "stdlib.h" cjm_data "${cjm_data}")
+++    string(REPLACE "memalign" "aligned_alloc" cjm_data "${cjm_data}")
+++    file(WRITE "${ICV_PACKAGE_ROOT}/iw/src/iw_${cjm_f}.c" "${cjm_data}")
+++  endforeach()
++   if(NOT ICV_PACKAGE_ROOT)
++     return()
++   endif()

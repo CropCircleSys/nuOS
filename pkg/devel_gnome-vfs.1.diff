@@ -1,13 +1,11 @@
---- ../gnome-vfs.orig/Makefile	2017-03-31 07:58:36.455346000 -0400
-+++ ./Makefile	2017-03-31 08:03:02.679089000 -0400
-@@ -56,9 +56,7 @@
- USES+=		fam
+--- ../gnome-vfs.orig/Makefile	2021-03-31 18:08:28.278818000 +0000
++++ ./Makefile	2021-03-31 22:37:45.283612000 +0000
+@@ -54,7 +54,7 @@
  .endif
  
--.if exists(${LOCALBASE}/lib/libkrb5.so)
+ .if exists(${LOCALBASE}/lib/libkrb5.so)
 -LIB_DEPENDS+=	libkrb5.so:security/heimdal
--.endif
 +LIB_DEPENDS+=	libkrb5.so:security/krb5
+ .endif
  
- .if ${PORT_OPTIONS:MHAL}
- CONFIGURE_ARGS+=--enable-hal
+ .if ${PORT_OPTIONS:MSAMBA}

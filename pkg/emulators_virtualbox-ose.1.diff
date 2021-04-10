@@ -1,0 +1,16 @@
+--- ../virtualbox-ose.orig/files/patch-src_VBox_RDP_client-1.8.4_Makefile.kmk	1970-01-01 00:00:00.000000000 +0000
++++ ./files/patch-src_VBox_RDP_client-1.8.4_Makefile.kmk	2021-04-09 19:26:34.511546000 +0000
+@@ -0,0 +1,13 @@
++--- src/VBox/RDP/client-1.8.4/Makefile.kmk.orig	2021-01-07 15:41:47.000000000 +0000
+++++ src/VBox/RDP/client-1.8.4/Makefile.kmk	2021-04-09 19:25:33.385277000 +0000
++@@ -117,8 +117,8 @@
++ rdesktop-vrdp_SOURCES.freebsd = \
++ 	rdpsnd_oss.c
++ rdesktop-vrdp_LIBPATH = \
++-	/usr/lib \
++-	$(VBOX_LIBPATH_X11)
+++	$(VBOX_LIBPATH_X11)/lib \
+++	/usr/lib
++ rdesktop-vrdp_LIBS = \
++ 	X11 \
++ 	$(LIB_RUNTIME)

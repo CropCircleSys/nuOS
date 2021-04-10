@@ -1,0 +1,1 @@
+grep -q python:3.8 Makefile

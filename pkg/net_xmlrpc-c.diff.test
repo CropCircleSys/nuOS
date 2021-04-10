@@ -1,0 +1,1 @@
+! grep -qw localbase:ldflags Makefile

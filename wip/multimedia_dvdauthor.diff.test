@@ -1,0 +1,1 @@
+[ ! -f files/patch-src_subgen-image.c ] && grep -q '\$FreeBSD: head/multimedia/dvdauthor/Makefile 568805 2021-03-19 16:46:49Z mat \$' Makefile

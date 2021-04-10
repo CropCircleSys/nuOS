@@ -108,7 +108,7 @@ collection_vars_init () {
 		mail/postfix
 		mail/opendkim
 		mail/opendmarc
-		dns/knot2
+		dns/knot3
 		security/acme.sh
 		net/openldap24-server
 		security/openvpn
@@ -129,9 +129,9 @@ collection_vars_init () {
 		lang/mono-basic
 		lang/go
 		www/npm
-		lang/php74-extensions
+		lang/php80-extensions
 		graphics/pecl-imagick-im7
-		www/mod_php74
+		www/mod_php80
 		www/apache24
 		www/nginx
 		net/haproxy
@@ -184,7 +184,6 @@ collection_vars_init () {
 		graphics/povray-meta
 		graphics/graphviz
 		x11-fonts/webfonts
-		mail/roundcube
 		net-im/jitsi-videobridge
 		www/jitsi-meet
 		print/gutenprint

@@ -1,0 +1,13 @@
+--- ../seexpr.orig/files/patch-src_tests_imageTests.cpp	1970-01-01 00:00:00.000000000 +0000
++++ ./files/patch-src_tests_imageTests.cpp	2021-04-09 12:43:47.492967000 +0000
+@@ -0,0 +1,10 @@
++--- src/tests/imageTests.cpp.orig	2021-04-09 12:41:50.224105000 +0000
+++++ src/tests/imageTests.cpp	2021-04-09 12:42:09.278315000 +0000
++@@ -22,6 +22,7 @@
++ #include <cstdio>
++ #include <cstring>
++ #include <fstream>
+++#include <libgen.h>
++ #include <assert.h>
++ #include <sys/stat.h>
++ 

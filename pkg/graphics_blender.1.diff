@@ -1,0 +1,11 @@
+--- ../blender.orig/Makefile	2021-03-31 18:08:39.939737000 +0000
++++ ./Makefile	2021-04-07 21:00:26.623444000 +0000
+@@ -27,7 +27,7 @@
+ # libraries are used, if either of the most common options in blender
+ # are set. We will pull boost in just to be on the safe side.
+ 
+-USES=		cmake compiler:c++14-lang gl jpeg python:3.8 shebangfix \
++USES=		cmake compiler:c++14-lang gl jpeg python:3.9 shebangfix \
+ 		tar:xz xorg
+ USE_XORG=	x11 xext xfixes xmu xrender
+ USE_GL=		gl glu glew
