@@ -227,23 +227,31 @@ case $SOFTWARE in
 					fi
 				else
 					if [ -z "${OPT_DELETE-}" ]; then
-						sed -E -e "
-							s/\<example\\.com\>/$HOST_NAME/g
-							/\<serial[[:blank:]]*$/s/[[:digit:]]+/$new_serial/" \
-								"${alt_root-}/usr/local/etc/knot/example${ALTERNATE:+_${ALTERNATE}}.com.zone" \
-									> "${alt_root-}/var/db/knot${ALTERNATE:+_${ALTERNATE}}/$HOST_NAME.zone"
+						(
+							umask 7
+							sed -E -e "
+								s/\<example\\.com\>/$HOST_NAME/g
+								/\<serial[[:blank:]]*$/s/[[:digit:]]+/$new_serial/" \
+									"${alt_root-}/usr/local/etc/knot/example${ALTERNATE:+_${ALTERNATE}}.com.zone" \
+										> "${alt_root-}/var/db/knot${ALTERNATE:+_${ALTERNATE}}/$HOST_NAME.zone"
+						)
+						chown knot:knot "${alt_root-}/var/db/knot${ALTERNATE:+_${ALTERNATE}}/$HOST_NAME.zone"
 					fi
 				fi
 				if [ -z "${OPT_DELETE-}" -a '(' A = $REC_TYPE -o AAAA = $REC_TYPE ')' ]; then
 					for ip in $PUB_IPS; do
 						rz=`rev_zone $ip`
 						if [ ! -f "${alt_root-}/var/db/knot${ALTERNATE:+_${ALTERNATE}}/$rz.zone" ]; then
-							sed -E -e "
-								s/\<example\\.in-addr\\.arpa\>/$rz/
-								s/\<example\\.in-addr\\.arpa\>/$HOST_NAME/
-								/\<serial[[:blank:]]*$/s/[[:digit:]]+/$new_serial/" \
-									"${alt_root-}/usr/local/etc/knot/example${ALTERNATE:+_${ALTERNATE}}.in-addr.arpa.zone" \
-										> "${alt_root-}/var/db/knot${ALTERNATE:+_${ALTERNATE}}/$rz.zone"
+							(
+								umask 7
+								sed -E -e "
+									s/\<example\\.in-addr\\.arpa\>/$rz/
+									s/\<example\\.in-addr\\.arpa\>/$HOST_NAME/
+									/\<serial[[:blank:]]*$/s/[[:digit:]]+/$new_serial/" \
+										"${alt_root-}/usr/local/etc/knot/example${ALTERNATE:+_${ALTERNATE}}.in-addr.arpa.zone" \
+											> "${alt_root-}/var/db/knot${ALTERNATE:+_${ALTERNATE}}/$rz.zone"
+							)
+							chown knot:knot "${alt_root-}/var/db/knot${ALTERNATE:+_${ALTERNATE}}/$rz.zone"
 							[ -n "${conf_began-}" ] || { $knotc_cmd conf-begin && conf_began=y; }
 							$knotc_cmd conf-set "zone[$rz]"
 							cat >> "${alt_root-}/usr/local/etc/knot/knot${ALTERNATE:+_${ALTERNATE}}.conf" <<EOF
