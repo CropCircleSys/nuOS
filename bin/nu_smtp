@@ -42,11 +42,11 @@ elif canhas "${CHROOTDIR-}"; then
 	alt_root="${CHROOTDIR-}"
 fi
 
-hostname=${NEW_HOST:-${HOST:=`hostname`}}
+hostname=${JAIL_NAME:+$JAIL_NAME.}${NEW_HOST:-${HOST:=`hostname`}}
 if [ -n "${OPT_ELECT-}" ]; then
-	default_servername=${hostname#*.}
+	default_servername=${JAIL_NAME:+$JAIL_NAME.}${hostname#${JAIL_NAME:+$JAIL_NAME.}*.}
 else
-	default_servername=$hostname
+	default_servername=${JAIL_NAME:+$JAIL_NAME.}$hostname
 fi
 
 echo 'host name       -h HOST_NAME      ' ${HOST_NAME:=${default_servername}}
@@ -133,6 +133,10 @@ smtpd_tls_CAfile = \$config_directory/ssl/$HOST_NAME.ca.crt
 EOF
 	fi
 fi
+
+echo default servername: $default_servername
+echo contrived hostname: $hostname
+echo specified hostname: $HOST_NAME
 
 if [ "$HOST_NAME" != "$hostname" ]; then
 	echo 'smtp_helo_name = $myorigin' >> "${alt_root-}/usr/local/etc/postfix/main.cf"

@@ -1,0 +1,403 @@
+#!/bin/sh
+# This is a shell archive
+echo x knot2
+mkdir -p knot2 > /dev/null 2>&1
+echo x knot2/distinfo
+sed 's/^X//' > knot2/distinfo << 'SHAR_END'
+XTIMESTAMP = 1618632465
+XSHA256 (knot-2.9.9.tar.xz) = 9e20697629dadf6fac596f0baa7d6d13d5acaa901a38d5a1ef571e4cb444158d
+XSIZE (knot-2.9.9.tar.xz) = 1190752
+SHAR_END
+echo x knot2/Makefile
+sed 's/^X//' > knot2/Makefile << 'SHAR_END'
+X# Created by: Leo Vandewoestijne <freebsd@dns.company>
+X# $FreeBSD: head/dns/knot3/Makefile 569204 2021-03-25 14:01:37Z nc $
+X
+XPORTNAME=	knot
+XDISTVERSION=	2.9.9
+XCATEGORIES=	dns
+XMASTER_SITES=	https://secure.nic.cz/files/knot-dns/ \
+X		https://dns.company/downloads/knot-dns/
+XPKGNAMESUFFIX?=	2
+X
+XMAINTAINER=	freebsd@dns.company
+XCOMMENT=	High performance authoritative-only DNS server
+X
+XLICENSE=	GPLv3
+XLICENSE_FILE=	${WRKSRC}/COPYING
+X
+X#BUILD_DEPENDS=	autoconf>=2.65:devel/autoconf \
+X#		gsed:textproc/gsed
+XBUILD_DEPENDS=	gsed:textproc/gsed
+XLIB_DEPENDS=	libgnutls.so:security/gnutls \
+X		liblmdb.so:databases/lmdb \
+X		libnghttp2.so:www/libnghttp2
+X
+XUSES=		alias autoreconf libtool localbase pkgconfig tar:xz
+X
+XCONFLICTS=	knot-1.* knot1-[0-6].* knot3-[0-9].*
+X
+XHAS_CONFIGURE=	yes
+XBINARY_ALIAS=	sed=${LOCALBASE}/bin/gsed
+XCONFIGURE_ARGS=	--enable-recvmmsg=no \
+X		--with-pkgconfigdir=${PREFIX}/libdata/pkgconfig \
+X		--mandir=${MANPREFIX}/man
+X
+X.if !defined(UTILS_ONLY) && !defined(LIB_ONLY)
+XCONFIGURE_ARGS+=	--with-rundir=/var/run/knot \
+X			--with-storage=/var/db/knot
+XLIB_DEPENDS+=	liburcu.so:sysutils/liburcu
+XUSE_RC_SUBR=	${PORTNAME}
+X#PLIST_FILES=	etc/rc.d/${PORTNAME}
+XSUB_FILES=	pkg-message
+XUSES+=		libedit
+X.endif
+X
+X.if defined(UTILS_ONLY) || defined(LIB_ONLY)
+XCONFIGURE_ARGS+=	--disable-daemon \
+X			--disable-modules
+X.endif
+X
+X.if defined(LIB_ONLY)
+XCONFIGURE_ARGS+=	--disable-utilities
+X.endif
+X
+XUSE_LDCONFIG=	yes
+XINSTALL_TARGET=	install-strip
+X
+XUSERS=		knot
+XGROUPS=		knot
+XSUB_LIST+=	USERS="${USERS}" GROUPS="${GROUPS}"
+X
+XPORTDOCS=	COPYING NEWS
+X
+XOPTIONS_DEFINE=			DNSTAP DOCS
+X
+X.if !defined(LIB_ONLY)
+XOPTIONS_DEFINE+=		IDN
+X.endif
+X
+X.if !defined(UTILS_ONLY) && !defined(LIB_ONLY)
+XOPTIONS_DEFINE+=		FASTPARSER MAXMINDDB
+X.endif
+X
+XDNSTAP_DESC=			dnstap support (see dnstap.info)
+XDNSTAP_CONFIGURE_ENABLE=	dnstap
+XDNSTAP_CONFIGURE_WITH=		module-dnstap=yes
+XDNSTAP_LIB_DEPENDS=		libprotobuf-c.so:devel/protobuf-c \
+X				libfstrm.so:devel/fstrm
+X
+X# XXX: because `kdig_CPPFLAGS += $(DNSTAP_CFLAGS)' line is missing from
+X# `src/Makefile.am' file (and thus pre-generated `src/Makefile.in') which
+X# should contain "$libfstrm_CFLAGS $libprotobuf_c_CFLAGS" set by configure
+X# script, provide it here explicitly as patching those files would result
+X# in higher line count.  Ideally this bug should be fixed upstream.
+XDNSTAP_CPPFLAGS=		-I${LOCALBASE}/include
+X
+XDOCS_CONFIGURE_OFF=		--disable-documentation
+X
+XFASTPARSER_DESC=		Fast zone parser (demanding compilation)
+XFASTPARSER_CONFIGURE_ENABLE=	fastparser
+X
+XIDN_CONFIGURE_WITH=		libidn
+XIDN_CONFIGURE_OFF=		--without-libidn
+X#IDN_LIB_DEPENDS=		libidn2.so:dns/libidn2
+X
+XMAXMINDDB_DESC=			Enable MaxMind for geodb module
+XMAXMINDDB_LIB_DEPENDS=		libmaxminddb.so:net/libmaxminddb
+XMAXMINDDB_CONFIGURE_ENABLE=	maxminddb
+X
+X.include <bsd.port.options.mk>
+X
+X.if ${ARCH} == i386
+XUSES+=				autoreconf
+X.endif
+X
+Xpost-patch:
+X.if !defined(UTILS_ONLY) && !defined(LIB_ONLY)
+X	@${REINPLACE_CMD} 's|$$(INSTALL) -d $$(DESTDIR)/\@run_dir\@|#$$(INSTALL) -d $$(DESTDIR)/\@run_dir\@|' \
+X		${WRKSRC}/src/Makefile.in
+X	@${REINPLACE_CMD} 's|$$(INSTALL) -d $$(DESTDIR)/\@storage_dir\@|#$$(INSTALL) -d $$(DESTDIR)/\@storage_dir\@|' \
+X		${WRKSRC}/src/Makefile.in
+X	@${RM} -r ${WRKSRC}/src/zscanner/scanner.c
+X.endif
+X
+Xpost-install:
+X.if !defined(UTILS_ONLY) && !defined(LIB_ONLY)
+X	${MV} ${STAGEDIR}${ETCDIR}/knot.sample.conf \
+X		${STAGEDIR}${ETCDIR}/knot.conf.sample
+X	@${MKDIR} ${STAGEDIR}/var/run/knot ${STAGEDIR}/var/db/knot
+X.endif
+X	@${MKDIR} ${STAGEDIR}${DOCSDIR}
+X	${INSTALL_DATA} ${PORTDOCS:S,^,${WRKSRC}/,} ${STAGEDIR}${DOCSDIR}/
+X
+X.include <bsd.port.mk>
+SHAR_END
+echo x knot2/pkg-plist
+sed 's/^X//' > knot2/pkg-plist << 'SHAR_END'
+Xbin/kdig
+Xbin/khost
+Xbin/knsec3hash
+Xbin/knsupdate
+Xbin/kzonecheck
+X%%ETCDIR%%/example.com.zone
+X%%ETCDIR%%/knot.conf.sample
+Xinclude/knot/module.h
+Xinclude/libdnssec/binary.h
+Xinclude/libdnssec/crypto.h
+Xinclude/libdnssec/dnssec.h
+Xinclude/libdnssec/error.h
+Xinclude/libdnssec/key.h
+Xinclude/libdnssec/keyid.h
+Xinclude/libdnssec/keystore.h
+Xinclude/libdnssec/keytag.h
+Xinclude/libdnssec/nsec.h
+Xinclude/libdnssec/pem.h
+Xinclude/libdnssec/random.h
+Xinclude/libdnssec/sign.h
+Xinclude/libdnssec/tsig.h
+Xinclude/libdnssec/version.h
+Xinclude/libknot/attribute.h
+Xinclude/libknot/codes.h
+Xinclude/libknot/consts.h
+Xinclude/libknot/control/control.h
+Xinclude/libknot/cookies.h
+Xinclude/libknot/db/db.h
+Xinclude/libknot/db/db_lmdb.h
+Xinclude/libknot/db/db_trie.h
+Xinclude/libknot/descriptor.h
+Xinclude/libknot/dname.h
+Xinclude/libknot/endian.h
+Xinclude/libknot/errcode.h
+Xinclude/libknot/error.h
+Xinclude/libknot/libknot.h
+Xinclude/libknot/lookup.h
+Xinclude/libknot/mm_ctx.h
+Xinclude/libknot/packet/compr.h
+Xinclude/libknot/packet/pkt.h
+Xinclude/libknot/packet/rrset-wire.h
+Xinclude/libknot/packet/wire.h
+Xinclude/libknot/rdata.h
+Xinclude/libknot/rdataset.h
+Xinclude/libknot/rrset-dump.h
+Xinclude/libknot/rrset.h
+Xinclude/libknot/rrtype/dnskey.h
+Xinclude/libknot/rrtype/ds.h
+Xinclude/libknot/rrtype/naptr.h
+Xinclude/libknot/rrtype/nsec.h
+Xinclude/libknot/rrtype/nsec3.h
+Xinclude/libknot/rrtype/nsec3param.h
+Xinclude/libknot/rrtype/opt.h
+Xinclude/libknot/rrtype/rdname.h
+Xinclude/libknot/rrtype/rrsig.h
+Xinclude/libknot/rrtype/soa.h
+Xinclude/libknot/rrtype/tsig.h
+Xinclude/libknot/tsig-op.h
+Xinclude/libknot/tsig.h
+Xinclude/libknot/version.h
+Xinclude/libknot/wire.h
+Xinclude/libknot/yparser/yparser.h
+Xinclude/libknot/yparser/ypformat.h
+Xinclude/libknot/yparser/ypschema.h
+Xinclude/libknot/yparser/yptrafo.h
+Xinclude/libzscanner/error.h
+Xinclude/libzscanner/scanner.h
+Xinclude/libzscanner/version.h
+Xlib/libdnssec.a
+Xlib/libdnssec.so
+Xlib/libdnssec.so.7
+Xlib/libdnssec.so.7.0.0
+Xlib/libknot.a
+Xlib/libknot.so
+Xlib/libknot.so.10
+Xlib/libknot.so.10.0.0
+Xlib/libzscanner.a
+Xlib/libzscanner.so
+Xlib/libzscanner.so.3
+Xlib/libzscanner.so.3.0.0
+Xlibdata/pkgconfig/knotd.pc
+Xlibdata/pkgconfig/libdnssec.pc
+Xlibdata/pkgconfig/libknot.pc
+Xlibdata/pkgconfig/libzscanner.pc
+Xman/man1/kdig.1.gz
+Xman/man1/khost.1.gz
+Xman/man1/knsec3hash.1.gz
+Xman/man1/knsupdate.1.gz
+Xman/man1/kzonecheck.1.gz
+Xman/man5/knot.conf.5.gz
+Xman/man8/keymgr.8.gz
+Xman/man8/kjournalprint.8.gz
+Xman/man8/knotc.8.gz
+Xman/man8/knotd.8.gz
+Xsbin/keymgr
+Xsbin/kjournalprint
+Xsbin/knotc
+Xsbin/knotd
+X@dir(knot,knot,750) /var/db/knot
+X@dir(knot,knot,750) /var/run/knot
+SHAR_END
+echo x knot2/files
+mkdir -p knot2/files > /dev/null 2>&1
+echo x knot2/pkg-descr
+sed 's/^X//' > knot2/pkg-descr << 'SHAR_END'
+XKnot DNS is a high-performance authoritative-only DNS server which
+Xsupports all key features of the domain name system including zone
+XAXFR and IXFR, DDNS and DNSSEC.  Its key features:
+X
+X * Open source
+X * High-performance, multi-threaded, and mostly lock-free
+X   implementation which scales well on SMPs
+X * Object-oriented design
+X * Support for all important DNS protocols:
+X   - Full and incremental zone transfers
+X   - EDNS0 and DNSSEC extensions, including NSEC3
+X   - NSID
+X
+XWWW: https://www.knot-dns.cz/
+SHAR_END
+echo x knot2/files/knot.in
+sed 's/^X//' > knot2/files/knot.in << 'SHAR_END'
+X#!/bin/sh
+X#
+X# $FreeBSD: head/dns/knot3/files/knot.in 489774 2019-01-09 12:33:30Z swills $
+X#
+X# PROVIDE: knot
+X# REQUIRE: SERVERS cleanvar
+X# KEYWORD: shutdown
+X#
+X# Add the following lines to /etc/rc.conf to enable knot:
+X#
+X# knot_enable="YES":	Set to NO by default.
+X#			Set it to YES to enable knot.
+X# knot_config="":	Set to %%PREFIX%%/etc/knot/knot.conf
+X#			by default.
+X#
+X# -----------------------------------------------------------------------------
+X#
+X# This script supports running multiple instances of knot.
+X# To run additional instances link this script to something like
+X# % ln -s knot knot_foo
+X# and define additional knot_foo_* variables in one of
+X# /etc/rc.conf, /etc/rc.conf.local or /etc/rc.conf.d/knot_foo
+X#
+X# Below NAME should be substituted with the name of this script. By default
+X# it is knot, so read as knot_enable. If you linked the script to
+X# knot_foo, then read as knot_foo_enable etc.
+X#
+X# The following variables are supported (defaults are shown).
+X# You can place them in any of
+X# /etc/rc.conf, /etc/rc.conf.local or /etc/rc.conf.d/NAME
+X#
+X# NAME_enable="NO"	# set to YES to enable knot
+X#
+X# # optional:
+X# NAME_config="%%PREFIX%%/etc/knot/NAME.conf"  # (-c)onfig file
+X# NAME_config="db:/var/db/knot/confdb"         # (-C)onfig database
+X# NAME_diruser="%%USERS%%"    # /var/db/NAME and /var/run/NAME are created if they
+X# NAME_dirgroup="%%GROUPS%%"  # don't exist. These don't control the user/group knot
+X#                       # runs as, the config file has a setting for that.
+X#
+X# You also need to set the rundir directive in the server section of the
+X# config file to /var/run/NAME (if using a NAME other than the default)
+X# and you will want the storage directive(s) declared in the zone section
+X# to point to /var/db/NAME overriding the default of /var/db/knot.
+X#
+X# For further documentation, please see knot.conf(5).
+X
+X. /etc/rc.subr
+X
+Xcase "$0" in
+X/etc/rc*)
+X	# during boot (shutdown) $0 is /etc/rc (/etc/rc.shutdown),
+X	# so get the name of the script from $_file
+X	name="$_file"
+X	;;
+X*)
+X	name="$0"
+X	;;
+Xesac
+X
+Xname="${name##*/}"
+Xrcvar=${name}_enable
+X
+Xload_rc_config ${name}
+X
+Xeval ": \${${name}_enable:=\"NO\"}"
+Xeval ": \${${name}_diruser:=\"%%USERS%%\"}"
+Xeval ": \${${name}_dirgroup:=\"%%GROUPS%%\"}"
+Xeval ": \${${name}_config:=\"%%PREFIX%%/etc/knot/${name}.conf\"}"
+X
+Xconfigfile="$(eval echo \${${name}_config})"
+Xdiruser="$(eval echo \${${name}_diruser})"
+Xdirgroup="$(eval echo \${${name}_dirgroup})"
+X
+Xcommand=%%PREFIX%%/sbin/knotd
+Xcase "$configfile" in
+Xdb:*)
+X	config_args="-C ${configfile#db:}"
+X	;;
+X*)
+X	config_args="-c ${configfile}"
+X	;;
+Xesac
+Xcommand_args="${config_args} -d"
+Xcontrol="%%PREFIX%%/sbin/knotc"
+Xpidfile="/var/run/${name}/knot.pid"
+X
+Xcase "$configfile" in
+Xdb:*)
+X	required_files=${configfile#db:}/data.mdb
+X	;;
+X*)
+X	required_files=${configfile}
+X	;;
+Xesac
+X
+Xextra_commands=reload
+Xreload_cmd="knot_reload"
+Xstart_precmd="knot_prestart"
+X
+Xknot_prestart()
+X{
+X	if [ ! -d /var/run/${name} ]; then
+X		install -d -o ${diruser} -g ${dirgroup} /var/run/${name}
+X	fi
+X	if [ ! -d /var/db/${name} ]; then
+X		install -d -o ${diruser} -g ${dirgroup} /var/db/${name}
+X	fi
+X	${control} ${config_args} conf-check
+X}
+X
+Xknot_reload()
+X{
+X	echo "Reloading ${name}."
+X	${control} ${config_args} reload
+X}
+X
+Xrun_rc_command "$1"
+SHAR_END
+echo x knot2/files/pkg-message.in
+sed 's/^X//' > knot2/files/pkg-message.in << 'SHAR_END'
+X[
+X{ type: install
+X  message: <<EOM
+X  To start using Knot DNS, you should complete the following tasks:
+X
+X    cp %%ETCDIR%%/knot.conf.sample %%ETCDIR%%/knot.conf
+X    $EDITOR %%ETCDIR%%/knot.conf
+X
+X    sysrc knot_enable=YES
+X    sysrc knot_config=%%ETCDIR%%/knot.conf
+X    service knot start
+X
+X  Please consult the documentation:
+X   - man knotd
+X   - https://www.knot-dns.cz/documentation/
+X
+X  When upgrading from 2.4.x read:
+X   - https://www.knot-dns.cz/docs/3.0/html/migration.html#upgrade-2-9-x-to-3-0-x
+XEOM
+X}
+X]
+SHAR_END
+exit

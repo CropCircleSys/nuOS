@@ -46,6 +46,27 @@ case `hostname -d | tr [[:upper:]] [[:lower:]]` in
 		init_emails='willy@woneye.site korben@meatpopsicle.vip giant@uglybagsofmostlywater.club bofh@nuos.xyz raven@nunu.foundation'
 	;;
 	
+	bofh.vip)
+	
+		country=SU
+		
+		province='Monastery'
+		locality='Scary Devil'
+		organization='Path-E-Tech Management'
+		
+		OWNER_ACCT=phb
+		OWNER_NAME='Pointy Haired Boss'
+		
+		infra_domain=BOFH.vip
+		org_zones='USAwhite.house FBI.management CIA.ventures DHS.agency NSA.direct CDC.doctor'
+		prod_zones='USwhite.house'
+		
+		sec_dept='Red Team'
+		net_dept='Blue Team'
+		
+		init_emails='ceo@bofh.vip phb@bofh.vip pfy@bofh.vip root@bofh.vip toor@bofh.vip daemon@bofh.vip operator@bofh.vip pop@bofh.vip nobody@bofh.vip'
+	;;
+	
 	entire.ninja)
 		
 		country=QU
@@ -290,6 +311,8 @@ for Z in $client_zones; do
 				department='Testbed System Host Service';;
 			bravest.world)
 				department='Testbed Application Service';;
+			usawhite.house|uswhite.house|fbi.management|cia.ventures|dhs.agency|nsa.direct|cdc.doctor)
+				department='Public Service Pilot';;
 			candid.press)
 				department='Uncensored Journalism & Editorial Platform';;
 			leak.report)
@@ -411,7 +434,7 @@ for Z in $zones; do
 	case $z in
 		goonies.pro|\
 		nuos.xyz|nunu.foundation|\
-		entire.ninja|\
+		entire.ninja|bofh.vip|\
 		cropcircle.systems|nu.zone|nu.click)
 			http_host_extra_flags=-s;;
 		woneye.site|bedlam.city|bumpkin.town|meatpopsicle.vip|uglybagsofmostlywater.club|\
@@ -421,6 +444,7 @@ for Z in $zones; do
 		uhax.tv|pawn.today|freer.trade|xng.trade|hypernatural.art|exocosmic.art|freshest.garden|ecodome.farm|feedour.world|unblind.date|blindish.date|bemylil.baby|dollhouse.cam|goddess.one|goddess.institute|her.services|lady.ninja|angel.directory|cuddle.expert|tickle.ninja|dominatrix.house|dominatrix.army|dominatrix.fashion|fetish.pink|brat.chat|homies.fund|together.rehab|\
 		candid.press|leak.report|pure.doctor|nolifeguardonduty.fyi|legit.blue|crooked.blue|oath.report|justice.house|civix.tech|brave.help|hero.rent|\
 		deplorable.town|deplorable.one|\
+		usawhite.house|uswhite.house|cdc.doctor|fbi.management|cia.ventures|dhs.agency|nsa.direct|\
 		wifeknows.best|dadsmore.fun|daddy.bar|dads.wtf|dad.university|man.coach|faith.agency)
 			http_host_extra_flags=-ssss;;
 		mcleod.host)
@@ -523,6 +547,7 @@ case $infra_domain_lc in
 	cargobay.net) link=lobby/;;
 	woneye.site) link=https://UglyBagsOfMostlyWater.club/;;
 	macleod.host) link=home/;;
+	*) link=https://$infra_domain/
 esac
 i=1; for Z in $org_zones; do
 	z=`echo $Z | tr [[:upper:]] [[:lower:]]`

@@ -108,7 +108,7 @@ collection_vars_init () {
 		mail/postfix
 		mail/opendkim
 		mail/opendmarc
-		dns/knot3
+		dns/knot2
 		security/acme.sh
 		net/openldap24-server
 		security/openvpn

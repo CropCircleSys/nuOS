@@ -5,7 +5,7 @@ case $NAME in
 		defaultrouter=23.111.168.33
 		primary_if=igb0
 	;;
-	willy)
+	willy|hub)
 		my_ip=66.206.20.42
 		netmask=0xfffffff8
 		defaultrouter=66.206.20.41
@@ -58,7 +58,7 @@ awk '($1 == "#" || $5 > 4000)' "$TRGT/usr/local/etc/ssh/moduli.sample" > "$TRGT/
 sister enable_svc -C "$TRGT" ntpd openssh
 
 case $NAME in
-	willy|mama)
+	willy|mama|hub)
 		cat >> "$TRGT/etc/rc.conf.local" <<EOF
 ifconfig_net0_alias0="inet `next_ip $my_ip` netmask 0xffffffff"
 EOF
