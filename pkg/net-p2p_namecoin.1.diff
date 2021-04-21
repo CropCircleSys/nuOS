@@ -1,0 +1,13 @@
+--- ../namecoin.orig/Makefile	2021-03-31 18:09:24.660540000 +0000
++++ ./Makefile	2021-04-19 13:47:34.432503000 +0000
+@@ -2,9 +2,8 @@
+ # $FreeBSD: head/net-p2p/namecoin/Makefile 562671 2021-01-26 14:01:09Z sunpoet $
+ 
+ PORTNAME=	namecoin
+-PORTVERSION=	0.19.1
++PORTVERSION=	0.21.0.1
+ DISTVERSIONPREFIX=	nc
+-PORTREVISION=	2
+ PORTEPOCH=	1
+ CATEGORIES=	net-p2p dns
+ 
