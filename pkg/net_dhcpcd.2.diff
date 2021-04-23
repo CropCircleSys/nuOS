@@ -1,0 +1,22 @@
+--- ../dhcpcd.orig/Makefile	2021-04-23 04:16:37.491120000 +0000
++++ ./Makefile	2021-04-23 04:16:32.249462000 +0000
+@@ -24,10 +24,18 @@
+ 		--without-udev
+ USE_RC_SUBR=	dhcpcd
+ 
++.include <bsd.port.pre.mk>
++
++.if ${OPSYS} == FreeBSD && ${OSVERSION} < 1200000
++post-patch:
++	@${REINPLACE_CMD} -e '631,640d;642,643d' ${WRKSRC}/configure
++.endif
++
++
+ post-install:
+ 	${MV} ${STAGEDIR}${PREFIX}/etc/dhcpcd.conf \
+ 		${STAGEDIR}${PREFIX}/share/examples/dhcpcd
+ 	@${STRIP_CMD} ${STAGEDIR}${PREFIX}/sbin/dhcpcd
+ 	${MKDIR} ${STAGEDIR}/var/db/dhcpcd
+ 
+-.include <bsd.port.mk>
++.include <bsd.port.post.mk>

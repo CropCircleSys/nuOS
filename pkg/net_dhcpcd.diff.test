@@ -1,1 +1,1 @@
-! grep -q ^rcvar= files/dhcpcd.in
+! grep -q ^rcvar= files/dhcpcd.in && grep -q '\$FreeBSD: head/net/dhcpcd/Makefile 559979 2021-01-03 00:08:40Z woodsb02 \$' Makefile
