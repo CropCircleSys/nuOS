@@ -16,7 +16,8 @@ set -e; set -u; set -C
 
 NUOS_VER=0.0.11.4a0
 
-while getopts nst:v OPT; do case $OPT in
+while getopts Fnst:v OPT; do case $OPT in
+	F) OPT_FORCE_OVERWRITE=y;;
 	n) OPT_DO_NOTHING=y;;
 	s) OPT_REPORT_SNAP=y;;
 	t) TARGET_DS=$OPTARG;;
@@ -104,7 +105,7 @@ while {
 # 			read -r -t 1 magic version
 # 			[ nu_backup.zstream = "$magic" ]
 # 			[ v0 = "$version" ]
-			zfs receive -s -d -u -v $TARGET_DS > "$pipes/recv_out" 2>| "$err_out" &
+			zfs receive -s -d -u ${OPT_FORCE_OVERWRITE:+-F} -v $TARGET_DS > "$pipes/recv_out" 2>| "$err_out" &
 		} < /dev/stdin
 		zfs_pid=$!
 		touch "$child_pids/$zfs_pid"

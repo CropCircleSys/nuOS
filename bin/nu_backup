@@ -117,7 +117,10 @@ while read ds; do
 			optional=y;;
 		*) optional=;;
 	esac
-	ds=$POOL_NAME/$ds
+	case "$ds" in
+		@) ds=$POOL_NAME;;
+		*) ds=$POOL_NAME/$ds;;
+	esac
 	while printf %s "$ds" | grep -q '('; do
 		tdds=`printf %s "$ds" | sed -E -e 's/^([^(]*)\(([^)]*)\)(.*)$/\1	\2	\3/'`
 		IFS='	' read left var right <<EOF
