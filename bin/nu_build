@@ -382,6 +382,7 @@ EOF
 #!/bin/sh
 
 # PROVIDE: nuos_firstboot
+# REQUIRE: LOGIN syscons swaplate sshd cron jail localpkg securelevel power_profile nfscbd natd msgs moused mixer kpasswdd kfd kadmind ipropd_slave ipropd_master ipfw_netflow inetd hostapd gptboot geli2 ftpd ftp-proxy dhclient bsnmpd bluetooth blacklistd bgfsck
 # KEYWORD: firstboot
 
 . /etc/rc.subr
@@ -391,18 +392,23 @@ desc="Kick off nuOS system site/local/user custom genesis procedure"
 start_cmd="nuos_firstboot_start"
 stop_cmd=":"
 rcvar="nuos_firstboot_enable"
+: ${nuos_firstboot_log:=/var/log/nuos_firstboot.log}
 
 nuos_firstboot_start ()
 {
 	echo "It seems this is the first boot of a nuOS system requiring a genesis procedure"
 	if [ -n "$nuos_firstboot_script" ] && [ "$nuos_firstboot_script" != "${nuos_firstboot_script%.sh}" ] && [ -f "$nuos_firstboot_script" ]; then
-		echo "Evaluating $nuos_firstboot_script in the background and logging to /var/log/nuos_firstboot.log"
+		(
+			umask 77
+			touch "$nuos_firstboot_log"
+		)
+		echo "Evaluating $nuos_firstboot_script in the background and logging to $nuos_firstboot_log"
 		(
 			export PATH=$PATH:/usr/local/sbin:/usr/local/bin:/usr/nuos/bin
 			export HOME=/root
 			date
 			time sh "$nuos_firstboot_script"
-		) >> /var/log/nuos_firstboot.log 2>&1 &
+		) >> "$nuos_firstboot_log" 2>&1 &
 	elif [ -n "$nuos_firstboot_script" ] && [ "$nuos_firstboot_script" != "${nuos_firstboot_script%.sh}" ]; then
 		echo "ERROR: nuos_firstboot_script '$nuos_firstboot_script' was not found"
 	elif [ -n "$nuos_firstboot_script" ]; then
