@@ -304,6 +304,9 @@ vfs.zfs.l2arc_norw=0
 # FreeBSD 11.2 default: 131072
 vfs.zfs.vdev.aggregation_limit=1048576
 
+# Use crypto operations batching
+# FreeBSD 11.4 default: 0
+kern.geom.eli.batch=1
 EOF
 	
 	cat > $pool_mnt/etc/periodic.conf <<'EOF'
