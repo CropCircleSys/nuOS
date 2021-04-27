@@ -219,6 +219,7 @@ require_tmp () {
 	[ -n "$1" ]
 	
 	: ${label=$1}
+	: ${TMPDIR:=/tmp}
 	
 	if eval [ -n \"\${$1-}\" ]; then
 		eval [ -w \"\$$1\" ]

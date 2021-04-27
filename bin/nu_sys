@@ -33,7 +33,7 @@ while getopts a:b:c:Deh:kK:l:p:qs:u:vx OPT; do case $OPT in
 	h) NEW_HOST=$OPTARG;;
 	k) OPT_INSTALL_ADMIN_KEYS=y;;
 	K) push ALSO_INSTALL_KEYS $OPTARG;;
-	l) LOCAL_SCRIPT=$OPTARG;;
+	l) eval LOCAL_SCRIPT_${ARGi_l:=0}=\$OPTARG; ARGi_l=$(($ARGi_l+1));;
 	p) POOL_NAME=$OPTARG;;
 	q) OPT_QUICK=y;;
 	s) SWAP_SIZE=$OPTARG;;
@@ -182,11 +182,12 @@ fi
 
 admin_install -z $pool_mnt
 
-if [ -n "${LOCAL_SCRIPT-}" ]; then
-	export POOL=$POOL_NAME
-	export TRGT=$pool_mnt
-	export NAME=${NEW_HOST%%.*}
-	export NUOS="$(realpath "$(dirname "$(realpath "$0")")/..")"
+export POOL=$POOL_NAME
+export TRGT=$pool_mnt
+export NAME=${NEW_HOST%%.*}
+export NUOS="$(realpath "$(dirname "$(realpath "$0")")/..")"
+while eval [ -n \"\${LOCAL_SCRIPT_${i:=0}-}\" ]; do
+	eval LOCAL_SCRIPT=\${LOCAL_SCRIPT_$i}
 	if [ -d "${LOCAL_SCRIPT-}" ]; then
 		script_files=`rcorder "$LOCAL_SCRIPT"/*.sh`
 		for script_file in "$script_files"; do
@@ -195,7 +196,8 @@ if [ -n "${LOCAL_SCRIPT-}" ]; then
 	elif [ -f "${LOCAL_SCRIPT-}" ]; then
 		. "$LOCAL_SCRIPT"
 	fi
-fi
+	i=$(($i+1))
+done
 
 zfs snapshot -r $new_host_ds@sys_birth
 if [ -z "${home_existed-}" ]; then

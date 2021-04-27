@@ -35,7 +35,7 @@ for svc in $*; do
 	echo ${svc}_enable='"YES"' > $confdir/$svc
 	if [ -n "${tempfile-}" ]; then
 		cat "$tempfile" >> $confdir/$svc
-		rm "$tempfile"
+		retire_tmp tempfile
 	fi
 	if [ -f $disabled_confdir/$svc ]; then
 		grep -v -E "$svc_switch_egrep" $disabled_confdir/$svc >> $confdir/$svc || true
