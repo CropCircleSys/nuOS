@@ -54,6 +54,7 @@ cat <<EOF
 `grep '^topology ' "${CHROOTDIR-}/usr/local/etc/openvpn/openvpn${ALTERNATE:+_$ALTERNATE}.conf"`
 client
 remote $SERVER_HOST
+tls-version-min 1.2
 verify-x509-name $SERVER_HOST name
 float
 ncp-disable

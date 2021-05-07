@@ -95,6 +95,7 @@ cat > "${CHROOTDIR-}/usr/local/etc/openvpn/openvpn${ALTERNATE:+_$ALTERNATE}.conf
 dev tun
 topology subnet
 server $PRIVATE_NET $PRIVATE_MASK
+tls-version-min 1.2
 ca ${ALTERNATE:+${ALTERNATE}_}ca.crt
 cert ${ALTERNATE:+${ALTERNATE}_}server.crt
 key private/${ALTERNATE:+${ALTERNATE}_}server.key
