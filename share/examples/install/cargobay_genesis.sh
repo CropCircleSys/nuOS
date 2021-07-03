@@ -21,7 +21,7 @@ case `hostname -d | tr [[:upper:]] [[:lower:]]` in
 		sec_dept='System & Network Security'
 		net_dept='Network Infrastructure & Operations'
 		
-		init_emails='chad@ccsys.com milios@ccsys.com *@ccsys.com chuck@nu.email chad@nu.email jake@nu.email'
+		init_emails='chad@ccsys.com milios@ccsys.com chuck@nu.email chad@nu.email jake@nu.email'
 	;;
 	
 	woneye.site|uglybagsofmostlywater.club)
