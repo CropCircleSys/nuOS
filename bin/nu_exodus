@@ -29,7 +29,7 @@ mkdir "$OUTPUT"
 maybe_yell
 
 roles="$@"
-: ${roles:="ca ns lb vpn po www"}
+: ${roles:="ca ns lb vpn pm po www"}
 
 canhas "$roles"
 
@@ -89,6 +89,13 @@ for role in $roles; do
 							csrs/\1.csr|'
 						` \
 				) | tar -xvf - -C "$OUTPUT/vpn/ssl"
+			else push err $role; fi
+		;;
+		pm) # post master (smtp) server
+			if [ -f /var/jail/postmaster/usr/local/etc/postfix/virtual ]; then
+				mkdir -p "$OUTPUT/pm"
+				tar -cf - -C /var/jail/postmaster/usr/local/etc/postfix \
+					aliases domains senders transport virtual | tar -xvf - -C "$OUTPUT/pm"
 			else push err $role; fi
 		;;
 		po) # post office (imap) server
