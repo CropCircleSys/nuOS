@@ -79,6 +79,7 @@ collection_vars_init () {
 		security/sudo
 		sysutils/lsof
 		textproc/jq
+		textproc/xsv-rs
 	'
 	
 	COLL_developer='
@@ -209,6 +210,7 @@ collection_vars_init () {
 		www/firefox
 		java/icedtea-web
 		mail/thunderbird
+		net/quiterss
 		multimedia/vlc
 		multimedia/obs-studio
 		multimedia/obs-ndi
