@@ -49,7 +49,6 @@ esac; done; shift $(($OPTIND-1))
 
 [ -z "${CHROOTDIR-}" ] || exit 43 # CHROOTDIR is not supported, though we want to some day
 
-. "$(dirname "$(realpath "$0")")/../lib/nu_common.sh"
 
 : ${VM_NAME:=box}
 : ${CHIPSET:=ich9} # can set to piix3

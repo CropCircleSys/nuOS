@@ -28,7 +28,6 @@ esac; done; shift $(($OPTIND-1))
 [ -z "${CHROOTDIR-}" ] || exit 43 # initdb requires the system up so CHROOTDIR is unsupported, though we want to remedy this some day so most of the code is still written with support
 
 . "$(dirname "$(realpath "$0")")/../lib/nu_system.sh"
-. "$(dirname "$(realpath "$0")")/../lib/nu_common.sh"
 
 nuos_init
 

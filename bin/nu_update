@@ -39,7 +39,6 @@ esac; done; shift $(($OPTIND-1))
 
 [ -n "${OPT_ONLY_SNAP-}" ] || [ -n "${OPT_DEPRECATED_AUTO_PROCESS-}" -a -z "${OUTPUT_FILE-}" ] || [ ! -e "$OUTPUT_FILE" -o ! -s "$OUTPUT_FILE" ]
 
-. "$(dirname "$(realpath "$0")")/../lib/nu_common.sh"
 . "$(dirname "$(realpath "$0")")/../lib/nu_collection.sh"
 
 baseos_init

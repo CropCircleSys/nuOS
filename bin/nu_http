@@ -39,7 +39,6 @@ if [ -n "${OPT_HIDE_SERVER_INFO-}" ]; then
 	esac
 fi
 
-. "$(dirname "$(realpath "$0")")/../lib/nu_common.sh"
 
 baseos_init
 nuos_init

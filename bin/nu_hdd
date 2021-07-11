@@ -66,7 +66,6 @@ while [ $# -gt 0 ]; do
 	shift
 done
 
-. "$(dirname "$(realpath "$0")")/../lib/nu_common.sh"
 
 baseos_init
 nuos_init

@@ -55,7 +55,6 @@ if srsly ${OPT_NEXT_MODE-} && srsly ${OPT_EXPORT_TLSA-}; then
 	: ${NEXT_PUBKEY:=/etc/ssl/csrs.next/$SSL_HOST.csr}
 fi
 
-. "$(dirname "$(realpath "$0")")/../lib/nu_common.sh"
 
 nuos_ssl_init
 

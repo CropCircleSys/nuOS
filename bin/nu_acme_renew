@@ -25,7 +25,6 @@ while getopts fij:v OPT; do case $OPT in
 esac; done; shift $(($OPTIND-1))
 
 . "$(dirname "$(realpath "$0")")/../lib/nu_system.sh"
-. "$(dirname "$(realpath "$0")")/../lib/nu_common.sh"
 
 [ $# -ge 1 ] || set -- `x=/ca.cer; cd && cd .acme.sh && ls *$x 2> /dev/null | sed -e "s|$x\$||"`
 

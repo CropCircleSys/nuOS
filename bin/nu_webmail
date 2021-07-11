@@ -27,7 +27,6 @@ esac; done; shift $(($OPTIND-1))
 [ $# = 0 ]
 
 . "$(dirname "$(realpath "$0")")/../lib/nu_system.sh"
-. "$(dirname "$(realpath "$0")")/../lib/nu_common.sh"
 
 nuos_init
 

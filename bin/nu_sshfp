@@ -28,7 +28,6 @@ while getopts A:C:Fh:j:l:v OPT; do case $OPT in
 esac; done; shift $(($OPTIND-1))
 [ $# = 0 ]
 
-. "$(dirname "$(realpath "$0")")/../lib/nu_common.sh"
 
 maybe_yell
 

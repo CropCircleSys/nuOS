@@ -27,7 +27,6 @@ while getopts c:p:P:qv OPT; do case $OPT in
 esac; done; shift $(($OPTIND-1))
 [ $# = 0 ]
 
-. "$(dirname "$(realpath "$0")")/../lib/nu_common.sh"
 . "$(dirname "$(realpath "$0")")/../lib/nu_admin.sh"
 . "$(dirname "$(realpath "$0")")/../lib/nu_make.sh"
 . "$(dirname "$(realpath "$0")")/../lib/nu_ports.sh"

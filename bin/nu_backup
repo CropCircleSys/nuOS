@@ -27,7 +27,6 @@ esac; done; shift $(($OPTIND-1))
 [ $# -ge 1 -o -f /etc/nuos/backup ]
 
 . "$(dirname "$(realpath "$0")")/../lib/nu_system.sh"
-. "$(dirname "$(realpath "$0")")/../lib/nu_common.sh"
 . "$(dirname "$(realpath "$0")")/../lib/nu_backup.sh"
 
 nuos_init -q

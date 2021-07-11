@@ -38,7 +38,6 @@ while getopts a:A:b:C:dh:i:k:m:s:t:vz: OPT; do case $OPT in
 esac; done; shift $(($OPTIND-1))
 [ $# = 0 ]
 
-. "$(dirname "$(realpath "$0")")/../lib/nu_common.sh"
 
 nuos_init
 

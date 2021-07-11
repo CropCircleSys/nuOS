@@ -18,7 +18,6 @@ NUOS_VER=0.0.11.4a0
 NUOS_CODE="$(dirname "$(realpath "$0")")/.."
 
 . "$NUOS_CODE/lib/nu_system.sh"
-. "$NUOS_CODE/lib/nu_common.sh"
 
 while IFS= read _nush_interactive_line; do
 	eval "$_nush_interactive_line"

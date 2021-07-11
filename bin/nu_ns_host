@@ -39,7 +39,6 @@ while getopts A:c:C:dh:i:j:klM:nr:st:vw OPT; do case $OPT in
 esac; done; shift $(($OPTIND-1))
 [ $# = 0 ]
 
-. "$(dirname "$(realpath "$0")")/../lib/nu_common.sh"
 
 if canhas ${NAMESERVER_JAILNAME-}; then
 	NAMESERVER_JAILNAME_=`echo $NAMESERVER_JAILNAME | tr . _`
