@@ -4,7 +4,7 @@
   "description": "barcode for fingerprint of data or signing key, qr code for uri, all in a cool Ol' Glory format",
   "main": "flag.js",
   "dependencies": {
-    "jsdom": "^11.11.0",
+    "jsdom": "^16.5.0",
     "pure-svg-code": "^1.0.5"
   },
   "devDependencies": {},
